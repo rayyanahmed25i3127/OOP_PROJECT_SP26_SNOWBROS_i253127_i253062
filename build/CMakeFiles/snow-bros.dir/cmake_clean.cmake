@@ -1,7 +1,9 @@
 file(REMOVE_RECURSE
-  "CMakeFiles/snow-bros.dir/src/main.cpp.o"
-  "CMakeFiles/snow-bros.dir/src/main.cpp.o.d"
-  "snow-bros"
+  "CMakeFiles/snow-bros.dir/src/main.cpp.obj"
+  "CMakeFiles/snow-bros.dir/src/main.cpp.obj.d"
+  "libsnow-bros.dll.a"
+  "snow-bros.exe"
+  "snow-bros.exe.manifest"
   "snow-bros.pdb"
 )
 

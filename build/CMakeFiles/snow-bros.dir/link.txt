@@ -1,1 +1,3 @@
-/usr/bin/c++ -Wl,-search_paths_first -Wl,-headerpad_max_install_names "CMakeFiles/snow-bros.dir/src/main.cpp.o" -o snow-bros  -Wl,-rpath,/usr/local/lib /usr/local/lib/libsfml-graphics.3.0.2.dylib /usr/local/lib/libsfml-window.3.0.2.dylib /usr/local/lib/libsfml-audio.3.0.2.dylib /usr/local/lib/libsfml-system.3.0.2.dylib
+"C:\Program Files\CMake\bin\cmake.exe" -E rm -f CMakeFiles\snow-bros.dir/objects.a
+C:\mingw64\bin\ar.exe qc CMakeFiles\snow-bros.dir/objects.a @CMakeFiles\snow-bros.dir\objects1.rsp
+C:\mingw64\bin\g++.exe -g -Wl,--whole-archive CMakeFiles\snow-bros.dir/objects.a -Wl,--no-whole-archive -o snow-bros.exe -Wl,--out-implib,libsnow-bros.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\snow-bros.dir\linkLibs.rsp

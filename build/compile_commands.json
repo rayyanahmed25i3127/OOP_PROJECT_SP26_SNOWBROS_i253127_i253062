@@ -1,0 +1,8 @@
+[
+{
+  "directory": "E:/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/build",
+  "command": "C:\\mingw64\\bin\\g++.exe  @CMakeFiles/snow-bros.dir/includes_CXX.rsp -g -std=gnu++17 -o CMakeFiles\\snow-bros.dir\\src\\main.cpp.obj -c E:\\OOP_PROJECT_SP26_SNOWBROS_i253127_i253062\\src\\main.cpp",
+  "file": "E:/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/main.cpp",
+  "output": "CMakeFiles/snow-bros.dir/src/main.cpp.obj"
+}
+]
