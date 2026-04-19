@@ -1,3 +1,0 @@
-"C:\Program Files\CMake\bin\cmake.exe" -E rm -f CMakeFiles\snow-bros.dir/objects.a
-C:\mingw64\bin\ar.exe qc CMakeFiles\snow-bros.dir/objects.a @CMakeFiles\snow-bros.dir\objects1.rsp
-C:\mingw64\bin\g++.exe -g -Wl,--whole-archive CMakeFiles\snow-bros.dir/objects.a -Wl,--no-whole-archive -o snow-bros.exe -Wl,--out-implib,libsnow-bros.dll.a -Wl,--major-image-version,0,--minor-image-version,0 @CMakeFiles\snow-bros.dir\linkLibs.rsp
