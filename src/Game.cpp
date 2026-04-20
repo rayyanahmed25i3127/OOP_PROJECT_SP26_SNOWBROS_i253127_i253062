@@ -1,11 +1,14 @@
 #include "Game.hpp"
+#include "states/MenuState.hpp"
 
 Game::Game()
     : m_window(sf::VideoMode({800, 600}), "Snow Bros")
 {
     m_window.setFramerateLimit(60);
-    // No initial state pushed yet — window will close immediately.
-    // We'll push MenuState here in the next step.
+
+    // Push MenuState as the initial state.
+    // std::make_unique creates a new MenuState and wraps it in a unique_ptr.
+    m_stateManager.pushState(std::make_unique<MenuState>());
 }
 
 void Game::run() {
@@ -28,7 +31,7 @@ void Game::run() {
 
         m_stateManager.update(dt);
 
-        m_window.clear(sf::Color::Black);
+        m_window.clear(sf::Color(15, 20, 35));  // dark blue-ish background
         m_stateManager.draw(m_window);
         m_window.display();
     }

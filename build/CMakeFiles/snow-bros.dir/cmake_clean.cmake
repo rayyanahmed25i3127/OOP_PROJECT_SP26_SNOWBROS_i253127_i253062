@@ -3,6 +3,8 @@ file(REMOVE_RECURSE
   "CMakeFiles/snow-bros.dir/src/Game.cpp.o.d"
   "CMakeFiles/snow-bros.dir/src/main.cpp.o"
   "CMakeFiles/snow-bros.dir/src/main.cpp.o.d"
+  "CMakeFiles/snow-bros.dir/src/states/MenuState.cpp.o"
+  "CMakeFiles/snow-bros.dir/src/states/MenuState.cpp.o.d"
   "CMakeFiles/snow-bros.dir/src/states/StateManager.cpp.o"
   "CMakeFiles/snow-bros.dir/src/states/StateManager.cpp.o.d"
   "snow-bros"

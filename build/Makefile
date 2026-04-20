@@ -178,6 +178,30 @@ src/main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/snow-bros.dir/build.make CMakeFiles/snow-bros.dir/src/main.cpp.s
 .PHONY : src/main.cpp.s
 
+src/states/MenuState.o: src/states/MenuState.cpp.o
+.PHONY : src/states/MenuState.o
+
+# target to build an object file
+src/states/MenuState.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/snow-bros.dir/build.make CMakeFiles/snow-bros.dir/src/states/MenuState.cpp.o
+.PHONY : src/states/MenuState.cpp.o
+
+src/states/MenuState.i: src/states/MenuState.cpp.i
+.PHONY : src/states/MenuState.i
+
+# target to preprocess a source file
+src/states/MenuState.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/snow-bros.dir/build.make CMakeFiles/snow-bros.dir/src/states/MenuState.cpp.i
+.PHONY : src/states/MenuState.cpp.i
+
+src/states/MenuState.s: src/states/MenuState.cpp.s
+.PHONY : src/states/MenuState.s
+
+# target to generate assembly for a file
+src/states/MenuState.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/snow-bros.dir/build.make CMakeFiles/snow-bros.dir/src/states/MenuState.cpp.s
+.PHONY : src/states/MenuState.cpp.s
+
 src/states/StateManager.o: src/states/StateManager.cpp.o
 .PHONY : src/states/StateManager.o
 
@@ -217,6 +241,9 @@ help:
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"
+	@echo "... src/states/MenuState.o"
+	@echo "... src/states/MenuState.i"
+	@echo "... src/states/MenuState.s"
 	@echo "... src/states/StateManager.o"
 	@echo "... src/states/StateManager.i"
 	@echo "... src/states/StateManager.s"
