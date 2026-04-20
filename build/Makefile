@@ -113,6 +113,7 @@ preinstall/fast:
 
 # clear depends
 depend:
+	$(CMAKE_COMMAND) -P /Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/build/CMakeFiles/VerifyGlobs.cmake
 	$(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
@@ -128,6 +129,30 @@ snow-bros: cmake_check_build_system
 snow-bros/fast:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/snow-bros.dir/build.make CMakeFiles/snow-bros.dir/build
 .PHONY : snow-bros/fast
+
+src/Game.o: src/Game.cpp.o
+.PHONY : src/Game.o
+
+# target to build an object file
+src/Game.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/snow-bros.dir/build.make CMakeFiles/snow-bros.dir/src/Game.cpp.o
+.PHONY : src/Game.cpp.o
+
+src/Game.i: src/Game.cpp.i
+.PHONY : src/Game.i
+
+# target to preprocess a source file
+src/Game.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/snow-bros.dir/build.make CMakeFiles/snow-bros.dir/src/Game.cpp.i
+.PHONY : src/Game.cpp.i
+
+src/Game.s: src/Game.cpp.s
+.PHONY : src/Game.s
+
+# target to generate assembly for a file
+src/Game.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/snow-bros.dir/build.make CMakeFiles/snow-bros.dir/src/Game.cpp.s
+.PHONY : src/Game.cpp.s
 
 src/main.o: src/main.cpp.o
 .PHONY : src/main.o
@@ -153,6 +178,30 @@ src/main.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/snow-bros.dir/build.make CMakeFiles/snow-bros.dir/src/main.cpp.s
 .PHONY : src/main.cpp.s
 
+src/states/StateManager.o: src/states/StateManager.cpp.o
+.PHONY : src/states/StateManager.o
+
+# target to build an object file
+src/states/StateManager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/snow-bros.dir/build.make CMakeFiles/snow-bros.dir/src/states/StateManager.cpp.o
+.PHONY : src/states/StateManager.cpp.o
+
+src/states/StateManager.i: src/states/StateManager.cpp.i
+.PHONY : src/states/StateManager.i
+
+# target to preprocess a source file
+src/states/StateManager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/snow-bros.dir/build.make CMakeFiles/snow-bros.dir/src/states/StateManager.cpp.i
+.PHONY : src/states/StateManager.cpp.i
+
+src/states/StateManager.s: src/states/StateManager.cpp.s
+.PHONY : src/states/StateManager.s
+
+# target to generate assembly for a file
+src/states/StateManager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/snow-bros.dir/build.make CMakeFiles/snow-bros.dir/src/states/StateManager.cpp.s
+.PHONY : src/states/StateManager.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -162,9 +211,15 @@ help:
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
 	@echo "... snow-bros"
+	@echo "... src/Game.o"
+	@echo "... src/Game.i"
+	@echo "... src/Game.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"
+	@echo "... src/states/StateManager.o"
+	@echo "... src/states/StateManager.i"
+	@echo "... src/states/StateManager.s"
 .PHONY : help
 
 
@@ -176,6 +231,7 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
+	$(CMAKE_COMMAND) -P /Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/build/CMakeFiles/VerifyGlobs.cmake
 	$(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

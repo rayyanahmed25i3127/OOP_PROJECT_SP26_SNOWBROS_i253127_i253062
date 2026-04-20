@@ -11,6 +11,8 @@ set(CMAKE_MAKEFILE_DEPENDS
   "CMakeFiles/4.2.3/CMakeCCompiler.cmake"
   "CMakeFiles/4.2.3/CMakeCXXCompiler.cmake"
   "CMakeFiles/4.2.3/CMakeSystem.cmake"
+  "CMakeFiles/VerifyGlobs.cmake"
+  "CMakeFiles/cmake.verify_globs"
   "/usr/local/lib/cmake/SFML/SFMLAudioSharedTargets-release.cmake"
   "/usr/local/lib/cmake/SFML/SFMLAudioSharedTargets.cmake"
   "/usr/local/lib/cmake/SFML/SFMLConfig.cmake"

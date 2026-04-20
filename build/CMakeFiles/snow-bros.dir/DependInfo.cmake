@@ -8,7 +8,9 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
+  "/Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/Game.cpp" "CMakeFiles/snow-bros.dir/src/Game.cpp.o" "gcc" "CMakeFiles/snow-bros.dir/src/Game.cpp.o.d"
   "/Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/main.cpp" "CMakeFiles/snow-bros.dir/src/main.cpp.o" "gcc" "CMakeFiles/snow-bros.dir/src/main.cpp.o.d"
+  "/Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/states/StateManager.cpp" "CMakeFiles/snow-bros.dir/src/states/StateManager.cpp.o" "gcc" "CMakeFiles/snow-bros.dir/src/states/StateManager.cpp.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

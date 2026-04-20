@@ -85,12 +85,12 @@ clean: CMakeFiles/snow-bros.dir/clean
 CMakeFiles/snow-bros.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/snow-bros.dir/build.make CMakeFiles/snow-bros.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/snow-bros.dir/build.make CMakeFiles/snow-bros.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/build/CMakeFiles --progress-num=1,2 "Built target snow-bros"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/build/CMakeFiles --progress-num=1,2,3,4 "Built target snow-bros"
 .PHONY : CMakeFiles/snow-bros.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/snow-bros.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/build/CMakeFiles 2
+	$(CMAKE_COMMAND) -E cmake_progress_start /Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/build/CMakeFiles 4
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/snow-bros.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/build/CMakeFiles 0
 .PHONY : CMakeFiles/snow-bros.dir/rule
@@ -102,7 +102,7 @@ snow-bros: CMakeFiles/snow-bros.dir/rule
 # codegen rule for target.
 CMakeFiles/snow-bros.dir/codegen:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/snow-bros.dir/build.make CMakeFiles/snow-bros.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/build/CMakeFiles --progress-num=1,2 "Finished codegen for target snow-bros"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/build/CMakeFiles --progress-num=1,2,3,4 "Finished codegen for target snow-bros"
 .PHONY : CMakeFiles/snow-bros.dir/codegen
 
 # clean rule for target.
@@ -117,6 +117,7 @@ CMakeFiles/snow-bros.dir/clean:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
+	$(CMAKE_COMMAND) -P /Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/build/CMakeFiles/VerifyGlobs.cmake
 	$(CMAKE_COMMAND) -S$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 
