@@ -5,6 +5,8 @@
 file(GLOB_RECURSE NEW_GLOB LIST_DIRECTORIES false "/Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/*.cpp")
 set(OLD_GLOB
   "/Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/Game.cpp"
+  "/Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/audio/AudioManager.cpp"
+  "/Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/effects/SnowEffect.cpp"
   "/Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/main.cpp"
   "/Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/states/MenuState.cpp"
   "/Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/states/StateManager.cpp"

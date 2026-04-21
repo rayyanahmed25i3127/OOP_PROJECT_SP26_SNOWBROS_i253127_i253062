@@ -1,68 +1,116 @@
 #pragma once
 
 #include "states/GameState.hpp"
+#include "effects/SnowEffect.hpp"
 #include <SFML/Graphics.hpp>
 #include <string>
 
 /**
- * @brief The home/main menu screen — first thing the player sees.
+ * @brief The home/main menu screen.
  *
- * Shows the game title and three buttons: Start Game, Leaderboard, Exit.
- * Supports both mouse (click/hover) and keyboard (Up/Down + Enter) navigation.
- *
- * Uses fixed-size C-style arrays instead of STL containers, and an enum +
- * switch for button actions instead of std::function callbacks.
+ * Features:
+ *   - Background image with snowfall overlay
+ *   - Three capsule-shaped "bubble" buttons with glossy shine
+ *   - Per-button color theme (navy / green / red)
+ *   - Smooth scale-up pop animation on hover
+ *   - Bubble Bobble font for the button text
+ *   - Mouse + keyboard navigation
  */
 class MenuState : public GameState {
 public:
-    // Maximum number of menu buttons. 3 for now (Start/Leaderboard/Exit)
-    // but keeping a constant makes it easy to add Settings/Credits later.
     static const int MAX_BUTTONS = 8;
 
 private:
-    // Each button has an ID used to dispatch its action in a switch statement.
-    // Enum-based dispatch is the classic OOP alternative to callback pointers.
     enum class ButtonAction {
         StartGame,
         Leaderboard,
         Exit
     };
 
-    // A single menu button — composition: MenuState HAS-A array of Buttons.
+    /**
+     * @brief A capsule-shaped "bubble" button.
+     *
+     * SFML has no native rounded rectangle, so we fake the capsule with
+     * a center rectangle + two end-cap circles. A semi-transparent white
+     * ellipse on the upper half provides the glossy highlight.
+     *
+     * All of this is hidden behind the Button's own draw() method —
+     * encapsulation in action.
+     */
     struct Button {
-        sf::Text text;                  // label ("Start Game", etc.)
-        sf::RectangleShape background;  // rectangle behind the text
-        ButtonAction action;            // what to do when activated
+        // Capsule parts (base color)
+        sf::RectangleShape centerRect;
+        sf::CircleShape    leftCap;
+        sf::CircleShape    rightCap;
 
-        // sf::Text requires a font reference on construction (SFML 3 quirk),
-        // so we need a constructor that takes the font.
+        // Glossy highlight on top (semi-transparent white ellipse)
+        sf::CircleShape    shineLeft;
+        sf::CircleShape    shineRight;
+        sf::RectangleShape shineCenter;
+
+        // Dark outline ring — drawn first, slightly larger than the capsule
+        sf::RectangleShape outlineRect;
+        sf::CircleShape    outlineLeft;
+        sf::CircleShape    outlineRight;
+
+        // Label
+        sf::Text text;
+
+        // Action + layout
+        ButtonAction action;
+        sf::Vector2f center;   // the button's center position (for scale anchor)
+        float baseWidth;       // width at 1.0x scale
+        float baseHeight;
+
+        // Animation
+        float currentScale;    // actually being rendered this frame
+        float targetScale;     // 1.0 normal, 1.10 hovered
+
+        // Theming
+        sf::Color fillColor;
+
         Button(const sf::Font& font);
+
+        // Build geometry from center position, size, color, label.
+        void configure(sf::Vector2f centerPos,
+                       float width, float height,
+                       sf::Color baseFill,
+                       const std::string& label);
+
+        // Called every frame — smoothly eases currentScale toward targetScale,
+        // then re-lays-out all the shapes based on the current scale.
+        void update(float dt);
+
+        // Draws all pieces in correct z-order.
+        void draw(sf::RenderWindow& window) const;
     };
 
-    sf::Font m_font;
-    sf::Text m_title;
+    // Fonts
+    sf::Font m_bubbleFont;  // for buttons (BubbleBobble)
 
-    Button* m_buttons[MAX_BUTTONS];  // array of pointers (Button has no default ctor in SFML 3)
+    // Background
+    sf::Texture m_backgroundTexture;
+    sf::Sprite  m_backgroundSprite;
+
+    // Snow effect
+    SnowEffect  m_snow;
+
+    // Buttons
+    Button* m_buttons[MAX_BUTTONS];
     int m_buttonCount;
-
     int m_selectedIndex;
 
-    // Theme colors
-    const sf::Color m_colorNormal   = sf::Color(200, 200, 200);
-    const sf::Color m_colorSelected = sf::Color(255, 220, 80);
-    const sf::Color m_colorTitle    = sf::Color(120, 200, 255);
-
     // Helpers
-    void addButton(const std::string& label, float yPos, ButtonAction action);
-    void refreshButtonVisuals();
-    int buttonAtPoint(sf::Vector2f point) const;
-    void activateButton(int index);  // runs the action at index
+    void addButton(const std::string& label, sf::Vector2f center,
+                   sf::Color fillColor, ButtonAction action);
+    void setHovered(int index);      // updates target scales
+    int  buttonAtPoint(sf::Vector2f point) const;
+    void activateButton(int index);
 
 public:
     MenuState();
     ~MenuState();
 
-    // Disable copy (we own heap Button objects)
     MenuState(const MenuState&) = delete;
     MenuState& operator=(const MenuState&) = delete;
 

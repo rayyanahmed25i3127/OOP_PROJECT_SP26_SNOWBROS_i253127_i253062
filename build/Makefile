@@ -154,6 +154,54 @@ src/Game.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/snow-bros.dir/build.make CMakeFiles/snow-bros.dir/src/Game.cpp.s
 .PHONY : src/Game.cpp.s
 
+src/audio/AudioManager.o: src/audio/AudioManager.cpp.o
+.PHONY : src/audio/AudioManager.o
+
+# target to build an object file
+src/audio/AudioManager.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/snow-bros.dir/build.make CMakeFiles/snow-bros.dir/src/audio/AudioManager.cpp.o
+.PHONY : src/audio/AudioManager.cpp.o
+
+src/audio/AudioManager.i: src/audio/AudioManager.cpp.i
+.PHONY : src/audio/AudioManager.i
+
+# target to preprocess a source file
+src/audio/AudioManager.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/snow-bros.dir/build.make CMakeFiles/snow-bros.dir/src/audio/AudioManager.cpp.i
+.PHONY : src/audio/AudioManager.cpp.i
+
+src/audio/AudioManager.s: src/audio/AudioManager.cpp.s
+.PHONY : src/audio/AudioManager.s
+
+# target to generate assembly for a file
+src/audio/AudioManager.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/snow-bros.dir/build.make CMakeFiles/snow-bros.dir/src/audio/AudioManager.cpp.s
+.PHONY : src/audio/AudioManager.cpp.s
+
+src/effects/SnowEffect.o: src/effects/SnowEffect.cpp.o
+.PHONY : src/effects/SnowEffect.o
+
+# target to build an object file
+src/effects/SnowEffect.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/snow-bros.dir/build.make CMakeFiles/snow-bros.dir/src/effects/SnowEffect.cpp.o
+.PHONY : src/effects/SnowEffect.cpp.o
+
+src/effects/SnowEffect.i: src/effects/SnowEffect.cpp.i
+.PHONY : src/effects/SnowEffect.i
+
+# target to preprocess a source file
+src/effects/SnowEffect.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/snow-bros.dir/build.make CMakeFiles/snow-bros.dir/src/effects/SnowEffect.cpp.i
+.PHONY : src/effects/SnowEffect.cpp.i
+
+src/effects/SnowEffect.s: src/effects/SnowEffect.cpp.s
+.PHONY : src/effects/SnowEffect.s
+
+# target to generate assembly for a file
+src/effects/SnowEffect.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/snow-bros.dir/build.make CMakeFiles/snow-bros.dir/src/effects/SnowEffect.cpp.s
+.PHONY : src/effects/SnowEffect.cpp.s
+
 src/main.o: src/main.cpp.o
 .PHONY : src/main.o
 
@@ -238,6 +286,12 @@ help:
 	@echo "... src/Game.o"
 	@echo "... src/Game.i"
 	@echo "... src/Game.s"
+	@echo "... src/audio/AudioManager.o"
+	@echo "... src/audio/AudioManager.i"
+	@echo "... src/audio/AudioManager.s"
+	@echo "... src/effects/SnowEffect.o"
+	@echo "... src/effects/SnowEffect.i"
+	@echo "... src/effects/SnowEffect.s"
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"

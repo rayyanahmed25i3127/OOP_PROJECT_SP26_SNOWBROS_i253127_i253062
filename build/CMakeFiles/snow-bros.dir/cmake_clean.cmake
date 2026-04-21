@@ -1,6 +1,10 @@
 file(REMOVE_RECURSE
   "CMakeFiles/snow-bros.dir/src/Game.cpp.o"
   "CMakeFiles/snow-bros.dir/src/Game.cpp.o.d"
+  "CMakeFiles/snow-bros.dir/src/audio/AudioManager.cpp.o"
+  "CMakeFiles/snow-bros.dir/src/audio/AudioManager.cpp.o.d"
+  "CMakeFiles/snow-bros.dir/src/effects/SnowEffect.cpp.o"
+  "CMakeFiles/snow-bros.dir/src/effects/SnowEffect.cpp.o.d"
   "CMakeFiles/snow-bros.dir/src/main.cpp.o"
   "CMakeFiles/snow-bros.dir/src/main.cpp.o.d"
   "CMakeFiles/snow-bros.dir/src/states/MenuState.cpp.o"

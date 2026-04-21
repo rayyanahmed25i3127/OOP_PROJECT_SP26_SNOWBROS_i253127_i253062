@@ -86,10 +86,38 @@ CMakeFiles/snow-bros.dir/src/Game.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/snow-bros.dir/src/Game.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/Game.cpp -o CMakeFiles/snow-bros.dir/src/Game.cpp.s
 
+CMakeFiles/snow-bros.dir/src/audio/AudioManager.cpp.o: CMakeFiles/snow-bros.dir/flags.make
+CMakeFiles/snow-bros.dir/src/audio/AudioManager.cpp.o: /Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/audio/AudioManager.cpp
+CMakeFiles/snow-bros.dir/src/audio/AudioManager.cpp.o: CMakeFiles/snow-bros.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/snow-bros.dir/src/audio/AudioManager.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/snow-bros.dir/src/audio/AudioManager.cpp.o -MF CMakeFiles/snow-bros.dir/src/audio/AudioManager.cpp.o.d -o CMakeFiles/snow-bros.dir/src/audio/AudioManager.cpp.o -c /Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/audio/AudioManager.cpp
+
+CMakeFiles/snow-bros.dir/src/audio/AudioManager.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/snow-bros.dir/src/audio/AudioManager.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/audio/AudioManager.cpp > CMakeFiles/snow-bros.dir/src/audio/AudioManager.cpp.i
+
+CMakeFiles/snow-bros.dir/src/audio/AudioManager.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/snow-bros.dir/src/audio/AudioManager.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/audio/AudioManager.cpp -o CMakeFiles/snow-bros.dir/src/audio/AudioManager.cpp.s
+
+CMakeFiles/snow-bros.dir/src/effects/SnowEffect.cpp.o: CMakeFiles/snow-bros.dir/flags.make
+CMakeFiles/snow-bros.dir/src/effects/SnowEffect.cpp.o: /Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/effects/SnowEffect.cpp
+CMakeFiles/snow-bros.dir/src/effects/SnowEffect.cpp.o: CMakeFiles/snow-bros.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/snow-bros.dir/src/effects/SnowEffect.cpp.o"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/snow-bros.dir/src/effects/SnowEffect.cpp.o -MF CMakeFiles/snow-bros.dir/src/effects/SnowEffect.cpp.o.d -o CMakeFiles/snow-bros.dir/src/effects/SnowEffect.cpp.o -c /Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/effects/SnowEffect.cpp
+
+CMakeFiles/snow-bros.dir/src/effects/SnowEffect.cpp.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Preprocessing CXX source to CMakeFiles/snow-bros.dir/src/effects/SnowEffect.cpp.i"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/effects/SnowEffect.cpp > CMakeFiles/snow-bros.dir/src/effects/SnowEffect.cpp.i
+
+CMakeFiles/snow-bros.dir/src/effects/SnowEffect.cpp.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green "Compiling CXX source to assembly CMakeFiles/snow-bros.dir/src/effects/SnowEffect.cpp.s"
+	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/effects/SnowEffect.cpp -o CMakeFiles/snow-bros.dir/src/effects/SnowEffect.cpp.s
+
 CMakeFiles/snow-bros.dir/src/main.cpp.o: CMakeFiles/snow-bros.dir/flags.make
 CMakeFiles/snow-bros.dir/src/main.cpp.o: /Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/main.cpp
 CMakeFiles/snow-bros.dir/src/main.cpp.o: CMakeFiles/snow-bros.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Building CXX object CMakeFiles/snow-bros.dir/src/main.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/snow-bros.dir/src/main.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/snow-bros.dir/src/main.cpp.o -MF CMakeFiles/snow-bros.dir/src/main.cpp.o.d -o CMakeFiles/snow-bros.dir/src/main.cpp.o -c /Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/main.cpp
 
 CMakeFiles/snow-bros.dir/src/main.cpp.i: cmake_force
@@ -103,7 +131,7 @@ CMakeFiles/snow-bros.dir/src/main.cpp.s: cmake_force
 CMakeFiles/snow-bros.dir/src/states/MenuState.cpp.o: CMakeFiles/snow-bros.dir/flags.make
 CMakeFiles/snow-bros.dir/src/states/MenuState.cpp.o: /Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/states/MenuState.cpp
 CMakeFiles/snow-bros.dir/src/states/MenuState.cpp.o: CMakeFiles/snow-bros.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_3) "Building CXX object CMakeFiles/snow-bros.dir/src/states/MenuState.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Building CXX object CMakeFiles/snow-bros.dir/src/states/MenuState.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/snow-bros.dir/src/states/MenuState.cpp.o -MF CMakeFiles/snow-bros.dir/src/states/MenuState.cpp.o.d -o CMakeFiles/snow-bros.dir/src/states/MenuState.cpp.o -c /Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/states/MenuState.cpp
 
 CMakeFiles/snow-bros.dir/src/states/MenuState.cpp.i: cmake_force
@@ -117,7 +145,7 @@ CMakeFiles/snow-bros.dir/src/states/MenuState.cpp.s: cmake_force
 CMakeFiles/snow-bros.dir/src/states/StateManager.cpp.o: CMakeFiles/snow-bros.dir/flags.make
 CMakeFiles/snow-bros.dir/src/states/StateManager.cpp.o: /Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/states/StateManager.cpp
 CMakeFiles/snow-bros.dir/src/states/StateManager.cpp.o: CMakeFiles/snow-bros.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_4) "Building CXX object CMakeFiles/snow-bros.dir/src/states/StateManager.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --progress-dir=/Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_6) "Building CXX object CMakeFiles/snow-bros.dir/src/states/StateManager.cpp.o"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/snow-bros.dir/src/states/StateManager.cpp.o -MF CMakeFiles/snow-bros.dir/src/states/StateManager.cpp.o.d -o CMakeFiles/snow-bros.dir/src/states/StateManager.cpp.o -c /Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/src/states/StateManager.cpp
 
 CMakeFiles/snow-bros.dir/src/states/StateManager.cpp.i: cmake_force
@@ -131,6 +159,8 @@ CMakeFiles/snow-bros.dir/src/states/StateManager.cpp.s: cmake_force
 # Object files for target snow-bros
 snow__bros_OBJECTS = \
 "CMakeFiles/snow-bros.dir/src/Game.cpp.o" \
+"CMakeFiles/snow-bros.dir/src/audio/AudioManager.cpp.o" \
+"CMakeFiles/snow-bros.dir/src/effects/SnowEffect.cpp.o" \
 "CMakeFiles/snow-bros.dir/src/main.cpp.o" \
 "CMakeFiles/snow-bros.dir/src/states/MenuState.cpp.o" \
 "CMakeFiles/snow-bros.dir/src/states/StateManager.cpp.o"
@@ -139,6 +169,8 @@ snow__bros_OBJECTS = \
 snow__bros_EXTERNAL_OBJECTS =
 
 snow-bros: CMakeFiles/snow-bros.dir/src/Game.cpp.o
+snow-bros: CMakeFiles/snow-bros.dir/src/audio/AudioManager.cpp.o
+snow-bros: CMakeFiles/snow-bros.dir/src/effects/SnowEffect.cpp.o
 snow-bros: CMakeFiles/snow-bros.dir/src/main.cpp.o
 snow-bros: CMakeFiles/snow-bros.dir/src/states/MenuState.cpp.o
 snow-bros: CMakeFiles/snow-bros.dir/src/states/StateManager.cpp.o
@@ -148,7 +180,7 @@ snow-bros: /usr/local/lib/libsfml-window.3.0.2.dylib
 snow-bros: /usr/local/lib/libsfml-audio.3.0.2.dylib
 snow-bros: /usr/local/lib/libsfml-system.3.0.2.dylib
 snow-bros: CMakeFiles/snow-bros.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_5) "Linking CXX executable snow-bros"
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Linking CXX executable snow-bros"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/snow-bros.dir/link.txt --verbose=$(VERBOSE)
 	/usr/local/bin/cmake -E copy_directory /Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/assets /Users/RyansMAC/Desktop/OOP_PROJECT_SP26_SNOWBROS_i253127_i253062/build/assets
 
