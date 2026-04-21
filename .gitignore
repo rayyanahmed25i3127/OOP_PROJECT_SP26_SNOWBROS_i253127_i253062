@@ -39,3 +39,13 @@ build/
 
 # debug information files
 *.dwo
+# VS Code
+.vscode/
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake-build-*/
+
+# Optional debug DLLs
+*-d.dll
