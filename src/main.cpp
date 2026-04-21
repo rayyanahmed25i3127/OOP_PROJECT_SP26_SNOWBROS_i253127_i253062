@@ -1,43 +1,37 @@
 #include <SFML/Graphics.hpp>
-#include <vector>
+#include "../include/Player.h"
+#include "../include/Platform.h"
 
-int main()
-{
-    sf::RenderWindow window(sf::VideoMode(sf::Vector2u(800, 600)), "Snow Bros");
+int main() {
+    // Create window (SFML 3 style)
+    sf::RenderWindow window(sf::VideoMode({800, 600}), "Snow Bros");
+    window.setFramerateLimit(60);
 
-    // Player
-    sf::CircleShape player(25.f);
-    player.setFillColor(sf::Color::Green);
-    player.setPosition(sf::Vector2f(400.f, 500.f));
+    Player player({100.f, 100.f});
+    Platform ground({800.f, 50.f}, {0.f, 550.f});
+    Platform p1({200.f, 20.f}, {100.f, 400.f});
+    Platform p2({150.f, 20.f}, {400.f, 300.f});
 
-    float speed = 0.5f;
+    sf::Clock clock;
 
-    std::vector<sf::CircleShape> enemies;
+    while (window.isOpen()) {
+        float dt = clock.restart().asSeconds();
 
-    while (window.isOpen())
-    {
-        while (auto event = window.pollEvent())
-        {
+        while (const std::optional event = window.pollEvent()) {
             if (event->is<sf::Event::Closed>())
                 window.close();
         }
 
-        // Movement (SFML 3)
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A))
-            player.move(sf::Vector2f(-speed, 0));
+        // Update
+        player.update(dt);
 
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D))
-            player.move(sf::Vector2f(speed, 0));
+        // Draw
+        window.clear(sf::Color::Black);
+        ground.draw(window);
+        p1.draw(window);
+        p2.draw(window);
 
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W))
-            player.move(sf::Vector2f(0, -speed));
-
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S))
-            player.move(sf::Vector2f(0, speed));
-
-        // Render
-        window.clear();
-        window.draw(player);
+        player.draw(window);
         window.display();
     }
 
