@@ -46,6 +46,11 @@ private:
     sf::Music* m_menuMusic;
     sf::Music* m_gameMusic;
 
+    // Track whether each track successfully loaded, so we don't call
+    // setLooping/setVolume/play on unloaded Music objects (which asserts on Windows).
+    bool m_menuLoaded;
+    bool m_gameLoaded;
+
     // Track which one is currently playing, so we don't restart it
     // if the same music is requested again.
     enum class CurrentTrack { None, Menu, Game };

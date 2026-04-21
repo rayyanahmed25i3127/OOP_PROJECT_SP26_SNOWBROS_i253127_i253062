@@ -11,25 +11,28 @@ AudioManager& AudioManager::get() {
 AudioManager::AudioManager()
     : m_menuMusic(nullptr)
     , m_gameMusic(nullptr)
+    , m_menuLoaded(false)
+    , m_gameLoaded(false)
     , m_current(CurrentTrack::None)
     , m_volume(50.f)
 {
-    // Allocate both Music objects up front. We keep them alive for the
-    // whole program — no re-loading when switching tracks.
     m_menuMusic = new sf::Music();
     m_gameMusic = new sf::Music();
 
-    // Try to load the placeholder files. If they don't exist yet,
-    // tryOpen() logs a warning and we continue without music.
-    // Once the user drops real files in assets/sounds/, this just works.
-    tryOpen(m_menuMusic, "assets/sounds/menu_music.ogg");
-    tryOpen(m_gameMusic, "assets/sounds/game_music.ogg");
+    // Track whether each file loaded successfully.
+    // Calling setLooping/setVolume on an unloaded Music asserts in SFML 3 on Windows,
+    // so we only configure tracks that actually loaded.
+    m_menuLoaded = tryOpen(m_menuMusic, "assets/sounds/menu_music.ogg");
+    m_gameLoaded = tryOpen(m_gameMusic, "assets/sounds/game_music.ogg");
 
-    // Configure both for looping playback
-    m_menuMusic->setLooping(true);
-    m_gameMusic->setLooping(true);
-    m_menuMusic->setVolume(m_volume);
-    m_gameMusic->setVolume(m_volume);
+    if (m_menuLoaded) {
+        m_menuMusic->setLooping(true);
+        m_menuMusic->setVolume(m_volume);
+    }
+    if (m_gameLoaded) {
+        m_gameMusic->setLooping(true);
+        m_gameMusic->setVolume(m_volume);
+    }
 }
 
 AudioManager::~AudioManager() {
@@ -57,47 +60,41 @@ bool AudioManager::tryOpen(sf::Music* music, const std::string& filepath) {
 }
 
 void AudioManager::playMenuMusic() {
-    // If menu music is already playing, don't restart it — that's the whole
-    // point of this class. Prevents the song from cutting out every time
-    // you transition Menu -> Leaderboard -> Menu.
-    if (m_current == CurrentTrack::Menu) {
-        return;
-    }
+    if (m_current == CurrentTrack::Menu) return;
 
-    // Stop whatever's currently playing
-    if (m_current == CurrentTrack::Game && m_gameMusic) {
+    if (m_current == CurrentTrack::Game && m_gameLoaded && m_gameMusic) {
         m_gameMusic->stop();
     }
 
-    if (m_menuMusic && m_menuMusic->getStatus() != sf::Music::Status::Playing) {
-        m_menuMusic->play();  // no-op if the file wasn't loaded
+    if (m_menuLoaded && m_menuMusic
+        && m_menuMusic->getStatus() != sf::Music::Status::Playing) {
+        m_menuMusic->play();
     }
     m_current = CurrentTrack::Menu;
 }
 
 void AudioManager::playGameMusic() {
-    if (m_current == CurrentTrack::Game) {
-        return;
-    }
+    if (m_current == CurrentTrack::Game) return;
 
-    if (m_current == CurrentTrack::Menu && m_menuMusic) {
+    if (m_current == CurrentTrack::Menu && m_menuLoaded && m_menuMusic) {
         m_menuMusic->stop();
     }
 
-    if (m_gameMusic && m_gameMusic->getStatus() != sf::Music::Status::Playing) {
+    if (m_gameLoaded && m_gameMusic
+        && m_gameMusic->getStatus() != sf::Music::Status::Playing) {
         m_gameMusic->play();
     }
     m_current = CurrentTrack::Game;
 }
 
 void AudioManager::stopMusic() {
-    if (m_menuMusic) m_menuMusic->stop();
-    if (m_gameMusic) m_gameMusic->stop();
+    if (m_menuLoaded && m_menuMusic) m_menuMusic->stop();
+    if (m_gameLoaded && m_gameMusic) m_gameMusic->stop();
     m_current = CurrentTrack::None;
 }
 
 void AudioManager::setMusicVolume(float volume) {
     m_volume = volume;
-    if (m_menuMusic) m_menuMusic->setVolume(volume);
-    if (m_gameMusic) m_gameMusic->setVolume(volume);
+    if (m_menuLoaded && m_menuMusic) m_menuMusic->setVolume(volume);
+    if (m_gameLoaded && m_gameMusic) m_gameMusic->setVolume(volume);
 }
