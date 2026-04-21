@@ -65,5 +65,9 @@ public:
     void update(float dt);
     void draw(sf::RenderWindow& window);
 
+    // For pause menus: draw everything underneath (frozen) + the top state on top.
+    // PauseState calls this to render the paused gameplay behind its overlay.
+    void drawAll(sf::RenderWindow& window);
+
     bool isEmpty() const { return m_stateCount == 0; }
 };

@@ -1,6 +1,7 @@
 #include "states/MenuState.hpp"
 #include "states/StateManager.hpp"
 #include "audio/AudioManager.hpp"
+#include "states/PlayState.hpp"
 #include <iostream>
 
 namespace {
@@ -274,7 +275,7 @@ void MenuState::activateButton(int index) {
     switch (m_buttons[index]->action) {
         case ButtonAction::StartGame:
             std::cout << "[MenuState] Start Game clicked\n";
-            // TODO: push LoginState (Anas) or PlayState (you) here
+            m_manager->pushState(new PlayState());
             break;
         case ButtonAction::Leaderboard:
             std::cout << "[MenuState] Leaderboard clicked\n";
