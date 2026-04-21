@@ -22,6 +22,9 @@ protected:
     StateManager* m_manager = nullptr;
 
 public:
+    // If true, StateManager draws the state beneath this one first.
+    // Used by overlay states like PauseState.
+    virtual bool isTransparent() const { return false; }
     // Virtual destructor required for polymorphic deletion through base pointer.
     virtual ~GameState() = default;
 

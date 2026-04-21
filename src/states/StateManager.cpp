@@ -123,7 +123,15 @@ void StateManager::update(float dt) {
 }
 
 void StateManager::draw(sf::RenderWindow& window) {
-    if (m_stateCount > 0) {
-        m_states[m_stateCount - 1]->draw(window);
+    if (m_stateCount == 0) return;
+
+    // Walk backwards from top to find the deepest "opaque" state.
+    // Then draw from there up to the top.
+    int firstToDraw = m_stateCount - 1;
+    while (firstToDraw > 0 && m_states[firstToDraw]->isTransparent()) {
+        --firstToDraw;
+    }
+    for (int i = firstToDraw; i < m_stateCount; ++i) {
+        m_states[i]->draw(window);
     }
 }
