@@ -7,8 +7,10 @@ Game::Game()
     m_window.setFramerateLimit(60);
 
     // Push MenuState as the initial state.
-    // std::make_unique creates a new MenuState and wraps it in a unique_ptr.
-    m_stateManager.pushState(std::make_unique<MenuState>());
+    // `new MenuState()` allocates on the heap; StateManager takes ownership
+    // and will delete it when the state is popped or when StateManager itself
+    // is destroyed.
+    m_stateManager.pushState(new MenuState());
 }
 
 void Game::run() {
@@ -31,7 +33,7 @@ void Game::run() {
 
         m_stateManager.update(dt);
 
-        m_window.clear(sf::Color(15, 20, 35));  // dark blue-ish background
+        m_window.clear(sf::Color(15, 20, 35));
         m_stateManager.draw(m_window);
         m_window.display();
     }
