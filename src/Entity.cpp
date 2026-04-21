@@ -1,4 +1,4 @@
-#include "Entity.h"
+#include "Entity.hpp"
 
 Entity::Entity(sf::Vector2f pos) : position(pos), velocity(0.f, 0.f), alive(true) {
     hitBox.position = pos;

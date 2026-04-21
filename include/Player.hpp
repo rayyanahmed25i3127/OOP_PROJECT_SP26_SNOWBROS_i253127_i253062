@@ -1,5 +1,5 @@
 #pragma once
-#include "Entity.h"
+#include "Entity.hpp"
 #include <SFML/Graphics.hpp>
 
 class Player : public Entity {//child class from entity

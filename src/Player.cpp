@@ -1,4 +1,4 @@
-#include "../include/Player.h"
+#include "Player.hpp"
 #include <SFML/Window.hpp>//handles window
 #include <SFML/Window/Keyboard.hpp>//handles inputs from keyboard
 

@@ -1,4 +1,4 @@
-#include "../include/Platform.h"
+#include "Platform.hpp"
 
 // Constructor
 Platform::Platform(sf::Vector2f size, sf::Vector2f position)
