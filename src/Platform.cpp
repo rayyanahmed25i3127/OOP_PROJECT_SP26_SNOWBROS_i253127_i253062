@@ -1,33 +1,24 @@
 #include "Platform.hpp"
 
-// Constructor
-Platform::Platform(sf::Vector2f size, sf::Vector2f position)
+Platform::Platform(const sf::Texture& texture, sf::Vector2f size, sf::Vector2f position)
+    : m_sprite(texture)        // SFML 3 requires texture on sprite construction
+    , m_position(position)
+    , m_size(size)
 {
-    body.setSize(size);//size of dabba
-    body.setFillColor(sf::Color::White);  //color of dabba 
-    body.setOutlineThickness(0);//outline of dabba
-    body.setOutlineColor(sf::Color::Green);//color of outline
-    body.setPosition(position);//position of dabba (x,y)
+    // Stretch the sprite to exactly the platform's size.
+    // getSize() returns sf::Vector2u (unsigned), so we cast to float.
+    auto texSize = texture.getSize();
+    float scaleX = size.x / static_cast<float>(texSize.x);
+    float scaleY = size.y / static_cast<float>(texSize.y);
+
+    m_sprite.setScale({scaleX, scaleY});
+    m_sprite.setPosition(position);
 }
 
-// Draw function
-void Platform::draw(sf::RenderWindow& window)
-{
-    window.draw(body);//draw platform on screen
+void Platform::draw(sf::RenderWindow& window) {
+    window.draw(m_sprite);
 }
 
-// Return rectangle bounds (area of rectangle) -> (used in collision)
-sf::FloatRect Platform::getBounds() const
-{
-    return body.getGlobalBounds();//actually this is the hitbox area
-}
-
-// Return position
-//helpful:
-//1) Objects ko allign karny ky liye(later)
-//2)Spawning enemies
-
-sf::Vector2f Platform::getPosition() const
-{
-    return body.getPosition();//only x,y of rectangle
+sf::FloatRect Platform::getBounds() const {
+    return sf::FloatRect(m_position, m_size);
 }

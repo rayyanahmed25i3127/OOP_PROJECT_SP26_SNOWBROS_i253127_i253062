@@ -28,8 +28,7 @@ public:
         return alive;    }
 
     // Setters
-    void setPosition(sf::Vector2f pos) { 
-        position = pos; hitBox.position = pos; }
+    virtual void setPosition(sf::Vector2f pos) { position = pos; }
     void setVelocity(sf::Vector2f vel) { 
         velocity = vel; }
     void setAlive(bool a)              {
