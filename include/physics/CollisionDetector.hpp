@@ -1,63 +1,62 @@
 #pragma once
 
-#include "Player.hpp"
+#include "Entity.hpp"
 #include "Platform.hpp"
+#include "enemies/Enemy.hpp"
 #include <SFML/Graphics.hpp>
 
 /**
- * @brief Resolves physics collisions between the player and the world.
+ * @brief Resolves physics collisions between any Entity and the world,
+ *        and detects player-enemy overlaps.
  *
  * Spec section 7.2: "All collisions go through CollisionDetector —
  * no ad-hoc overlap checks."
  *
- * Design: stateless utility class. It doesn't own any game objects;
- * it just provides collision resolution services called once per frame
- * by PlayState after Player::update() has moved the player.
+ * Design: stateless utility class. Polymorphic over Entity (option b from
+ * the design discussion): Player and Enemy both resolve through the same
+ * code path — we never reach into subclass-specific members.
  *
- * Collision strategy:
- *   - Swept AABB (Axis-Aligned Bounding Box) resolution, per-axis
- *   - Horizontal first, then vertical (prevents corner-catch bugs)
- *   - One-way platforms: only block falling player from above
- *   - Screen borders act as solid walls at configurable X coordinates
- *
- * Usage per frame (inside PlayState::update):
- *   1. Player::update(dt) — applies velocity, gravity, moves position
- *   2. collider.resolve(player, platforms, platformCount)
+ * Collision strategy for resolve():
+ *   1. Screen-border wall clamp (left/right)
+ *   2. Solid hit-box horizontal push-out
+ *   3. One-way platform landing
+ *   4. Fallback ground plane
  */
 class CollisionDetector {
 private:
-    // World boundaries (the icy border walls in bg_lvl1.png).
-    // Player's hitbox is clamped to stay within [m_leftWall, m_rightWall].
     float m_leftWall;
     float m_rightWall;
 
 public:
-    /**
-     * @param leftWall   X coord where the left ice wall ends (player min X)
-     * @param rightWall  X coord where the right ice wall starts (player max X)
-     */
     CollisionDetector(float leftWall = 30.f, float rightWall = 770.f);
 
     /**
-     * @brief Resolves all collisions for the player this frame.
+     * @brief Resolves all platform/wall collisions for an entity this frame.
      *
-     * Call AFTER the player's update() has moved them. This method:
-     *   1. Clamps the player horizontally against the screen walls
-     *   2. For each platform, checks if the player landed on top and snaps
-     *      them to the platform surface if so (setting onGround)
-     *
-     * @param player        The player to resolve. Position and velocity may be modified.
-     * @param platforms     Array of platform pointers (non-owning).
-     * @param platformCount Number of valid entries in the platforms array.
-     * @param prevY         Player's Y position BEFORE this frame's movement
-     *                      (needed to distinguish jumping-through from landing-on).
+     * Call AFTER the entity's update() has moved it. Modifies position/velocity
+     * via Entity setters and calls entity.setOnGround(bool) to report contact.
      */
-    void resolve(Player& player,
-                 Platform* const platforms[],
-                 int platformCount,
-                 float prevY) const;
+    void resolve(Entity& entity,
+                 Platform* const platforms[], int platformCount,
+                 float prevX, float prevY) const;
 
-    // Getters for the walls (debug display / future enemy logic)
+    /**
+     * @brief Checks whether the player's hit-box overlaps any living enemy.
+     *
+     * Per spec §7.2, this centralizes player-enemy overlap detection so
+     * PlayState doesn't do ad-hoc AABB checks. Returns true on the first
+     * overlap found. Ignores enemies in non-Alive state (snowballed
+     * enemies can be pushed, not instantly lethal — matters when snowball
+     * mechanic lands).
+     *
+     * @param player        The player to test.
+     * @param enemies       Non-owning array of enemy pointers.
+     * @param enemyCount    Number of valid entries in `enemies`.
+     * @return true if player's hit-box intersects any alive enemy's hit-box.
+     */
+    bool checkEnemyContact(const Entity& player,
+                           Enemy* const enemies[], int enemyCount) const;
+
     float getLeftWall()  const { return m_leftWall; }
     float getRightWall() const { return m_rightWall; }
 };

@@ -10,8 +10,8 @@ namespace {
     // Collision hitbox — smaller than visual. This is what physics uses.
     // Narrower so you can squeeze past platform edges; slightly shorter
     // so the sprite appears to touch surfaces instead of floating.
-    const float HITBOX_WIDTH   = 36.f;   // ~65% of sprite width
-    const float HITBOX_HEIGHT  = 60.f;   // ~88% of sprite height
+    const float HITBOX_WIDTH   = 24.f;   // tighter   // ~65% of sprite width
+    const float HITBOX_HEIGHT  = 57.f;   // ~88% of sprite height
 
     // Offset of hitbox WITHIN the sprite rectangle.
     // The sprite's visible character occupies roughly the horizontal center
@@ -27,10 +27,13 @@ Player::Player(sf::Vector2f pos)
     : Entity(pos)
     , m_sprite(m_texture)
     , speed(200.f)
-    , jumpForce(-550.f)
+    , jumpForce(-450.f)
     , gravity(800.f)
     , onGround(false)
     , m_facingRight(true)
+    , m_lives(2)
+    , m_invincibleTimer(0.f)
+    , m_blinkVisible(true)
 {
     if (!m_texture.loadFromFile("assets/sprites/player_blue_idle.png")) {
         std::cerr << "[Player] Failed to load player_blue_idle.png\n";
@@ -75,35 +78,47 @@ void Player::applyGravity(float dt) {
 }
 
 void Player::update(float dt) {
+    // --- Invincibility countdown + blink toggle ---
+    if (m_invincibleTimer > 0.f) {
+        m_invincibleTimer -= dt;
+
+        // Flip visibility every 0.1 seconds for the blink effect.
+        // Using floor(timer * 10) parity keeps blinking framerate-stable.
+        int phase = static_cast<int>(m_invincibleTimer * 10.f);
+        m_blinkVisible = (phase % 2 == 0);
+
+        if (m_invincibleTimer <= 0.f) {
+            m_invincibleTimer = 0.f;
+            m_blinkVisible = true;  // ensure visible when invincibility ends
+        }
+    }
+
     handleInput();
     applyGravity(dt);
 
-    // Apply velocity to position.
-    // Collision resolution happens AFTER this, in CollisionDetector,
-    // called by PlayState. Do NOT do any ground/wall/platform checks here.
     position += velocity * dt;
-
-    // Hit-box tracks position
-    // Hit-box tracks position (with offset from sprite origin)
     hitBox.position = { position.x + HITBOX_OFFSET_X, position.y + HITBOX_OFFSET_Y };
 
-    // Update sprite — flip horizontally based on facing direction.
     auto texSize = m_texture.getSize();
     if (texSize.x > 0 && texSize.y > 0) {
         float absScaleX = PLAYER_WIDTH  / static_cast<float>(texSize.x);
         float absScaleY = PLAYER_HEIGHT / static_cast<float>(texSize.y);
 
+        m_sprite.setOrigin({ static_cast<float>(texSize.x) / 2.f, 0.f });
+
         if (m_facingRight) {
             m_sprite.setScale({absScaleX, absScaleY});
-            m_sprite.setPosition(position);
         } else {
             m_sprite.setScale({-absScaleX, absScaleY});
-            m_sprite.setPosition({position.x + PLAYER_WIDTH, position.y});
         }
+
+        m_sprite.setPosition({ position.x + PLAYER_WIDTH / 2.f, position.y });
     }
 }
-
 void Player::draw(sf::RenderWindow& window) {
+    // During invincibility, blink the sprite. Hit-box debug outline (drawn
+    // by PlayState) is unaffected — always shows actual collision shape.
+    if (m_invincibleTimer > 0.f && !m_blinkVisible) return;
     window.draw(m_sprite);
 }
 
@@ -111,5 +126,25 @@ void Player::draw(sf::RenderWindow& window) {
 void Player::setPosition(sf::Vector2f pos) {
     position = pos;
     hitBox.position = { pos.x + HITBOX_OFFSET_X, pos.y + HITBOX_OFFSET_Y };
-    m_sprite.setPosition(pos);
+    // Sprite origin is at its horizontal center, so offset position accordingly.
+    m_sprite.setPosition({ pos.x + PLAYER_WIDTH / 2.f, pos.y });
+}
+
+void Player::loseLife() {
+    if (m_invincibleTimer > 0.f) return;   // already in grace period
+    if (m_lives <= 0) return;               // already dead
+
+    --m_lives;
+    m_invincibleTimer = 1.5f;
+    m_blinkVisible = true;
+    // Respawn position is decided by the game state (PlayState owns the
+    // spawn coords). PlayState calls respawn() after loseLife() when
+    // m_lives > 0.
+}
+
+void Player::respawn(sf::Vector2f spawnPos) {
+    setPosition(spawnPos);
+    velocity = { 0.f, 0.f };
+    onGround = false;
+    m_facingRight = true;
 }

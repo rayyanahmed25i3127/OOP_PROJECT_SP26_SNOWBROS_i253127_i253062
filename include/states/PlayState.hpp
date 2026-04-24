@@ -3,36 +3,66 @@
 #include "states/GameState.hpp"
 #include "Player.hpp"
 #include "Platform.hpp"
+#include "enemies/Enemy.hpp"
 #include "physics/CollisionDetector.hpp"
 #include <SFML/Graphics.hpp>
+#include <string>
 
 class PlayState : public GameState {
 public:
     static const int MAX_PLATFORMS = 16;
+    static const int MAX_ENEMIES   = 16;
 
 private:
     sf::Texture m_backgroundTexture;
     sf::Sprite  m_backgroundSprite;
     bool m_backgroundLoaded;
 
+    // HUD resources
+    sf::Font    m_hudFont;
+    bool        m_hudFontLoaded;
+    sf::Texture m_heartTexture;
+    sf::Texture m_diamondTexture;
+    bool        m_heartLoaded;
+    bool        m_diamondLoaded;
+
+    // HUD state
+    int         m_score;
+    int         m_gems;
+    int         m_currentLevel;
+    int         m_totalLevels;
+
+    // Player spawn position (used for respawn after losing a life)
+    sf::Vector2f m_playerSpawn;
+
+    // HUD helper
+    void drawHUD(sf::RenderWindow& window);
+
     sf::Texture m_platformTexture;
     sf::Texture m_platformTopTexture;
     bool m_platformTextureLoaded;
     bool m_platformTopTextureLoaded;
 
-    Player* m_player;
+    Player*   m_player;
     Platform* m_platforms[MAX_PLATFORMS];
-    int m_platformCount;
+    int       m_platformCount;
 
-    // New: collision system
+    Enemy*    m_enemies[MAX_ENEMIES];
+    int       m_enemyCount;
+
+    float m_playerPrevX;
+    float m_playerPrevY;
+    float m_enemyPrevX[MAX_ENEMIES];
+    float m_enemyPrevY[MAX_ENEMIES];
+
     CollisionDetector m_collider;
 
-    // New: track previous Y so collider can distinguish landing-on vs jumping-through
-    float m_playerPrevY;
-
     bool m_showHitboxes;
+    bool m_gameOver;   // latches true once enemy contact triggers game over,
+                       // so we push GameOverState exactly once.
 
     void buildLevel();
+    void spawnEnemies();
 
 public:
     PlayState();
