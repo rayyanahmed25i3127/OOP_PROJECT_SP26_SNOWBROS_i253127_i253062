@@ -66,14 +66,13 @@ void PlayState::onEnter() {
     } else {
         m_platformTopTextureLoaded = true;
     }
-
     // --- Spawn player ---
     // Spawn on the ground, left-ish side. Y is chosen so the hitbox
     // bottom will naturally settle at the snow line on first frame.
     m_player = new Player(sf::Vector2f(100.f, 450.f));
 
     // --- Build level geometry ---
-    buildLevel();
+   buildLevel();
 
     // --- Music switch ---
     AudioManager::get().playGameMusic();
@@ -139,6 +138,10 @@ void PlayState::buildLevel() {
             new Platform(m_platformTexture, {w, p1H}, {WINDOW_WIDTH - BORDER_W - w, 437.f});
     }
 }
+//ANAS ADDING FOR LEVEL 2
+
+//added till here
+
 void PlayState::handleEvent(const sf::Event& event) {
     if (const auto* keyEvent = event.getIf<sf::Event::KeyPressed>()) {
         if (keyEvent->code == sf::Keyboard::Key::Escape) {

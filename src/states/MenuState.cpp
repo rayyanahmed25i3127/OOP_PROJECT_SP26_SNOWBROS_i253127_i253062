@@ -2,6 +2,7 @@
 #include "states/StateManager.hpp"
 #include "audio/AudioManager.hpp"
 #include "states/PlayState.hpp"
+#include "states/LeaderboardState.hpp"
 #include <iostream>
 
 namespace {
@@ -280,6 +281,8 @@ void MenuState::activateButton(int index) {
         case ButtonAction::Leaderboard:
             std::cout << "[MenuState] Leaderboard clicked\n";
             // TODO: push LeaderboardState here
+            //Pushing:
+            m_manager->pushState(new LeaderboardState());
             break;
         case ButtonAction::Exit:
             std::cout << "[MenuState] Exit clicked\n";

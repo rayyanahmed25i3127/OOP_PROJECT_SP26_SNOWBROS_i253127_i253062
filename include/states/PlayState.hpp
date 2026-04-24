@@ -19,10 +19,12 @@ private:
     sf::Texture m_platformTopTexture;
     bool m_platformTextureLoaded;
     bool m_platformTopTextureLoaded;
+   
 
     Player* m_player;
     Platform* m_platforms[MAX_PLATFORMS];
     int m_platformCount;
+    
 
     // New: collision system
     CollisionDetector m_collider;
@@ -33,6 +35,7 @@ private:
     bool m_showHitboxes;
 
     void buildLevel();
+    
 
 public:
     PlayState();

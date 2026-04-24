@@ -10,6 +10,7 @@ Game::Game()
     // `new MenuState()` allocates on the heap; StateManager takes ownership
     // and will delete it when the state is popped or when StateManager itself
     // is destroyed.
+     m_stateManager.setWindow(&m_window);
     m_stateManager.pushState(new MenuState());
 }
 

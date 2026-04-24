@@ -80,6 +80,7 @@ void StateManager::applyPendingActions() {
                     continue;
                 }
                 action.state->setManager(this);
+               action.state->setWindow(m_window); 
                 action.state->onEnter();
                 m_states[m_stateCount] = action.state;
                 ++m_stateCount;

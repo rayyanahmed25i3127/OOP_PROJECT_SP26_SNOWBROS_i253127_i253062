@@ -18,7 +18,11 @@
  * own update() or handleEvent().
  */
 class StateManager {
+    private:
+    sf::RenderWindow* m_window = nullptr;
 public:
+public:
+    void setWindow(sf::RenderWindow* window) { m_window = window; }
     // Maximum number of states we can stack at once.
     // Game flow: Menu -> Play -> Pause -> Shop = 4. 8 is a safe ceiling.
     static const int MAX_STATES = 8;
