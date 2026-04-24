@@ -23,6 +23,10 @@ private:
     sf::Texture m_texture;
     sf::Sprite  m_sprite;
 
+    int   m_lives;
+    float m_invincibleTimer;   // seconds remaining; 0 = not invincible
+    bool  m_blinkVisible;      // flips during invincibility for blink effect
+
     float speed;
     float jumpForce;
     float gravity;
@@ -43,6 +47,10 @@ public:
 
     // Called by CollisionDetector after resolving the player's movement
     // against the world. Determines whether jumping is available next frame.
-    void setOnGround(bool value) { onGround = value; }
+    void setOnGround(bool value) override { onGround = value; }
     bool isOnGround() const      { return onGround; }
+    int  getLives() const        { return m_lives; }
+    bool isInvincible() const    { return m_invincibleTimer > 0.f; }
+    void loseLife();             // called on enemy contact; triggers invincibility + respawn
+    void respawn(sf::Vector2f spawnPos);
 };
