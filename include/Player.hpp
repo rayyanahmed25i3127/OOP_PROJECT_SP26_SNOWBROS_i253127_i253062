@@ -27,6 +27,10 @@ private:
     float m_invincibleTimer;   // seconds remaining; 0 = not invincible
     bool  m_blinkVisible;      // flips during invincibility for blink effect
 
+    float m_throwCooldown;     // seconds until next throw allowed
+    float m_throwInterval;     // cooldown reset value (0.4s)
+    bool  m_wantsToThrow;      // set true on throw-key press, cleared by PlayState after spawning snowball
+
     float speed;
     float jumpForce;
     float gravity;
@@ -42,6 +46,10 @@ public:
     void handleInput();
     void applyGravity(float dt);
 
+    bool wantsToThrow() const     { return m_wantsToThrow; }
+    void consumeThrowRequest()    { m_wantsToThrow = false; m_throwCooldown = m_throwInterval; }
+    bool isFacingRight() const    { return m_facingRight; }
+    
     virtual void update(float dt) override;
     virtual void draw(sf::RenderWindow& window) override;
 
