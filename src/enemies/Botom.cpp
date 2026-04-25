@@ -34,24 +34,24 @@ Botom::Botom(sf::Vector2f pos)
     , m_maxJumpInterval(6.0f)
     , m_lastWalkVelocityX(0.f)
 {
-    if (!m_texture.loadFromFile("assets/sprites/botom_idle.png")) {
-        std::cerr << "[Botom] Failed to load botom_idle.png\n";
-    } else {
-        m_sprite.setTexture(m_texture, true);
-    }
+    // All textures (body poses + snow overlays) are loaded by the base
+    // class via a single call. Fallbacks in Enemy handle missing files.
+    loadEnemyAssets(
+        "assets/sprites/botom_idle.png",
+        "assets/sprites/botom_trapped.png",
+        "assets/sprites/botom_unleash_1.png",
+        "assets/sprites/botom_unleash_2.png",
+        "assets/sprites/botom_unleash_3.png",
+        "assets/sprites/snow_encase_50.png",
+        "assets/sprites/snow_encase_100.png",
+        "assets/sprites/snow_escape_75.png",
+        "assets/sprites/snow_escape_50.png",
+        "assets/sprites/snow_escape_25.png"
+    );
 
     m_facingRight = (std::rand() % 2 == 0);
-
     rollDirectionTimer();
     rollJumpTimer();
-
-    auto texSize = m_texture.getSize();
-    if (texSize.x > 0 && texSize.y > 0) {
-        float scaleX = BOTOM_SPRITE_W / static_cast<float>(texSize.x);
-        float scaleY = BOTOM_SPRITE_H / static_cast<float>(texSize.y);
-        m_sprite.setScale({ scaleX, scaleY });
-    }
-    m_sprite.setPosition(pos);
 }
 
 void Botom::rollDirectionTimer() {
