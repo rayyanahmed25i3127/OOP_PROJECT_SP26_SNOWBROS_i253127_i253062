@@ -195,7 +195,7 @@ void LeaderboardState::draw(sf::RenderWindow& window)
         window.draw(*bgSprite);
 
     // ── Column X positions ──────────────────────────────────────────────────────
-    const float startX      = 70.f;
+    const float startX      = 50.f;
     const float colRank     = startX;
     const float colName     = startX + 70.f;
     const float colScore    = startX + 300.f;
@@ -208,6 +208,50 @@ void LeaderboardState::draw(sf::RenderWindow& window)
     // ── Leaderboard rows ────────────────────────────────────────────────────────
     const LeaderboardEntry* e     = leaderboard.getEntries();
     int                     total = leaderboard.getCount();
+
+    //Mlf:(Headers)
+    //  HEADER Y POSITION (above first row)
+float headerY = 40.f;
+
+// 🔹 Rank Header
+sf::Text rankHeader(font);
+rankHeader.setString("Rank");
+rankHeader.setCharacterSize(28);
+rankHeader.setFillColor(sf::Color::White);
+rankHeader.setStyle(sf::Text::Bold);
+rankHeader.setPosition({colRank, headerY});
+
+// 🔹 Name Header
+sf::Text nameHeader(font);
+nameHeader.setString("Name");
+nameHeader.setCharacterSize(28);
+nameHeader.setFillColor(sf::Color::White);
+nameHeader.setStyle(sf::Text::Bold);
+nameHeader.setPosition({colName, headerY});
+
+// 🔹 Score Header
+sf::Text scoreHeader(font);
+scoreHeader.setString("Score");
+scoreHeader.setCharacterSize(28);
+scoreHeader.setFillColor(sf::Color::White);
+scoreHeader.setStyle(sf::Text::Bold);
+scoreHeader.setPosition({colScore, headerY});
+
+// 🔹 Date Header
+sf::Text dateHeader(font);
+dateHeader.setString("Date");
+dateHeader.setCharacterSize(28);
+dateHeader.setFillColor(sf::Color::White);
+dateHeader.setStyle(sf::Text::Bold);
+dateHeader.setPosition({colDate, headerY});
+
+// 🔹 DRAW HEADERS
+window.draw(rankHeader);
+window.draw(nameHeader);
+window.draw(scoreHeader);
+window.draw(dateHeader);
+
+//headers
 
     for (int i = 0; i < 10; ++i)
     {

@@ -4,7 +4,42 @@
 #include "states/GameOverState.hpp"
 #include "enemies/Botom.hpp"
 #include "audio/AudioManager.hpp"
+//mlf:
+#include <ctime>//for date
+#include <cstdlib>//rand
+
 #include <iostream>
+//mlf:(date function)
+std::string getCurrentDate() {
+    time_t now = time(0);
+    tm* ltm = localtime(&now);
+
+    char buffer[11];
+    sprintf(buffer, "%04d-%02d-%02d",
+        1900 + ltm->tm_year,
+        1 + ltm->tm_mon,
+        ltm->tm_mday);
+
+    return std::string(buffer);
+}
+//mlf:
+#include <fstream>
+void saveScore(const std::string& name, int score, int level) {
+    std::ofstream file("leaderboard.txt", std::ios::app);
+
+    if (!file.is_open()) {
+        std::cerr << "Failed to open leaderboard.txt\n";
+        return;
+    }
+
+   file << name << ","
+     << score << " "
+     << level << " "
+     << getCurrentDate()
+     << "\n";
+
+    file.close();
+}
 
 namespace {
     const float WINDOW_WIDTH  = 800.f;
@@ -56,6 +91,10 @@ PlayState::~PlayState() {
 }
 
 void PlayState::onEnter() {
+    //mlf
+    //nff
+    m_playerName = m_manager->getCurrentUserName();
+
     std::cout << "[PlayState] Entering gameplay\n";
 
     if (!m_backgroundTexture.loadFromFile("assets/sprites/bg_lvl1.png")) {
@@ -83,43 +122,34 @@ void PlayState::onEnter() {
     } else {
         m_platformTopTextureLoaded = true;
     }
-<<<<<<< HEAD
-    // --- Spawn player ---
-    // Spawn on the ground, left-ish side. Y is chosen so the hitbox
-    // bottom will naturally settle at the snow line on first frame.
-    m_player = new Player(sf::Vector2f(100.f, 450.f));
+// --- Spawn player ---
+m_player = new Player(m_playerSpawn);
 
-    // --- Build level geometry ---
-   buildLevel();
-=======
+// --- Load HUD assets ---
+if (!m_hudFont.openFromFile("assets/fonts/PressStart2P-Regular.ttf")) {
+    std::cerr << "[PlayState] Could not load PressStart2P-Regular.ttf\n";
+    m_hudFontLoaded = false;
+} else {
+    m_hudFontLoaded = true;
+}
 
-    m_player = new Player(m_playerSpawn);
+if (!m_heartTexture.loadFromFile("assets/sprites/heart.png")) {
+    std::cerr << "[PlayState] Could not load heart.png\n";
+    m_heartLoaded = false;
+} else {
+    m_heartLoaded = true;
+}
 
-    // --- Load HUD assets ---
-    if (!m_hudFont.openFromFile("assets/fonts/PressStart2P-Regular.ttf")) {
-        std::cerr << "[PlayState] Could not load PressStart2P-Regular.ttf\n";
-        m_hudFontLoaded = false;
-    } else {
-        m_hudFontLoaded = true;
-    }
+if (!m_diamondTexture.loadFromFile("assets/sprites/diamond.png")) {
+    std::cerr << "[PlayState] Could not load diamond.png\n";
+    m_diamondLoaded = false;
+} else {
+    m_diamondLoaded = true;
+}
 
-    if (!m_heartTexture.loadFromFile("assets/sprites/heart.png")) {
-        std::cerr << "[PlayState] Could not load heart.png\n";
-        m_heartLoaded = false;
-    } else {
-        m_heartLoaded = true;
-    }
-
-    if (!m_diamondTexture.loadFromFile("assets/sprites/diamond.png")) {
-        std::cerr << "[PlayState] Could not load diamond.png\n";
-        m_diamondLoaded = false;
-    } else {
-        m_diamondLoaded = true;
-    }
-
-    buildLevel();
-    spawnEnemies();
->>>>>>> origin
+// --- Build level + enemies ---
+buildLevel();
+spawnEnemies();
 
     AudioManager::get().playGameMusic();
 }
@@ -191,12 +221,6 @@ void PlayState::buildLevel() {
             new Platform(m_platformTexture, {w, p1H}, {WINDOW_WIDTH - BORDER_W - w, 437.f});
     }
 }
-<<<<<<< HEAD
-//ANAS ADDING FOR LEVEL 2
-
-//added till here
-=======
-
 void PlayState::spawnEnemies() {
     m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(140.f, 400.f));
     m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(600.f, 400.f));
@@ -206,8 +230,6 @@ void PlayState::spawnEnemies() {
 
     std::cout << "[PlayState] Spawned " << m_enemyCount << " Botoms\n";
 }
->>>>>>> origin
-
 void PlayState::handleEvent(const sf::Event& event) {
     if (const auto* keyEvent = event.getIf<sf::Event::KeyPressed>()) {
         if (keyEvent->code == sf::Keyboard::Key::Escape) {
@@ -266,6 +288,13 @@ void PlayState::update(float dt) {
 
         if (m_player->getLives() <= 0) {
             m_gameOver = true;
+            //mlf:
+            // using temperoray now int score = m_score;   // or temporary if not implemented
+              int score = rand() % 2000;
+            std::string safeName = m_playerName;
+           std::string currentUser = m_manager->getCurrentUserName();
+saveScore(currentUser, score, m_currentLevel);
+
             m_manager->pushState(new GameOverState());
         } else {
             m_player->respawn(m_playerSpawn);

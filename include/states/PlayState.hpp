@@ -9,6 +9,9 @@
 #include <string>
 
 class PlayState : public GameState {
+    //making leaderboard functional:
+    std::string m_playerName;
+    
 public:
     static const int MAX_PLATFORMS = 16;
     static const int MAX_ENEMIES   = 16;

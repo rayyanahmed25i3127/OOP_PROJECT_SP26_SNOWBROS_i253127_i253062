@@ -1,5 +1,6 @@
 #include "Game.hpp"
 #include "states/MenuState.hpp"
+#include "states/LoginState.hpp"//login added
 
 Game::Game()
     : m_window(sf::VideoMode({800, 600}), "Snow Bros")
@@ -11,7 +12,7 @@ Game::Game()
     // and will delete it when the state is popped or when StateManager itself
     // is destroyed.
      m_stateManager.setWindow(&m_window);
-    m_stateManager.pushState(new MenuState());
+    m_stateManager.pushState(new LoginState());//login added
 }
 
 void Game::run() {
