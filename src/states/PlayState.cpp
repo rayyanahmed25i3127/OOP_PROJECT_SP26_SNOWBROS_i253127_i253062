@@ -4,12 +4,14 @@
 #include "states/GameOverState.hpp"
 #include "enemies/Botom.hpp"
 #include "audio/AudioManager.hpp"
-//mlf:
-#include <ctime>//for date
-#include <cstdlib>//rand
+#include "effects/HitFlash.hpp"
 
 #include <iostream>
-//mlf:(date function)
+#include <cstdlib>
+#include <ctime>   // for date
+#include <fstream> // for file handling
+
+// Function to get current date
 std::string getCurrentDate() {
     time_t now = time(0);
     tm* ltm = localtime(&now);
@@ -22,8 +24,8 @@ std::string getCurrentDate() {
 
     return std::string(buffer);
 }
-//mlf:
-#include <fstream>
+
+// Function to save score to leaderboard
 void saveScore(const std::string& name, int score, int level) {
     std::ofstream file("leaderboard.txt", std::ios::app);
 
@@ -32,11 +34,11 @@ void saveScore(const std::string& name, int score, int level) {
         return;
     }
 
-   file << name << ","
-     << score << " "
-     << level << " "
-     << getCurrentDate()
-     << "\n";
+    file << name << ","
+         << score << " "
+         << level << " "
+         << getCurrentDate()
+         << "\n";
 
     file.close();
 }
@@ -67,7 +69,12 @@ PlayState::PlayState()
     , m_currentLevel(1)
     , m_totalLevels(10)
     , m_playerSpawn(100.f, 450.f)
+    , m_projectileCount(0)
+    , m_hitFlashCount(0)
 {
+    for (int i = 0; i < MAX_HIT_FLASHES; ++i) m_hitFlashes[i] = nullptr;
+    for (int i = 0; i < MAX_ENEMIES; ++i) m_chainCount[i] = 0;
+    for (int i = 0; i < MAX_PROJECTILES; ++i) m_projectiles[i] = nullptr;
     for (int i = 0; i < MAX_PLATFORMS; ++i) m_platforms[i] = nullptr;
     for (int i = 0; i < MAX_ENEMIES;   ++i) {
         m_enemies[i]    = nullptr;
@@ -88,6 +95,11 @@ PlayState::~PlayState() {
         delete m_enemies[i];
         m_enemies[i] = nullptr;
     }
+    for (int i = 0; i < m_projectileCount; ++i) {
+        delete m_projectiles[i];
+        m_projectiles[i] = nullptr;
+    }
+    for (int i = 0; i < m_hitFlashCount; ++i) delete m_hitFlashes[i];
 }
 
 void PlayState::onEnter() {
@@ -251,9 +263,7 @@ void PlayState::update(float dt) {
     if (m_player) {
         m_playerPrevX = m_player->getPosition().x;
         m_playerPrevY = m_player->getPosition().y;
-
         m_player->update(dt);
-
         m_collider.resolve(*m_player, m_platforms, m_platformCount,
                            m_playerPrevX, m_playerPrevY);
     }
@@ -261,31 +271,233 @@ void PlayState::update(float dt) {
     // --- Enemies ---
     for (int i = 0; i < m_enemyCount; ++i) {
         if (!m_enemies[i]) continue;
-
         m_enemyPrevX[i] = m_enemies[i]->getPosition().x;
         m_enemyPrevY[i] = m_enemies[i]->getPosition().y;
-
         m_enemies[i]->update(dt);
-
-        m_collider.resolve(*m_enemies[i], m_platforms, m_platformCount,
-                           m_enemyPrevX[i], m_enemyPrevY[i]);
+        // Rolling enemies have their own motion — don't route through collider.
+        if (m_enemies[i]->getState() != Enemy::State::Rolling) {
+            m_collider.resolve(*m_enemies[i], m_platforms, m_platformCount,
+                               m_enemyPrevX[i], m_enemyPrevY[i]);
+        }
     }
 
-    // --- Player-Enemy contact check ---
-    // Routed through CollisionDetector per spec §7.2 ("no ad-hoc overlap checks").
-    // m_gameOver guard prevents pushing multiple GameOverStates if contact
-    // persists during the one-frame gap before GameOverState activates.
-    // --- Player-Enemy contact -> lose a life (or game over if out of lives) ---
-    // Spec §7.3: touching an enemy costs 1 life. Player gets a brief
-    // invincibility window after losing a life so a single prolonged
-    // overlap doesn't drain every life in one frame.
-    if (!m_gameOver && m_player && !m_player->isInvincible()
-        && m_collider.checkEnemyContact(*m_player, m_enemies, m_enemyCount))
+    // --- Spawn attack ball ---
+    if (m_player && m_player->wantsToThrow()
+        && m_projectileCount < MAX_PROJECTILES) {
+        sf::Vector2f pPos = m_player->getPosition();
+        sf::FloatRect pHit = m_player->getHitBox();
+        float spawnY = pHit.position.y + pHit.size.y * 0.3f;
+        float spawnX = m_player->isFacingRight()
+            ? pHit.position.x + pHit.size.x + 2.f
+            : pHit.position.x - 16.f - 2.f;
+        m_projectiles[m_projectileCount++] =
+            new AttackBall({spawnX, spawnY}, m_player->isFacingRight());
+        m_player->consumeThrowRequest();
+    }
+
+    // --- Update projectiles ---
+    for (int i = 0; i < m_projectileCount; ++i) {
+        if (m_projectiles[i]) m_projectiles[i]->update(dt);
+    }
+
+    // --- Attack ball vs enemy collision ---
+    // Enemy::takeAttackHit() decides whether the hit counts (Alive,
+    // PartialEncase, or Escaping75/50/25). PlayState just registers the
+    // hit and spawns the flash.
+    for (int i = 0; i < m_projectileCount; ++i) {
+        if (!m_projectiles[i] || !m_projectiles[i]->isAlive()) continue;
+        sf::FloatRect pHit = m_projectiles[i]->getHitBox();
+        float pL = pHit.position.x, pR = pL + pHit.size.x;
+        float pT = pHit.position.y, pB = pT + pHit.size.y;
+
+        for (int e = 0; e < m_enemyCount; ++e) {
+            if (!m_enemies[e]) continue;
+            Enemy::State s = m_enemies[e]->getState();
+            // Skip states that never react to attack balls.
+            if (s != Enemy::State::Alive &&
+                s != Enemy::State::PartialEncase &&
+                s != Enemy::State::Escaping75 &&
+                s != Enemy::State::Escaping50 &&
+                s != Enemy::State::Escaping25) {
+                continue;
+            }
+
+            sf::FloatRect eHit = m_enemies[e]->getHitBox();
+            float eL = eHit.position.x, eR = eL + eHit.size.x;
+            float eT = eHit.position.y, eB = eT + eHit.size.y;
+            bool overlap = (pR > eL) && (pL < eR) && (pB > eT) && (pT < eB);
+            if (!overlap) continue;
+
+            // Register hit, spawn hit-flash, kill the attack ball.
+            m_enemies[e]->takeAttackHit();
+            m_projectiles[i]->setAlive(false);
+
+            // Spawn the hit flash at impact point (center of attack ball).
+            if (m_hitFlashCount < MAX_HIT_FLASHES) {
+                sf::Vector2f flashPos{ (pL + pR) * 0.5f - 6.f,
+                                       (pT + pB) * 0.5f - 8.f };
+                m_hitFlashes[m_hitFlashCount++] = new HitFlash(flashPos);
+            }
+            break;
+        }
+    }
+
+    // --- GC dead projectiles ---
     {
+        int write = 0;
+        for (int read = 0; read < m_projectileCount; ++read) {
+            if (m_projectiles[read] && m_projectiles[read]->isAlive()) {
+                m_projectiles[write++] = m_projectiles[read];
+            } else {
+                delete m_projectiles[read];
+                m_projectiles[read] = nullptr;
+            }
+        }
+        m_projectileCount = write;
+    }
+
+    // --- Update & GC hit flashes ---
+    for (int i = 0; i < m_hitFlashCount; ++i) {
+        if (m_hitFlashes[i]) m_hitFlashes[i]->update(dt);
+    }
+    {
+        int write = 0;
+        for (int read = 0; read < m_hitFlashCount; ++read) {
+            if (m_hitFlashes[read] && m_hitFlashes[read]->isAlive()) {
+                m_hitFlashes[write++] = m_hitFlashes[read];
+            } else {
+                delete m_hitFlashes[read];
+                m_hitFlashes[read] = nullptr;
+            }
+        }
+        m_hitFlashCount = write;
+    }
+
+    // --- PLAYER KICKS SNOWBALLED ENEMY → Rolling ---
+    // Auto-kick on contact: if player's hitbox overlaps a Snowballed enemy,
+    // launch it rolling in the player's facing direction. Reset its chain
+    // count so the first kill scores the base, second adds 10%, etc.
+    // --- PLAYER KICKS SNOWBALLED ENEMY → Rolling ---
+    // Auto-kick on contact: if player's hitbox overlaps a Snowballed enemy,
+    // launch it rolling in the player's facing direction.
+    //
+    // Spec §9.1: an enemy is "defeated" the moment it's encased and rolled,
+    // so we award its base score here at kick-time. Any additional enemies
+    // the rolling snowball kills earn base + 10% × chain index on top
+    // (handled in the rolling-kill loop below). m_chainCount[e] is set to 1
+    // here so the first secondary kill is treated as chain index 2 (+10%),
+    // matching "Chain Kill Bonus +10% per enemy in chain".
+    if (m_player) {
+        sf::FloatRect pHit = m_player->getHitBox();
+        float pL = pHit.position.x, pR = pL + pHit.size.x;
+        float pT = pHit.position.y, pB = pT + pHit.size.y;
+
+        for (int e = 0; e < m_enemyCount; ++e) {
+            if (!m_enemies[e]) continue;
+            if (m_enemies[e]->getState() != Enemy::State::Snowballed) continue;
+
+            sf::FloatRect eHit = m_enemies[e]->getHitBox();
+            float eL = eHit.position.x, eR = eL + eHit.size.x;
+            float eT = eHit.position.y, eB = eT + eHit.size.y;
+            bool overlap = (pR > eL) && (pL < eR) && (pB > eT) && (pT < eB);
+            if (!overlap) continue;
+
+            m_enemies[e]->kickIntoRoll(m_player->isFacingRight());
+
+            // Award base score for the enemy that just got rolled.
+            int kickedScore = randomScore(100, 500);
+            m_score += kickedScore;
+            // Chain count = 1 → next victim is chain index 2 → base + 10%.
+            m_chainCount[e] = 1;
+
+            std::cout << "[PlayState] Kicked Botom into roll. +"
+                      << kickedScore << " (base). Score: "
+                      << m_score << "\n";
+            break;
+        }
+    }
+
+    // --- ROLLING ENEMY KILLS (spec §9.1) ---
+    // Every enemy a rolling snowball touches awards score immediately.
+    //   First kill  = base (100-500 for Botom)
+    //   Second kill = base + 10%
+    //   Third kill  = base + 20%
+    //   etc.
+    // Chain counter m_chainCount[r] is reset in kickIntoRoll handling above
+    // and carried across GC compaction (see GC block below).
+    for (int r = 0; r < m_enemyCount; ++r) {
+        if (!m_enemies[r]) continue;
+        if (m_enemies[r]->getState() != Enemy::State::Rolling) continue;
+
+        sf::FloatRect rHit = m_enemies[r]->getHitBox();
+        float rL = rHit.position.x, rR = rL + rHit.size.x;
+        float rT = rHit.position.y, rB = rT + rHit.size.y;
+
+        for (int v = 0; v < m_enemyCount; ++v) {
+            if (v == r || !m_enemies[v]) continue;
+            if (!m_enemies[v]->isAlive()) continue;   // already killed this frame
+
+            Enemy::State vs = m_enemies[v]->getState();
+            // Rolling snowballs pass through each other; dead enemies ignored.
+            if (vs == Enemy::State::Dead || vs == Enemy::State::Rolling) continue;
+
+            sf::FloatRect vHit = m_enemies[v]->getHitBox();
+            float vL = vHit.position.x, vR = vL + vHit.size.x;
+            float vT = vHit.position.y, vB = vT + vHit.size.y;
+            bool overlap = (rR > vL) && (rL < vR) && (rB > vT) && (rT < vB);
+            if (!overlap) continue;
+
+            // Award score. chainIndex 1 = first kill (no bonus),
+            // chainIndex 2 = second kill (+10%), etc.
+            m_chainCount[r]++;
+            int chainIndex = m_chainCount[r];
+            int base  = randomScore(100, 500);
+            int bonus = static_cast<int>(base * 0.10f * (chainIndex - 1));
+            int award = base + bonus;
+            m_score += award;
+
+            std::cout << "[PlayState] Roll kill #" << chainIndex
+                      << " +" << award
+                      << " (base " << base << " + bonus " << bonus
+                      << "). Score: " << m_score << "\n";
+
+            m_enemies[v]->setAlive(false);
+        }
+    }
+
+    // --- GC dead enemies (compact array) ---
+    // Carry chain count along with the enemy pointer when indices shift.
+    // Reading m_chainCount[read] then writing to [write] preserves the
+    // rolling enemy's kill count across compaction.
+    {
+        int write = 0;
+        for (int read = 0; read < m_enemyCount; ++read) {
+            Enemy* e = m_enemies[read];
+            bool keep = e && e->isAlive()
+                     && e->getState() != Enemy::State::Dead;
+            if (keep) {
+                int carriedChain = m_chainCount[read];
+                m_enemies[write]    = e;
+                m_chainCount[write] = carriedChain;
+                ++write;
+            } else {
+                delete e;
+                m_enemies[read] = nullptr;
+            }
+        }
+        for (int i = write; i < m_enemyCount; ++i) {
+            m_enemies[i]    = nullptr;
+            m_chainCount[i] = 0;
+        }
+        m_enemyCount = write;
+    }
+
+    // --- Player-Enemy contact (lethal only on Alive) ---
+    if (!m_gameOver && m_player && !m_player->isInvincible()
+        && m_collider.checkEnemyContact(*m_player, m_enemies, m_enemyCount)) {
         m_player->loseLife();
         std::cout << "[PlayState] Player lost a life. Lives left: "
                   << m_player->getLives() << "\n";
-
         if (m_player->getLives() <= 0) {
             m_gameOver = true;
             //mlf:
@@ -319,16 +531,32 @@ void PlayState::draw(sf::RenderWindow& window) {
         if (m_enemies[i]) m_enemies[i]->draw(window);
     }
 
+    // Projectiles drawn above enemies, below player — AttackBalls read cleanly.
+    for (int i = 0; i < m_projectileCount; ++i) {
+        if (m_projectiles[i]) m_projectiles[i]->draw(window);
+    }
+
     if (m_player) m_player->draw(window);
+
+    // Hit flashes — always drawn (not a debug-only element).
+    // Above projectiles/player so impact spark pops on top.
+    for (int i = 0; i < m_hitFlashCount; ++i) {
+        if (m_hitFlashes[i]) m_hitFlashes[i]->draw(window);
+    }
 
     if (m_showHitboxes) {
         if (m_player) {
             m_player->drawHitBoxDebug(window, sf::Color::Green);
         }
-
         for (int i = 0; i < m_enemyCount; ++i) {
             if (m_enemies[i]) {
                 m_enemies[i]->drawHitBoxDebug(window, sf::Color::Red);
+            }
+        }
+        // Yellow projectile hitboxes per spec §7.2
+        for (int i = 0; i < m_projectileCount; ++i) {
+            if (m_projectiles[i]) {
+                m_projectiles[i]->drawHitBoxDebug(window, sf::Color::Yellow);
             }
         }
 
@@ -345,6 +573,7 @@ void PlayState::draw(sf::RenderWindow& window) {
             }
         }
     }
+
     drawHUD(window);
 }
 
@@ -449,4 +678,9 @@ void PlayState::drawHUD(sf::RenderWindow& window) {
         });
         window.draw(powText);
     }
+}
+
+int PlayState::randomScore(int lo, int hi) const {
+    int range = hi - lo + 1;
+    return lo + (std::rand() % range);
 }

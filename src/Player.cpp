@@ -34,6 +34,9 @@ Player::Player(sf::Vector2f pos)
     , m_lives(2)
     , m_invincibleTimer(0.f)
     , m_blinkVisible(true)
+    , m_throwCooldown(0.f)
+    , m_throwInterval(0.18f)   // ~5.5 shots/sec — arcade feel
+    , m_wantsToThrow(false)
 {
     if (!m_texture.loadFromFile("assets/sprites/player_blue_idle.png")) {
         std::cerr << "[Player] Failed to load player_blue_idle.png\n";
@@ -67,9 +70,22 @@ void Player::handleInput() {
         velocity.x = speed;
         m_facingRight = true;
     }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space) && onGround) {
+
+    // Jump: W or Up Arrow (spec §14). Space is now throw-only.
+    if ((sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W)
+       || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
+        && onGround) {
         velocity.y = jumpForce;
         onGround = false;
+    }
+
+    // Throw snowball: Space (or J as spec-valid alternate).
+    // We only FLAG the intent here — PlayState spawns the actual
+    // snowball so Player stays decoupled from the projectile array.
+    if ((sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space)
+       || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::J))
+        && m_throwCooldown <= 0.f) {
+        m_wantsToThrow = true;
     }
 }
 
@@ -78,6 +94,8 @@ void Player::applyGravity(float dt) {
 }
 
 void Player::update(float dt) {
+
+    if (m_throwCooldown > 0.f) m_throwCooldown -= dt;
     // --- Invincibility countdown + blink toggle ---
     if (m_invincibleTimer > 0.f) {
         m_invincibleTimer -= dt;
@@ -106,10 +124,11 @@ void Player::update(float dt) {
 
         m_sprite.setOrigin({ static_cast<float>(texSize.x) / 2.f, 0.f });
 
+        // Source sprite is drawn facing LEFT, so flip X when facing right.
         if (m_facingRight) {
-            m_sprite.setScale({absScaleX, absScaleY});
-        } else {
             m_sprite.setScale({-absScaleX, absScaleY});
+        } else {
+            m_sprite.setScale({ absScaleX, absScaleY});
         }
 
         m_sprite.setPosition({ position.x + PLAYER_WIDTH / 2.f, position.y });
@@ -135,7 +154,7 @@ void Player::loseLife() {
     if (m_lives <= 0) return;               // already dead
 
     --m_lives;
-    m_invincibleTimer = 1.5f;
+    m_invincibleTimer = 3.0f;
     m_blinkVisible = true;
     // Respawn position is decided by the game state (PlayState owns the
     // spawn coords). PlayState calls respawn() after loseLife() when
