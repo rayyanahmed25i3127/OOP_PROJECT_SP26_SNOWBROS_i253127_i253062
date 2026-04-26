@@ -1,18 +1,20 @@
 #include "states/PauseState.hpp"
 #include "states/StateManager.hpp"
 #include <iostream>
+#include <cmath>
 
 namespace {
     const float WINDOW_WIDTH  = 800.f;
     const float WINDOW_HEIGHT = 600.f;
 
-    const float BTN_WIDTH  = 220.f;
-    const float BTN_HEIGHT = 50.f;
-    const unsigned int BTN_TEXT_SIZE = 22;
+    // Capsule button dimensions - iOS style glassy buttons
+    const float BTN_WIDTH  = 140.f;  // Reduced width for 2-button rows
+    const float BTN_HEIGHT = 45.f;
+    const unsigned int BTN_TEXT_SIZE = 25;
 
-    const float HOVER_SCALE = 1.10f;
+    const float HOVER_SCALE = 1.15f;  // 15% zoom on hover
     const float NORMAL_SCALE = 1.00f;
-    const float SCALE_EASE_SPEED = 12.f;
+    const float SCALE_EASE_SPEED = 10.f;
 }
 
 // ===== Button =====
@@ -28,21 +30,21 @@ PauseState::Button::Button(const sf::Font& font)
 {}
 
 void PauseState::Button::configure(sf::Vector2f centerPos, float w, float h,
-                                   sf::Color fill, const std::string& label,
-                                   Action act)
+                                   const std::string& label, Action act)
 {
     center = centerPos;
     baseWidth = w;
     baseHeight = h;
     action = act;
 
-    background.setFillColor(fill);
-    background.setOutlineThickness(2.f);
-    background.setOutlineColor(sf::Color::White);
+    // iOS-style glassy effect: white with 50% transparency
+    background.setFillColor(sf::Color(255, 255, 255, 128));  // 50% transparent white
+    background.setOutlineThickness(1.5f);
+    background.setOutlineColor(sf::Color(255, 255, 255, 180));  // Slightly more opaque border
 
     text.setString(label);
-    text.setFillColor(sf::Color::White);
-    text.setOutlineColor(sf::Color::Black);
+    text.setFillColor(sf::Color(255, 255, 255, 255));  // White text
+    text.setOutlineColor(sf::Color(0, 0, 0, 150));     // Semi-transparent black outline
     text.setOutlineThickness(2.f);
 
     update(0.f);
@@ -74,8 +76,11 @@ void PauseState::Button::draw(sf::RenderWindow& window) const {
 
 // ===== PauseState =====
 PauseState::PauseState()
-    : m_title(m_font, "", 48)
-    , m_overlay({WINDOW_WIDTH, WINDOW_HEIGHT})
+    : m_title(m_font, "", 40)
+    , m_bgSprite(m_bgTexture)
+    , m_bgLoaded(false)
+    , m_clickSound(m_clickSoundBuffer)
+    , m_clickSoundLoaded(false)
     , m_selectedIndex(0)
 {
     for (int i = 0; i < NUM_BUTTONS; ++i) m_buttons[i] = nullptr;
@@ -89,47 +94,86 @@ PauseState::~PauseState() {
 }
 
 void PauseState::onEnter() {
-    // Reuse the same Bubble Bobble font used in MenuState
+    // Load font
     if (!m_font.openFromFile("assets/fonts/BubbleBobble-rg3rx.ttf")) {
         std::cerr << "[PauseState] Failed to load font\n";
     }
 
-    // Dark semi-transparent overlay — 65% black
-    m_overlay.setFillColor(sf::Color(0, 0, 0, 165));
-    m_overlay.setPosition({0.f, 0.f});
+    // Load background image
+    if (!m_bgTexture.loadFromFile("assets/sprites/pause_bg.png")) {
+        std::cerr << "[PauseState] Failed to load pause_bg.png\n";
+        m_bgLoaded = false;
+    } else {
+        m_bgSprite.setTexture(m_bgTexture, true);
+        auto texSize = m_bgTexture.getSize();
+        float scaleX = WINDOW_WIDTH  / static_cast<float>(texSize.x);
+        float scaleY = WINDOW_HEIGHT / static_cast<float>(texSize.y);
+        m_bgSprite.setScale({scaleX, scaleY});
+        m_bgLoaded = true;
+    }
 
-    // Title
+    // Load button click sound
+    if (!m_clickSoundBuffer.loadFromFile("assets/sounds/button_click.wav")) {
+        std::cerr << "[PauseState] Failed to load button_click.wav (placeholder - add sound file later)\n";
+        m_clickSoundLoaded = false;
+    } else {
+        m_clickSound.setBuffer(m_clickSoundBuffer);
+        m_clickSoundLoaded = true;
+    }
+
+    // Title "PAUSED" - positioned below "CLASSIC" text
     m_title.setFont(m_font);
     m_title.setString("PAUSED");
-    m_title.setCharacterSize(56);
-    m_title.setFillColor(sf::Color(255, 240, 180));
-    m_title.setOutlineColor(sf::Color::Black);
+    m_title.setCharacterSize(52);
+    m_title.setFillColor(sf::Color(255, 240, 180, 255));
+    m_title.setOutlineColor(sf::Color(0, 0, 0, 255));
     m_title.setOutlineThickness(3.f);
     auto tb = m_title.getLocalBounds();
     m_title.setPosition({
         (WINDOW_WIDTH - tb.size.x) / 2.f - tb.position.x,
-        120.f
+        310.f  // Position below the logo
     });
 
-    // Buttons — centered vertically under the title
+    // Button layout:
+    // Row 1 (centered): Resume
+    // Row 2 (2 buttons): Main Menu | Shop
+    // Row 3 (2 buttons): Logout | Exit Game
+    
     float centerX = WINDOW_WIDTH / 2.f;
-    float startY = 260.f;
-    float spacing = 70.f;
+    float resumeY = 390.f;  // Right below "PAUSED" text
+    float row2Y = 450.f;    // Second row - reduced spacing
+    float row3Y = 505.f;    // Third row - reduced spacing
+    float horizontalGap = 80.f;  // Reduced gap between buttons in same row
 
+    // Button 0: Resume (centered, alone in row 1)
     m_buttons[0] = new Button(m_font);
-    m_buttons[0]->configure({centerX, startY + 0 * spacing},
+    m_buttons[0]->configure({centerX, resumeY},
                             BTN_WIDTH, BTN_HEIGHT,
-                            sf::Color( 25,  45, 120), "Resume", Action::Resume);
+                            "Resume", Action::Resume);
 
+    // Button 1: Main Menu (left side of row 2)
     m_buttons[1] = new Button(m_font);
-    m_buttons[1]->configure({centerX, startY + 1 * spacing},
+    m_buttons[1]->configure({centerX - horizontalGap, row2Y},
                             BTN_WIDTH, BTN_HEIGHT,
-                            sf::Color( 20,  90,  50), "Main Menu", Action::MainMenu);
+                            "Main Menu", Action::MainMenu);
 
+    // Button 2: Shop (right side of row 2)
     m_buttons[2] = new Button(m_font);
-    m_buttons[2]->configure({centerX, startY + 2 * spacing},
+    m_buttons[2]->configure({centerX + horizontalGap, row2Y},
                             BTN_WIDTH, BTN_HEIGHT,
-                            sf::Color(170,  30,  40), "Exit Game", Action::Exit);
+                            "Shop", Action::Shop);
+
+    // Button 3: Logout (left side of row 3)
+    m_buttons[3] = new Button(m_font);
+    m_buttons[3]->configure({centerX - horizontalGap, row3Y},
+                            BTN_WIDTH, BTN_HEIGHT,
+                            "Logout", Action::Logout);
+
+    // Button 4: Exit Game (right side of row 3)
+    m_buttons[4] = new Button(m_font);
+    m_buttons[4]->configure({centerX + horizontalGap, row3Y},
+                            BTN_WIDTH, BTN_HEIGHT,
+                            "Exit Game", Action::Exit);
 
     setHovered(0);
 }
@@ -153,18 +197,40 @@ int PauseState::buttonAtPoint(sf::Vector2f point) const {
 }
 
 void PauseState::activateButton(int index) {
+    // Play click sound
+    if (m_clickSoundLoaded) {
+        m_clickSound.play();
+    }
+
     switch (m_buttons[index]->action) {
         case Action::Resume:
-            // Just pop self — PlayState resumes underneath
+            // Small delay to let sound play, then pop self
+            if (m_clickSoundLoaded) {
+                sf::sleep(sf::milliseconds(100));  // 100ms delay
+            }
             m_manager->popState();
             break;
         case Action::MainMenu:
-            // Pop self AND PlayState — back to MenuState
+            // Small delay to let sound play
+            if (m_clickSoundLoaded) {
+                sf::sleep(sf::milliseconds(100));
+            }
             m_manager->popState();  // removes PauseState
             m_manager->popState();  // removes PlayState (triggers its onExit)
             break;
+        case Action::Shop:
+            // TODO: Push ShopState on top of pause menu
+            std::cout << "[PauseState] Shop button clicked - not yet implemented\n";
+            break;
+        case Action::Logout:
+            // TODO: Implement logout functionality
+            std::cout << "[PauseState] Logout button clicked - not yet implemented\n";
+            break;
         case Action::Exit:
-            // Pop everything — empty stack makes Game::run close the window
+            // Small delay to let sound play
+            if (m_clickSoundLoaded) {
+                sf::sleep(sf::milliseconds(100));
+            }
             m_manager->popState();
             m_manager->popState();
             m_manager->popState();  // in case MenuState is also on stack
@@ -215,11 +281,20 @@ void PauseState::update(float dt) {
 }
 
 void PauseState::draw(sf::RenderWindow& window) {
-    // PlayState already drew itself underneath us (StateManager handles that
-    // because we return true from isTransparent()).
-    // Now draw our overlay + UI on top.
-    window.draw(m_overlay);
+    // Draw background image
+    if (m_bgLoaded) {
+        window.draw(m_bgSprite);
+    } else {
+        // Fallback: semi-transparent overlay like before
+        sf::RectangleShape fallback({WINDOW_WIDTH, WINDOW_HEIGHT});
+        fallback.setFillColor(sf::Color(0, 0, 0, 165));
+        window.draw(fallback);
+    }
+
+    // Draw title
     window.draw(m_title);
+
+    // Draw buttons
     for (int i = 0; i < NUM_BUTTONS; ++i) {
         m_buttons[i]->draw(window);
     }

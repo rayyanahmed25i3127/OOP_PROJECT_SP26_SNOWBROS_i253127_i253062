@@ -50,6 +50,10 @@
  *
  * INHERITANCE (spec §15.2 depth ≥ 3):
  *   Entity → Enemy → Botom → FlyngFoogaFoog → Tornado   (depth 5)
+ *
+ * POWER-UP: Snowball Power (Phase 4.5)
+ *   - When active, m_oneHitEncase = true
+ *   - Enemies are encased in 1 hit instead of 2
  */
 class Enemy : public Entity {
 public:
@@ -128,6 +132,10 @@ protected:
     // future subclasses).
     virtual float getPartialEncaseDuration() const { return 2.0f; }
 
+    // ===== POWER-UP: Snowball Power =====
+    // When true, enemy is encased in 1 hit instead of 2
+    bool m_oneHitEncase;
+
     // ----- Helpers -----
     void applyGravity(float dt);
     void syncHitBox();
@@ -177,6 +185,15 @@ public:
     // Called by PlayState when a Rolling enemy kills another Alive enemy.
     // Doesn't do anything here — kill/score accounting lives in PlayState —
     // but centralizes the "did we just do a chain kill" concept.
+
+    // ===== POWER-UP: Snowball Power =====
+    /**
+     * @brief Set whether this enemy is encased in 1 hit (true) or 2 hits (false).
+     *
+     * Called when Snowball Power power-up is activated/deactivated.
+     */
+    void setOneHitEncase(bool val) { m_oneHitEncase = val; }
+    bool isOneHitEncase() const    { return m_oneHitEncase; }
 
     // Getters
     State getState()       const { return m_state; }

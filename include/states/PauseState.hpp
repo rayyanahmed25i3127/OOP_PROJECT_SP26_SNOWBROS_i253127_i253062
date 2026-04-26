@@ -2,30 +2,30 @@
 
 #include "states/GameState.hpp"
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <string>
 
 /**
  * @brief Pause menu — pushed on top of PlayState when player presses Escape.
  *
- * Classic "dimmed overlay" style: frozen gameplay shows through a
- * semi-transparent dark layer, with three buttons on top.
- *
- * Because this state sits on TOP of PlayState in the stack:
- *   - PlayState::update() is NOT called (game is frozen)
- *   - PlayState::draw() IS called first (via StateManager::drawAll in PauseState's own draw),
- *     so the frozen scene is visible behind the overlay
+ * New design with background image and iOS-style glassy buttons.
+ * - Background: pause_bg.png showing Snow Bros logo
+ * - Title "PAUSED" below the logo
+ * - 5 capsule-shaped glassy buttons with hover zoom effect
  *
  * Buttons:
  *   - Resume       -> pop self (returns to PlayState)
  *   - Main Menu    -> pop self AND pop PlayState (back to MenuState)
+ *   - Shop         -> [TODO: implement shop state]
+ *   - Logout       -> [TODO: implement logout]
  *   - Exit Game    -> pop everything (Game::run closes window)
  */
 class PauseState : public GameState {
 public:
-    static const int NUM_BUTTONS = 3;
+    static const int NUM_BUTTONS = 5;
 
 private:
-    enum class Action { Resume, MainMenu, Exit };
+    enum class Action { Resume, MainMenu, Shop, Logout, Exit };
 
     struct Button {
         sf::Text text;
@@ -39,7 +39,7 @@ private:
 
         Button(const sf::Font& font);
         void configure(sf::Vector2f centerPos, float w, float h,
-                       sf::Color fill, const std::string& label, Action act);
+                       const std::string& label, Action act);
         void update(float dt);
         void draw(sf::RenderWindow& window) const;
     };
@@ -47,8 +47,15 @@ private:
     sf::Font m_font;
     sf::Text m_title;
 
-    // Dimmed overlay that covers the whole screen
-    sf::RectangleShape m_overlay;
+    // Background image
+    sf::Texture m_bgTexture;
+    sf::Sprite m_bgSprite;
+    bool m_bgLoaded;
+
+    // Button click sound
+    sf::SoundBuffer m_clickSoundBuffer;
+    sf::Sound m_clickSound;
+    bool m_clickSoundLoaded;
 
     Button* m_buttons[NUM_BUTTONS];
     int m_selectedIndex;

@@ -5,6 +5,7 @@
 #include "enemies/Botom.hpp"
 #include "audio/AudioManager.hpp"
 #include "effects/HitFlash.hpp"
+#include "powerups/PowerUp.hpp"
 
 #include <iostream>
 #include <cstdlib>
@@ -71,6 +72,17 @@ PlayState::PlayState()
     , m_playerSpawn(100.f, 450.f)
     , m_projectileCount(0)
     , m_hitFlashCount(0)
+    , m_powerUpCount(0)
+    , m_speedActive(false), m_speedTimer(0.f)
+    , m_balloonActive(false), m_balloonTimer(0.f)
+    , m_snowballPowerActive(false)
+    , m_distanceActive(false)
+    , m_displayedType(PowerUp::Type::SpeedBoost)
+    , m_hasDisplayed(false)
+    , m_puIconSpeedLoaded(false)
+    , m_puIconSnowballLoaded(false)
+    , m_puIconDistanceLoaded(false)
+    , m_puIconBalloonLoaded(false)
 {
     for (int i = 0; i < MAX_HIT_FLASHES; ++i) m_hitFlashes[i] = nullptr;
     for (int i = 0; i < MAX_ENEMIES; ++i) m_chainCount[i] = 0;
@@ -81,6 +93,7 @@ PlayState::PlayState()
         m_enemyPrevX[i] = 0.f;
         m_enemyPrevY[i] = 0.f;
     }
+    for (int i = 0; i < MAX_POWERUPS; ++i) m_powerUps[i] = nullptr;
 }
 
 PlayState::~PlayState() {
@@ -100,6 +113,11 @@ PlayState::~PlayState() {
         m_projectiles[i] = nullptr;
     }
     for (int i = 0; i < m_hitFlashCount; ++i) delete m_hitFlashes[i];
+
+    for (int i = 0; i < m_powerUpCount; ++i) {
+        delete m_powerUps[i];
+        m_powerUps[i] = nullptr;
+    }
 }
 
 void PlayState::onEnter() {
@@ -159,10 +177,18 @@ if (!m_diamondTexture.loadFromFile("assets/sprites/diamond.png")) {
     m_diamondLoaded = true;
 }
 
+if (!m_diamondTexture.loadFromFile("assets/sprites/diamond.png")) {
+    std::cerr << "[PlayState] Could not load diamond.png\n";
+    m_diamondLoaded = false;
+} else {
+    m_diamondLoaded = true;
+}
+
+loadPowerUpIcons();
+
 // --- Build level + enemies ---
 buildLevel();
 spawnEnemies();
-
     AudioManager::get().playGameMusic();
 }
 
@@ -240,6 +266,17 @@ void PlayState::spawnEnemies() {
     m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(150.f, 180.f));
     m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(620.f, 180.f));
 
+    // ===== Apply Snowball Power if active =====
+    // If Snowball Power was already activated before these enemies spawned,
+    // make sure they also get the one-hit encase effect
+    if (m_snowballPowerActive) {
+        for (int i = 0; i < m_enemyCount; ++i) {
+            if (m_enemies[i]) {
+                m_enemies[i]->setOneHitEncase(true);
+            }
+        }
+    }
+
     std::cout << "[PlayState] Spawned " << m_enemyCount << " Botoms\n";
 }
 void PlayState::handleEvent(const sf::Event& event) {
@@ -290,8 +327,16 @@ void PlayState::update(float dt) {
         float spawnX = m_player->isFacingRight()
             ? pHit.position.x + pHit.size.x + 2.f
             : pHit.position.x - 16.f - 2.f;
-        m_projectiles[m_projectileCount++] =
-            new AttackBall({spawnX, spawnY}, m_player->isFacingRight());
+        
+        // Create the attack ball
+        AttackBall* newBall = new AttackBall({spawnX, spawnY}, m_player->isFacingRight());
+        
+        // ===== APPLY DISTANCE INCREASE POWER-UP =====
+        if (m_distanceActive) {
+            newBall->setMaxRangeMode(true);
+        }
+        
+        m_projectiles[m_projectileCount++] = newBall;
         m_player->consumeThrowRequest();
     }
 
@@ -423,8 +468,11 @@ void PlayState::update(float dt) {
     //   Second kill = base + 10%
     //   Third kill  = base + 20%
     //   etc.
-    // Chain counter m_chainCount[r] is reset in kickIntoRoll handling above
-    // and carried across GC compaction (see GC block below).
+    // Chain counter m_chainCount[r] is reset to 1 by the kick handler above
+    // (the kicked enemy IS the first kill), then incremented per chain
+    // victim here. So the first victim hit by the rolling ball already
+    // gets index 2 → +10%. Spec §8.1: enemies defeated via chain roll
+    // also drop a power-up.
     for (int r = 0; r < m_enemyCount; ++r) {
         if (!m_enemies[r]) continue;
         if (m_enemies[r]->getState() != Enemy::State::Rolling) continue;
@@ -447,8 +495,8 @@ void PlayState::update(float dt) {
             bool overlap = (rR > vL) && (rL < vR) && (rB > vT) && (rT < vB);
             if (!overlap) continue;
 
-            // Award score. chainIndex 1 = first kill (no bonus),
-            // chainIndex 2 = second kill (+10%), etc.
+            // chainCount was 1 at kick (kicked enemy = first kill);
+            // ++ here makes this victim chain index 2 → +10%, then 3, ...
             m_chainCount[r]++;
             int chainIndex = m_chainCount[r];
             int base  = randomScore(100, 500);
@@ -461,10 +509,65 @@ void PlayState::update(float dt) {
                       << " (base " << base << " + bonus " << bonus
                       << "). Score: " << m_score << "\n";
 
+            // --- Power-up drop (spec §8.1) ---
+            // Chain kill = victim index >= 2. Spawn at victim's position,
+            // randomly choose one of the 4 Level-1 power-ups.
+            if (m_powerUpCount < MAX_POWERUPS) {
+                int typeIdx = std::rand() % static_cast<int>(PowerUp::Type::Count_);
+                PowerUp::Type chosen = static_cast<PowerUp::Type>(typeIdx);
+                sf::Vector2f spawnPos = m_enemies[v]->getPosition();
+                m_powerUps[m_powerUpCount++] = new PowerUp(spawnPos, chosen);
+                std::cout << "[PlayState] Dropped power-up: "
+                          << PowerUp::typeName(chosen) << "\n";
+            }
+
             m_enemies[v]->setAlive(false);
         }
     }
 
+    // --- POWER-UPS: physics + collision against platforms + pickup ---
+    for (int i = 0; i < m_powerUpCount; ++i) {
+        if (!m_powerUps[i]) continue;
+        float prevX = m_powerUps[i]->getPosition().x;
+        float prevY = m_powerUps[i]->getPosition().y;
+        m_powerUps[i]->update(dt);
+        m_collider.resolve(*m_powerUps[i], m_platforms, m_platformCount,
+                           prevX, prevY);
+    }
+
+    // Player picks up power-up on hitbox overlap → activate, kill icon.
+    if (m_player) {
+        sf::FloatRect pHit = m_player->getHitBox();
+        float pL = pHit.position.x, pR = pL + pHit.size.x;
+        float pT = pHit.position.y, pB = pT + pHit.size.y;
+        for (int i = 0; i < m_powerUpCount; ++i) {
+            if (!m_powerUps[i] || !m_powerUps[i]->isAlive()) continue;
+            sf::FloatRect h = m_powerUps[i]->getHitBox();
+            float hL = h.position.x, hR = hL + h.size.x;
+            float hT = h.position.y, hB = hT + h.size.y;
+            bool overlap = (pR > hL) && (pL < hR) && (pB > hT) && (pT < hB);
+            if (!overlap) continue;
+
+            activatePowerUp(m_powerUps[i]->getType());
+            m_powerUps[i]->setAlive(false);
+        }
+    }
+
+    // GC dead power-ups
+    {
+        int write = 0;
+        for (int read = 0; read < m_powerUpCount; ++read) {
+            if (m_powerUps[read] && m_powerUps[read]->isAlive()) {
+                m_powerUps[write++] = m_powerUps[read];
+            } else {
+                delete m_powerUps[read];
+                m_powerUps[read] = nullptr;
+            }
+        }
+        m_powerUpCount = write;
+    }
+
+    updatePowerUpTimers(dt);
     // --- GC dead enemies (compact array) ---
     // Carry chain count along with the enemy pointer when indices shift.
     // Reading m_chainCount[read] then writing to [write] preserves the
@@ -538,6 +641,10 @@ void PlayState::draw(sf::RenderWindow& window) {
         if (m_projectiles[i]) m_projectiles[i]->draw(window);
     }
 
+    for (int i = 0; i < m_powerUpCount; ++i) {
+        if (m_powerUps[i]) m_powerUps[i]->draw(window);
+    }
+
     if (m_player) m_player->draw(window);
 
     // Hit flashes — always drawn (not a debug-only element).
@@ -559,6 +666,13 @@ void PlayState::draw(sf::RenderWindow& window) {
         for (int i = 0; i < m_projectileCount; ++i) {
             if (m_projectiles[i]) {
                 m_projectiles[i]->drawHitBoxDebug(window, sf::Color::Yellow);
+            }
+        }
+
+        // Magenta power-up hitboxes (not in spec — debug-only convenience)
+        for (int i = 0; i < m_powerUpCount; ++i) {
+            if (m_powerUps[i]) {
+                m_powerUps[i]->drawHitBoxDebug(window, sf::Color::Magenta);
             }
         }
 
@@ -668,21 +782,180 @@ void PlayState::drawHUD(sf::RenderWindow& window) {
     }
 
     // --- Power-up status (bottom-center, placeholder) ---
-    {
-        sf::Text powText(m_hudFont, "POWER-UP: NONE", 12);
-        powText.setFillColor(sf::Color(200, 200, 200));
-        powText.setOutlineColor(sf::Color::Black);
-        powText.setOutlineThickness(2.f);
-        auto tb = powText.getLocalBounds();
-        powText.setPosition({
-            (800.f - tb.size.x) / 2.f - tb.position.x,
-            576.f
-        });
-        window.draw(powText);
-    }
+    drawPowerUpHUD(window);
 }
 
 int PlayState::randomScore(int lo, int hi) const {
     int range = hi - lo + 1;
     return lo + (std::rand() % range);
+}
+
+void PlayState::loadPowerUpIcons() {
+    auto tryLoad = [](sf::Texture& tex, const char* path, bool& flag) {
+        if (std::FILE* f = std::fopen(path, "rb")) {
+            std::fclose(f);
+            flag = tex.loadFromFile(path);
+        } else {
+            flag = false;
+        }
+    };
+    tryLoad(m_puIconSpeed,    "assets/sprites/powerup_speed.png",    m_puIconSpeedLoaded);
+    tryLoad(m_puIconSnowball, "assets/sprites/powerup_snowball.png", m_puIconSnowballLoaded);
+    tryLoad(m_puIconDistance, "assets/sprites/powerup_distance.png", m_puIconDistanceLoaded);
+    tryLoad(m_puIconBalloon,  "assets/sprites/powerup_balloon.png",  m_puIconBalloonLoaded);
+}
+
+void PlayState::activatePowerUp(PowerUp::Type type) {
+    switch (type) {
+        case PowerUp::Type::SpeedBoost:
+            m_speedActive = true;
+            m_speedTimer  = 15.0f;   // spec §8.2
+            // ===== APPLY SPEED BOOST EFFECT =====
+            if (m_player) {
+                m_player->setSpeedMultiplier(1.5f);  // +50% speed boost
+            }
+            break;
+        case PowerUp::Type::SnowballPower:
+            m_snowballPowerActive = true;
+            // ===== APPLY SNOWBALL POWER EFFECT =====
+            // Set all enemies to one-hit encase mode
+            for (int i = 0; i < m_enemyCount; ++i) {
+                if (m_enemies[i]) {
+                    m_enemies[i]->setOneHitEncase(true);
+                }
+            }
+            break;
+        case PowerUp::Type::DistanceIncrease:
+            m_distanceActive = true;
+            // Distance effect is applied when spawning new AttackBalls
+            // (checked in spawn code below around line 274)
+            break;
+        case PowerUp::Type::BalloonMode:
+            m_balloonActive = true;
+            m_balloonTimer  = 10.0f; // spec §8.2
+            // ===== APPLY BALLOON MODE EFFECT =====
+            if (m_player) {
+                m_player->setBalloonMode(true);
+            }
+            break;
+        default: return;
+    }
+    m_displayedType = type;
+    m_hasDisplayed  = true;
+    std::cout << "[PlayState] Activated power-up: "
+              << PowerUp::typeName(type) << "\n";
+}
+
+void PlayState::updatePowerUpTimers(float dt) {
+    if (m_speedActive) {
+        m_speedTimer -= dt;
+        if (m_speedTimer <= 0.f) {
+            m_speedActive = false;
+            m_speedTimer  = 0.f;
+            // ===== DEACTIVATE SPEED BOOST =====
+            if (m_player) {
+                m_player->setSpeedMultiplier(1.0f);  // back to normal speed
+            }
+            if (m_hasDisplayed && m_displayedType == PowerUp::Type::SpeedBoost) {
+                // Fall back to any other still-active power-up, else hide.
+                if      (m_balloonActive)        m_displayedType = PowerUp::Type::BalloonMode;
+                else if (m_snowballPowerActive)  m_displayedType = PowerUp::Type::SnowballPower;
+                else if (m_distanceActive)       m_displayedType = PowerUp::Type::DistanceIncrease;
+                else                             m_hasDisplayed  = false;
+            }
+        }
+    }
+    if (m_balloonActive) {
+        m_balloonTimer -= dt;
+        if (m_balloonTimer <= 0.f) {
+            m_balloonActive = false;
+            m_balloonTimer  = 0.f;
+            // ===== DEACTIVATE BALLOON MODE =====
+            if (m_player) {
+                m_player->setBalloonMode(false);
+            }
+            if (m_hasDisplayed && m_displayedType == PowerUp::Type::BalloonMode) {
+                if      (m_speedActive)          m_displayedType = PowerUp::Type::SpeedBoost;
+                else if (m_snowballPowerActive)  m_displayedType = PowerUp::Type::SnowballPower;
+                else if (m_distanceActive)       m_displayedType = PowerUp::Type::DistanceIncrease;
+                else                             m_hasDisplayed  = false;
+            }
+        }
+    }
+}
+
+void PlayState::drawPowerUpHUD(sf::RenderWindow& window) {
+    if (!m_hasDisplayed) return;
+
+    // Layout: bottom-center, icon | bar to the right.
+    const float HUD_BOTTOM_Y = 568.f;
+    const float ICON_SIZE    = 22.f;
+    const float BAR_WIDTH    = 160.f;
+    const float BAR_HEIGHT   = 10.f;
+    const float GAP          = 8.f;
+
+    const float totalW  = ICON_SIZE + GAP + BAR_WIDTH;
+    const float startX  = (800.f - totalW) / 2.f;
+    const float iconX   = startX;
+    const float barX    = startX + ICON_SIZE + GAP;
+    const float iconY   = HUD_BOTTOM_Y;
+    const float barY    = HUD_BOTTOM_Y + (ICON_SIZE - BAR_HEIGHT) / 2.f;
+
+    // Pick texture + fill ratio (1.0 = full / permanent)
+    sf::Texture* tex = nullptr;
+    bool         loaded = false;
+    float        fillRatio = 1.0f;
+    sf::Color    barColor  = sf::Color::White;
+
+    switch (m_displayedType) {
+        case PowerUp::Type::SpeedBoost:
+            tex = &m_puIconSpeed;     loaded = m_puIconSpeedLoaded;
+            fillRatio = (m_speedTimer <= 0.f) ? 0.f : (m_speedTimer / 15.0f);
+            barColor  = sf::Color(120, 200, 255);
+            break;
+        case PowerUp::Type::SnowballPower:
+            tex = &m_puIconSnowball;  loaded = m_puIconSnowballLoaded;
+            fillRatio = 1.0f;          // permanent for level
+            barColor  = sf::Color(255, 120, 200);
+            break;
+        case PowerUp::Type::DistanceIncrease:
+            tex = &m_puIconDistance;  loaded = m_puIconDistanceLoaded;
+            fillRatio = 1.0f;
+            barColor  = sf::Color(80,  140, 255);
+            break;
+        case PowerUp::Type::BalloonMode:
+            tex = &m_puIconBalloon;   loaded = m_puIconBalloonLoaded;
+            fillRatio = (m_balloonTimer <= 0.f) ? 0.f : (m_balloonTimer / 10.0f);
+            barColor  = sf::Color(180, 220, 255);
+            break;
+        default: return;
+    }
+
+    // Icon
+    if (loaded && tex) {
+        sf::Sprite icon(*tex);
+        auto ts = tex->getSize();
+        if (ts.x > 0 && ts.y > 0) {
+            icon.setScale({ ICON_SIZE / static_cast<float>(ts.x),
+                            ICON_SIZE / static_cast<float>(ts.y) });
+        }
+        icon.setPosition({ iconX, iconY });
+        window.draw(icon);
+    }
+
+    // Bar background
+    sf::RectangleShape bg({ BAR_WIDTH, BAR_HEIGHT });
+    bg.setPosition({ barX, barY });
+    bg.setFillColor(sf::Color(20, 20, 30, 200));
+    bg.setOutlineColor(sf::Color::Black);
+    bg.setOutlineThickness(1.f);
+    window.draw(bg);
+
+    // Bar fill
+    if (fillRatio > 0.f) {
+        sf::RectangleShape fill({ BAR_WIDTH * fillRatio, BAR_HEIGHT });
+        fill.setPosition({ barX, barY });
+        fill.setFillColor(barColor);
+        window.draw(fill);
+    }
 }

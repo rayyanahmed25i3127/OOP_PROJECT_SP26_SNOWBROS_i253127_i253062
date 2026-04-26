@@ -17,6 +17,10 @@
  *
  * INHERITANCE:
  *   Entity → Projectile → AttackBall
+ *
+ * POWER-UP: Distance Increase (Phase 4.5)
+ *   - When m_maxRangeMode is true, snowball travels full screen width (800px)
+ *   - Otherwise, uses default range (220px)
  */
 class AttackBall : public Projectile {
 private:
@@ -31,6 +35,9 @@ private:
     float m_speed;
     bool  m_facingRight;
 
+    // ===== POWER-UP: Distance Increase =====
+    bool  m_maxRangeMode;      // when true, m_maxDistance = 800 (screen width)
+
     float m_spriteWidth;
     float m_spriteHeight;
 
@@ -43,4 +50,13 @@ public:
     void setPosition(sf::Vector2f pos) override;
 
     bool isFacingRight() const { return m_facingRight; }
+
+    // ===== POWER-UP: Distance Increase =====
+    /**
+     * @brief Set max-range mode. When true, snowball travels across entire screen.
+     *
+     * Called when Distance Increase power-up is activated.
+     */
+    void setMaxRangeMode(bool val) { m_maxRangeMode = val; }
+    bool isMaxRangeMode() const    { return m_maxRangeMode; }
 };
