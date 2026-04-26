@@ -37,6 +37,8 @@ Player::Player(sf::Vector2f pos)
     , m_throwCooldown(0.f)
     , m_throwInterval(0.18f)   // ~5.5 shots/sec — arcade feel
     , m_wantsToThrow(false)
+    , m_balloonMode(false)
+    , m_balloonGravity(-50.f)  // gentle upward pull
 {
     if (!m_texture.loadFromFile("assets/sprites/player_blue_idle.png")) {
         std::cerr << "[Player] Failed to load player_blue_idle.png\n";
@@ -90,7 +92,20 @@ void Player::handleInput() {
 }
 
 void Player::applyGravity(float dt) {
-    velocity.y += gravity * dt;
+    // ===== POWER-UP: Balloon Mode =====
+    // When balloon mode is active, apply upward pull instead of downward gravity
+    if (m_balloonMode) {
+        velocity.y += m_balloonGravity * dt;  // gentle upward pull
+    } else {
+        velocity.y += gravity * dt;           // normal downward gravity
+    }
+}
+
+void Player::setSpeedMultiplier(float multiplier) {
+    // Reset to base speed first, then apply multiplier
+    // This prevents cumulative stacking if called multiple times
+    const float BASE_SPEED = 200.f;
+    speed = BASE_SPEED * multiplier;
 }
 
 void Player::update(float dt) {
@@ -116,6 +131,42 @@ void Player::update(float dt) {
 
     position += velocity * dt;
     hitBox.position = { position.x + HITBOX_OFFSET_X, position.y + HITBOX_OFFSET_Y };
+
+    // ===== BALLOON MODE: Boundary Reflection =====
+    // When in balloon mode, player bounces off all 4 screen boundaries
+    if (m_balloonMode) {
+        const float TOP_BOUNDARY    = 15.f;   // upper screen boundary
+        const float BOTTOM_BOUNDARY = 585.f;  // lower screen boundary (just above ground)
+        const float LEFT_BOUNDARY   = 30.f;   // left wall
+        const float RIGHT_BOUNDARY  = 770.f;  // right wall
+        
+        // Top boundary - reflect downward
+        if (position.y < TOP_BOUNDARY) {
+            position.y = TOP_BOUNDARY;
+            velocity.y = -velocity.y;  // reverse vertical direction
+        }
+        
+        // Bottom boundary - reflect upward
+        if (position.y + PLAYER_HEIGHT > BOTTOM_BOUNDARY) {
+            position.y = BOTTOM_BOUNDARY - PLAYER_HEIGHT;
+            velocity.y = -velocity.y;
+        }
+        
+        // Left boundary - reflect right
+        if (position.x < LEFT_BOUNDARY) {
+            position.x = LEFT_BOUNDARY;
+            velocity.x = -velocity.x;
+        }
+        
+        // Right boundary - reflect left
+        if (position.x + PLAYER_WIDTH > RIGHT_BOUNDARY) {
+            position.x = RIGHT_BOUNDARY - PLAYER_WIDTH;
+            velocity.x = -velocity.x;
+        }
+        
+        // Update hitbox after boundary correction
+        hitBox.position = { position.x + HITBOX_OFFSET_X, position.y + HITBOX_OFFSET_Y };
+    }
 
     auto texSize = m_texture.getSize();
     if (texSize.x > 0 && texSize.y > 0) {

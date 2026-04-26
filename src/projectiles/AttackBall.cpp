@@ -7,6 +7,7 @@ namespace {
     // At typical 96 DPI, 2 inches ≈ 192 pixels. Use 200 as round number.
     const float ATTACKBALL_SPEED    = 700.f;   // snappier arcade feel
     const float ATTACKBALL_MAX_DIST = 220.f;
+    const float SCREEN_WIDTH        = 800.f;   // for Distance Increase power-up
 
     // Visual / physics size of the projectile sprite
     const float ATTACKBALL_W = 20.f;
@@ -27,6 +28,7 @@ AttackBall::AttackBall(sf::Vector2f pos, bool facingRight,
     , m_maxDistance(ATTACKBALL_MAX_DIST)
     , m_speed(ATTACKBALL_SPEED)
     , m_facingRight(facingRight)
+    , m_maxRangeMode(false)  // ===== ADD THIS LINE =====
     , m_spriteWidth(ATTACKBALL_W)
     , m_spriteHeight(ATTACKBALL_H)
 {
@@ -65,7 +67,12 @@ void AttackBall::update(float dt) {
 
     setPosition(position);
 
-    if (m_distanceTravelled >= m_maxDistance) {
+    // ===== POWER-UP: Distance Increase =====
+    // When max-range mode is active, snowball travels full screen width (800px)
+    // Otherwise, uses default range (220px)
+    float effectiveRange = m_maxRangeMode ? SCREEN_WIDTH : m_maxDistance;
+    
+    if (m_distanceTravelled >= effectiveRange) {
         alive = false;
     }
 }
