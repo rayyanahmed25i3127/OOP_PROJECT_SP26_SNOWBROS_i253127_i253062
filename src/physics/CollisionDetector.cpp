@@ -1,4 +1,5 @@
 #include "physics/CollisionDetector.hpp"
+#include "Player.hpp"
 #include <iostream>
 
 CollisionDetector::CollisionDetector(float leftWall, float rightWall)
@@ -139,6 +140,14 @@ bool CollisionDetector::checkEnemyContact(const Entity& player,
                                           Enemy* const enemies[],
                                           int enemyCount) const
 {
+    // ===== BALLOON MODE: Player is invulnerable to ground enemies =====
+    // We need to cast to Player* to check balloon mode
+    // This is safe because this function is only called with Player objects
+    const Player* playerPtr = dynamic_cast<const Player*>(&player);
+    if (playerPtr && playerPtr->isBalloonMode()) {
+        return false;  // invulnerable in balloon mode
+    }
+
     sf::FloatRect playerHit = player.getHitBox();
     float pLeft   = playerHit.position.x;
     float pRight  = playerHit.position.x + playerHit.size.x;

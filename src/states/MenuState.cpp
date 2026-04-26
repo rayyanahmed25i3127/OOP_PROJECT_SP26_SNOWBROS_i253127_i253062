@@ -18,10 +18,12 @@ namespace {
     const float NORMAL_SCALE = 1.00f;
     const float SCALE_EASE_SPEED = 12.f;  // higher = snappier
 
-    // Button colors (requested themes)
-    const sf::Color COLOR_NAVY   = sf::Color( 25,  45, 120);  // Start Game
-    const sf::Color COLOR_GREEN  = sf::Color( 20,  90,  50);  // Leaderboard (bottle green)
-    const sf::Color COLOR_RED    = sf::Color(170,  30,  40);  // Exit
+    // Button colors
+    const sf::Color COLOR_NAVY     = sf::Color( 25,  45, 120);  // New Game
+    const sf::Color COLOR_SKYBLUE  = sf::Color( 70, 160, 220);  // Continue
+    const sf::Color COLOR_GREEN    = sf::Color( 20,  90,  50);  // Leaderboard (bottle green)
+    const sf::Color COLOR_GREY     = sf::Color( 60,  60,  70);  // Logout
+    const sf::Color COLOR_RED      = sf::Color(170,  30,  40);  // Exit
 
     const sf::Color COLOR_OUTLINE = sf::Color(10, 10, 15, 220);
 }
@@ -40,7 +42,7 @@ MenuState::Button::Button(const sf::Font& font)
     , outlineLeft(1.f)
     , outlineRight(1.f)
     , text(font, "", BTN_TEXT_SIZE)
-    , action(ButtonAction::StartGame)
+    , action(ButtonAction::NewGame)
     , center({0.f, 0.f})
     , baseWidth(BTN_WIDTH)
     , baseHeight(BTN_HEIGHT)
@@ -170,6 +172,8 @@ void MenuState::Button::draw(sf::RenderWindow& window) const {
 MenuState::MenuState()
     : m_backgroundSprite(m_backgroundTexture)
     , m_snow(WINDOW_WIDTH, WINDOW_HEIGHT)
+    , m_clickSound(m_clickSoundBuffer)
+    , m_clickSoundLoaded(false)
     , m_buttonCount(0)
     , m_selectedIndex(0)
 {
@@ -204,25 +208,34 @@ void MenuState::onEnter() {
         m_backgroundSprite.setColor(sf::Color(200, 200, 200));
     }
 
+    // --- Button click sound ---
+    if (!m_clickSoundBuffer.loadFromFile("assets/sounds/button_click.wav")) {
+        std::cerr << "[MenuState] Failed to load button_click.wav (placeholder - add sound file later)\n";
+        m_clickSoundLoaded = false;
+    } else {
+        m_clickSound.setBuffer(m_clickSoundBuffer);
+        m_clickSoundLoaded = true;
+    }
+
     // --- Buttons ---
-    // Moved down so the background title art ("SNOW BROS / NICK & TOM / SPECIAL")
-    // is fully visible above them.
-    float startY = 460.f;
+    // Layout: 5 buttons total
+    // New Game, Continue, Leaderboard, Logout moved upward
+    // Exit stays at same position but with more gap
+    float startY = 380.f;      // Moved up more from 400
     float spacing = 40.f;
     float centerX = WINDOW_WIDTH / 2.f;
+    float exitY = 540.f;       // Exit stays at its original position
 
-    // Well, the bottom of the background has the monster row at y~1000+,
-    // but our window is 600px so we stop at ~580.
-    // Actually with startY=420 + 2*70 = 560 — fits within 600 just barely,
-    // but we need to check against the monsters at the bottom of the art.
-    // If it looks cramped, tweak startY down to ~380.
-
-    addButton("Start Game",  {centerX, startY + 0 * spacing},
-              COLOR_NAVY,  ButtonAction::StartGame);
-    addButton("Leaderboard", {centerX, startY + 1 * spacing},
-              COLOR_GREEN, ButtonAction::Leaderboard);
-    addButton("Exit",        {centerX, startY + 2 * spacing},
-              COLOR_RED,   ButtonAction::Exit);
+    addButton("New Game",    {centerX, startY + 0 * spacing},
+              COLOR_NAVY,     ButtonAction::NewGame);
+    addButton("Continue",    {centerX, startY + 1 * spacing},
+              COLOR_SKYBLUE,  ButtonAction::Continue);
+    addButton("Leaderboard", {centerX, startY + 2 * spacing},
+              COLOR_GREEN,    ButtonAction::Leaderboard);
+    addButton("Logout",      {centerX, startY + 3 * spacing},
+              COLOR_GREY,     ButtonAction::Logout);
+    addButton("Exit",        {centerX, exitY},
+              COLOR_RED,      ButtonAction::Exit);
 
     m_selectedIndex = 0;
     setHovered(0);
@@ -272,17 +285,38 @@ int MenuState::buttonAtPoint(sf::Vector2f point) const {
 void MenuState::activateButton(int index) {
     if (index < 0 || index >= m_buttonCount) return;
 
+    // Play click sound
+    if (m_clickSoundLoaded) {
+        m_clickSound.play();
+    }
+
     switch (m_buttons[index]->action) {
-        case ButtonAction::StartGame:
-            std::cout << "[MenuState] Start Game clicked\n";
+        case ButtonAction::NewGame:
+            std::cout << "[MenuState] New Game clicked\n";
+            // Small delay for sound to play before state change
+            if (m_clickSoundLoaded) {
+                sf::sleep(sf::milliseconds(100));
+            }
             m_manager->pushState(new PlayState());
             break;
+        case ButtonAction::Continue:
+            std::cout << "[MenuState] Continue clicked - not yet implemented\n";
+            // TODO: Load saved game state
+            break;
         case ButtonAction::Leaderboard:
-            std::cout << "[MenuState] Leaderboard clicked\n";
+            std::cout << "[MenuState] Leaderboard clicked - not yet implemented\n";
             // TODO: push LeaderboardState here
+            break;
+        case ButtonAction::Logout:
+            std::cout << "[MenuState] Logout clicked - not yet implemented\n";
+            // TODO: logout and return to login screen
             break;
         case ButtonAction::Exit:
             std::cout << "[MenuState] Exit clicked\n";
+            // Small delay for sound to play before exit
+            if (m_clickSoundLoaded) {
+                sf::sleep(sf::milliseconds(100));
+            }
             m_manager->popState();
             break;
     }

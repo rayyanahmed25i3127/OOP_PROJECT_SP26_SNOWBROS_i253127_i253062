@@ -17,6 +17,10 @@
  *
  * Note: ground/wall/platform collision is NOT handled inside Player.
  * Per spec 7.2 it's routed through a dedicated CollisionDetector.
+ *
+ * POWER-UP: Balloon Mode support (Phase 4.5)
+ *   - When balloon mode is active, gravity is inverted (upward float)
+ *   - CollisionDetector skips enemy contact checks
  */
 class Player : public Entity {
 private:
@@ -36,6 +40,10 @@ private:
     float gravity;
     bool  onGround;
     bool  m_facingRight;
+
+    // ===== POWER-UP: Balloon Mode =====
+    bool  m_balloonMode;       // true when balloon power-up is active
+    float m_balloonGravity;    // upward pull (-50.f by default)
 
 public:
     Player(sf::Vector2f pos);
@@ -61,4 +69,19 @@ public:
     bool isInvincible() const    { return m_invincibleTimer > 0.f; }
     void loseLife();             // called on enemy contact; triggers invincibility + respawn
     void respawn(sf::Vector2f spawnPos);
+
+    // ===== POWER-UP: Balloon Mode getters/setters =====
+    /**
+     * @brief Enable/disable balloon mode. When active, player floats upward
+     *        and is invulnerable to ground enemies.
+     */
+    void setBalloonMode(bool val) { m_balloonMode = val; }
+    bool isBalloonMode() const    { return m_balloonMode; }
+
+    // ===== POWER-UP: Speed Boost =====
+    /**
+     * @brief Set speed multiplier for Speed Boost power-up.
+     * @param multiplier Speed multiplier (1.0 = normal, 1.5 = +50% speed boost)
+     */
+    void setSpeedMultiplier(float multiplier);
 };

@@ -3,6 +3,7 @@
 #include "states/GameState.hpp"
 #include "effects/SnowEffect.hpp"
 #include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
 #include <string>
 
 /**
@@ -22,8 +23,10 @@ public:
 
 private:
     enum class ButtonAction {
-        StartGame,
+        NewGame,
+        Continue,
         Leaderboard,
+        Logout,
         Exit
     };
 
@@ -94,6 +97,11 @@ private:
 
     // Snow effect
     SnowEffect  m_snow;
+
+    // Button click sound
+    sf::SoundBuffer m_clickSoundBuffer;
+    sf::Sound m_clickSound;
+    bool m_clickSoundLoaded;
 
     // Buttons
     Button* m_buttons[MAX_BUTTONS];
