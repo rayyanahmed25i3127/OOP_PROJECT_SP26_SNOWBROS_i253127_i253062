@@ -502,9 +502,11 @@ void PlayState::update(float dt) {
             m_gameOver = true;
             //mlf:
             // using temperoray now int score = m_score;   // or temporary if not implemented
-              int score = rand() % 2000;
+              //int score = rand() % 2000;removed random score!
+              int score = m_score;
             std::string safeName = m_playerName;
            std::string currentUser = m_manager->getCurrentUserName();
+           std::cout << "Saving score now...\n";
 saveScore(currentUser, score, m_currentLevel);
 
             m_manager->pushState(new GameOverState());
