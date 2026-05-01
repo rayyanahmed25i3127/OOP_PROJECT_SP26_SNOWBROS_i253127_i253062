@@ -19,6 +19,7 @@ public:
     static const int MAX_PLATFORMS = 16;
     static const int MAX_ENEMIES   = 16;
     static const int MAX_PROJECTILES = 8;
+    int m_characterIndex;
 
 private:
     sf::Texture m_backgroundTexture;
@@ -122,7 +123,7 @@ void buildLevel();
 void spawnEnemies();
 
 public:
-    PlayState();
+   PlayState(int characterIndex=0);
     ~PlayState();
 
     PlayState(const PlayState&) = delete;
