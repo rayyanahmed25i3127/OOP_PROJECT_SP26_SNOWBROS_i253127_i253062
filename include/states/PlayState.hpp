@@ -118,9 +118,17 @@ private:
     bool m_showHitboxes;
     bool m_gameOver;   // latches true once enemy contact triggers game over,
                        // so we push GameOverState exactly once.
+    
+    // Level transition
+    bool  m_levelComplete;
+    float m_levelTransitionTimer;
+    float m_levelSlideOffset;
+    bool  m_showLevelCompleteText;
 
     void buildLevel();
     void spawnEnemies();
+    void nextLevel();
+    void cleanupLevel();
 
 public:
     PlayState();
