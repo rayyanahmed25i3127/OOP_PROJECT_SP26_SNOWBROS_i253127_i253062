@@ -52,20 +52,26 @@ namespace {
 PlayState::PlayState(int characterIndex)
     : m_playerName("")
     , m_characterIndex(characterIndex)
+
     , m_backgroundTexture()
     , m_backgroundSprite(m_backgroundTexture)
     , m_backgroundLoaded(false)
+
     , m_projectileCount(0)
     , m_hitFlashCount(0)
     , m_powerUpCount(0)
+    , m_diamondCount(0)
+
     , m_speedActive(false)
     , m_speedTimer(0.f)
     , m_balloonActive(false)
     , m_balloonTimer(0.f)
     , m_snowballPowerActive(false)
     , m_distanceActive(false)
+
     , m_displayedType(PowerUp::Type::SpeedBoost)
     , m_hasDisplayed(false)
+
     , m_puIconSpeed()
     , m_puIconSpeedLoaded(false)
     , m_puIconSnowball()
@@ -74,30 +80,48 @@ PlayState::PlayState(int characterIndex)
     , m_puIconDistanceLoaded(false)
     , m_puIconBalloon()
     , m_puIconBalloonLoaded(false)
+
     , m_hudFont()
     , m_hudFontLoaded(false)
+
     , m_heartTexture()
     , m_diamondTexture()
     , m_heartLoaded(false)
     , m_diamondLoaded(false)
+
     , m_score(0)
     , m_gems(0)
+
     , m_currentLevel(1)
     , m_totalLevels(10)
     , m_playerSpawn(100.f, 450.f)
+
     , m_platformTexture()
     , m_platformTopTexture()
     , m_platformTextureLoaded(false)
     , m_platformTopTextureLoaded(false)
+
     , m_player(nullptr)
     , m_platformCount(0)
     , m_enemyCount(0)
+
     , m_playerPrevX(0.f)
     , m_playerPrevY(0.f)
+
     , m_collider(30.f, 770.f)
+
     , m_showHitboxes(false)
     , m_gameOver(false)
+
+    , m_levelComplete(false)
+    , m_levelTransitionTimer(0.f)
+    , m_levelSlideOffset(0.f)
+    , m_showLevelCompleteText(false)
+
+
 {
+    for (int i = 0; i < MAX_DIAMONDS; ++i)
+    m_diamonds[i] = nullptr;
     for (int i = 0; i < MAX_HIT_FLASHES; ++i) m_hitFlashes[i] = nullptr;
     for (int i = 0; i < MAX_ENEMIES; ++i) m_chainCount[i] = 0;
     for (int i = 0; i < MAX_PROJECTILES; ++i) m_projectiles[i] = nullptr;
@@ -271,11 +295,26 @@ void PlayState::buildLevel() {
 }
 
 void PlayState::spawnEnemies() {
-    m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(140.f, 400.f));
-    m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(600.f, 400.f));
-    m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(300.f, 290.f));
-    m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(150.f, 180.f));
-    m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(620.f, 180.f));
+    // Level-specific enemy counts and positions
+    if (m_currentLevel == 1) {
+        // Level 1: 5 enemies
+        m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(140.f, 400.f));
+        m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(600.f, 400.f));
+        m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(300.f, 290.f));
+        m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(150.f, 180.f));
+        m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(620.f, 180.f));
+    } else {
+        // Levels 2-10: 8 enemies - random positions on platforms
+        std::srand(static_cast<unsigned>(std::time(nullptr)) + m_currentLevel);
+        float positions[] = {140.f, 300.f, 450.f, 600.f, 150.f, 350.f, 500.f, 650.f};
+        float yLevels[] = {400.f, 290.f, 180.f};
+        
+        for (int i = 0; i < 8; ++i) {
+            float x = positions[i];
+            float y = yLevels[std::rand() % 3];
+            m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(x, y));
+        }
+    }
 
     // ===== Apply Snowball Power if active =====
     // If Snowball Power was already activated before these enemies spawned,
@@ -288,7 +327,8 @@ void PlayState::spawnEnemies() {
         }
     }
 
-    std::cout << "[PlayState] Spawned " << m_enemyCount << " Botoms\n";
+    std::cout << "[PlayState] Level " << m_currentLevel 
+              << " - Spawned " << m_enemyCount << " Botoms\n";
 }
 
 void PlayState::handleEvent(const sf::Event& event) {
@@ -574,6 +614,36 @@ void PlayState::update(float dt) {
         m_enemyCount = write;
     }
 
+    // --- Level Complete Check ---
+    if (!m_levelComplete && m_enemyCount == 0) {
+        m_levelComplete = true;
+        m_showLevelCompleteText = true;
+        m_levelTransitionTimer = 0.f;
+        std::cout << "[PlayState] Level " << m_currentLevel << " Complete!\n";
+    }
+
+    // --- Level Transition ---
+    if (m_levelComplete) {
+        m_levelTransitionTimer += dt;
+        
+        // Show "Level X Complete!" for 2 seconds
+        if (m_levelTransitionTimer < 2.0f) {
+            return; // Freeze gameplay
+        }
+        
+        // Slide transition (2s to 3s)
+        if (m_levelTransitionTimer < 3.0f) {
+            m_showLevelCompleteText = false;
+            float progress = (m_levelTransitionTimer - 2.0f) / 1.0f;
+            m_levelSlideOffset = progress * 600.f; // Slide down
+            return; // Skip all other updates during slide
+        } else {
+            // Transition complete - load next level
+            nextLevel();
+            return;
+        }
+    }
+
     // --- Player-Enemy contact ---
     if (!m_gameOver && m_player && !m_player->isInvincible()
         && m_collider.checkEnemyContact(*m_player, m_enemies, m_enemyCount)) {
@@ -658,6 +728,37 @@ void PlayState::draw(sf::RenderWindow& window) {
     }
 
     drawHUD(window);
+    
+    // --- Level Complete Text ---
+    if (m_showLevelCompleteText && m_hudFontLoaded) {
+        sf::Text levelCompleteText(m_hudFont);
+        
+        std::string message = "Level " + std::to_string(m_currentLevel) + " Complete!";
+        if (m_currentLevel == 4) {
+            message += "\nGet ready to face the Boss Mogera!";
+        } else if (m_currentLevel == 9) {
+            message += "\nGet ready to face the Boss Gamakichi!";
+        }
+        
+        levelCompleteText.setString(message);
+        levelCompleteText.setCharacterSize(40);
+        levelCompleteText.setFillColor(sf::Color::Yellow);
+        levelCompleteText.setOutlineColor(sf::Color::Black);
+        levelCompleteText.setOutlineThickness(2.f);
+        
+        sf::FloatRect bounds = levelCompleteText.getLocalBounds();
+        levelCompleteText.setPosition({400.f - bounds.size.x / 2.f, 
+                                       m_currentLevel == 4 || m_currentLevel == 9 ? 220.f : 250.f});
+        window.draw(levelCompleteText);
+    }
+    
+    // --- Slide Transition Overlay ---
+    if (m_levelSlideOffset > 0.f) {
+        sf::RectangleShape overlay({800.f, 600.f});
+        overlay.setFillColor(sf::Color::Black);
+        overlay.setPosition({0.f, m_levelSlideOffset - 600.f});
+        window.draw(overlay);
+    }
 }
 
 void PlayState::drawHUD(sf::RenderWindow& window) {
@@ -911,4 +1012,69 @@ void PlayState::drawPowerUpHUD(sf::RenderWindow& window) {
         fill.setFillColor(barColor);
         window.draw(fill);
     }
+}
+
+void PlayState::nextLevel() {
+    cleanupLevel();
+    m_currentLevel++;
+    
+    if (m_currentLevel > m_totalLevels) {
+        std::cout << "[PlayState] All levels complete!\n";
+        // TODO: Victory screen
+        return;
+    }
+    
+    m_levelComplete = false;
+    m_levelTransitionTimer = 0.f;
+    m_levelSlideOffset = 0.f;
+    m_showLevelCompleteText = false;
+    
+    buildLevel();
+    spawnEnemies();
+    
+    if (m_player) {
+        m_player->respawn(m_playerSpawn);
+    }
+    
+    std::cout << "[PlayState] Started Level " << m_currentLevel << "\n";
+}
+
+void PlayState::cleanupLevel() {
+    // Clean up platforms first
+    for (int i = 0; i < m_platformCount; ++i) {
+        delete m_platforms[i];
+        m_platforms[i] = nullptr;
+    }
+    m_platformCount = 0;
+    
+    for (int i = 0; i < m_enemyCount; ++i) {
+        delete m_enemies[i];
+        m_enemies[i] = nullptr;
+        m_chainCount[i] = 0;
+    }
+    m_enemyCount = 0;
+    
+    for (int i = 0; i < m_projectileCount; ++i) {
+        delete m_projectiles[i];
+        m_projectiles[i] = nullptr;
+    }
+    m_projectileCount = 0;
+    
+    for (int i = 0; i < m_powerUpCount; ++i) {
+        delete m_powerUps[i];
+        m_powerUps[i] = nullptr;
+    }
+    m_powerUpCount = 0;
+    
+    for (int i = 0; i < m_diamondCount; ++i) {
+        delete m_diamonds[i];
+        m_diamonds[i] = nullptr;
+    }
+    m_diamondCount = 0;
+    
+    for (int i = 0; i < m_hitFlashCount; ++i) {
+        delete m_hitFlashes[i];
+        m_hitFlashes[i] = nullptr;
+    }
+    m_hitFlashCount = 0;
 }

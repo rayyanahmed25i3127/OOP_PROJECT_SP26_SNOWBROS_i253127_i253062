@@ -9,6 +9,7 @@
 #include "effects/HitFlash.hpp"
 #include "powerups/PowerUp.hpp"
 #include <SFML/Graphics.hpp>
+#include "powerups/Diamond.hpp"
 #include <string>
 
 class PlayState : public GameState {
@@ -20,6 +21,11 @@ public:
     static const int MAX_POWERUPS = 16;
 
 private:
+// ===== DIAMOND SYSTEM =====
+static const int MAX_DIAMONDS = 50;
+
+Diamond* m_diamonds[MAX_DIAMONDS];
+int      m_diamondCount;
     //making leaderboard functional:
     std::string m_playerName;
     int m_characterIndex;
@@ -121,11 +127,21 @@ private:
     CollisionDetector m_collider;
 
     bool m_showHitboxes;
-    bool m_gameOver;
+
+bool m_gameOver;   // latches true once enemy contact triggers game over,
+                   // so we push GameOverState exactly once.
+
+// Level transition
+bool  m_levelComplete;
+float m_levelTransitionTimer;
+float m_levelSlideOffset;
+bool  m_showLevelCompleteText;
 
     // 🔥 KEEP BOTH FUNCTIONS
     void buildLevel();
     void spawnEnemies();
+    void nextLevel();
+    void cleanupLevel();
 
 public:
     PlayState(int characterIndex = 0);
