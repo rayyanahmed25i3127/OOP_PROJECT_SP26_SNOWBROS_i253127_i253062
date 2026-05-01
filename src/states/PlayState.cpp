@@ -6,12 +6,15 @@
 #include "audio/AudioManager.hpp"
 #include "effects/HitFlash.hpp"
 #include "powerups/PowerUp.hpp"
+#include "powerups/Diamond.hpp"
 #include <iostream>
 #include <cstdlib>
+#include <ctime>   
 
 namespace {
     const float WINDOW_WIDTH  = 800.f;
     const float WINDOW_HEIGHT = 600.f;
+    int g_globalDoubleKillEvents = 0; // ADDED: Tracks the total number of successful combo rolls across the level
 }
 
 PlayState::PlayState()
@@ -38,6 +41,7 @@ PlayState::PlayState()
     , m_projectileCount(0)
     , m_hitFlashCount(0)
     , m_powerUpCount(0)
+    , m_diamondCount(0)
     , m_speedActive(false), m_speedTimer(0.f)
     , m_balloonActive(false), m_balloonTimer(0.f)
     , m_snowballPowerActive(false)
@@ -59,6 +63,7 @@ PlayState::PlayState()
         m_enemyPrevY[i] = 0.f;
     }
     for (int i = 0; i < MAX_POWERUPS; ++i) m_powerUps[i] = nullptr;
+    for (int i = 0; i < MAX_DIAMONDS; ++i) m_diamonds[i] = nullptr;
 }
 
 PlayState::~PlayState() {
@@ -83,9 +88,18 @@ PlayState::~PlayState() {
         delete m_powerUps[i];
         m_powerUps[i] = nullptr;
     }
+
+    for (int i = 0; i < m_diamondCount; ++i) {
+        delete m_diamonds[i];
+        m_diamonds[i] = nullptr;
+    }
 }
 
 void PlayState::onEnter() {
+    // Reset combo counter for new level/game
+    g_globalDoubleKillEvents = 0; 
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
+
     std::cout << "[PlayState] Entering gameplay\n";
 
     if (!m_backgroundTexture.loadFromFile("assets/sprites/bg_lvl1.png")) {
@@ -219,9 +233,6 @@ void PlayState::spawnEnemies() {
     m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(150.f, 180.f));
     m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(620.f, 180.f));
 
-    // ===== Apply Snowball Power if active =====
-    // If Snowball Power was already activated before these enemies spawned,
-    // make sure they also get the one-hit encase effect
     if (m_snowballPowerActive) {
         for (int i = 0; i < m_enemyCount; ++i) {
             if (m_enemies[i]) {
@@ -265,7 +276,6 @@ void PlayState::update(float dt) {
         m_enemyPrevX[i] = m_enemies[i]->getPosition().x;
         m_enemyPrevY[i] = m_enemies[i]->getPosition().y;
         m_enemies[i]->update(dt);
-        // Rolling enemies have their own motion — don't route through collider.
         if (m_enemies[i]->getState() != Enemy::State::Rolling) {
             m_collider.resolve(*m_enemies[i], m_platforms, m_platformCount,
                                m_enemyPrevX[i], m_enemyPrevY[i]);
@@ -282,10 +292,8 @@ void PlayState::update(float dt) {
             ? pHit.position.x + pHit.size.x + 2.f
             : pHit.position.x - 16.f - 2.f;
         
-        // Create the attack ball
         AttackBall* newBall = new AttackBall({spawnX, spawnY}, m_player->isFacingRight());
         
-        // ===== APPLY DISTANCE INCREASE POWER-UP =====
         if (m_distanceActive) {
             newBall->setMaxRangeMode(true);
         }
@@ -300,9 +308,6 @@ void PlayState::update(float dt) {
     }
 
     // --- Attack ball vs enemy collision ---
-    // Enemy::takeAttackHit() decides whether the hit counts (Alive,
-    // PartialEncase, or Escaping75/50/25). PlayState just registers the
-    // hit and spawns the flash.
     for (int i = 0; i < m_projectileCount; ++i) {
         if (!m_projectiles[i] || !m_projectiles[i]->isAlive()) continue;
         sf::FloatRect pHit = m_projectiles[i]->getHitBox();
@@ -312,7 +317,6 @@ void PlayState::update(float dt) {
         for (int e = 0; e < m_enemyCount; ++e) {
             if (!m_enemies[e]) continue;
             Enemy::State s = m_enemies[e]->getState();
-            // Skip states that never react to attack balls.
             if (s != Enemy::State::Alive &&
                 s != Enemy::State::PartialEncase &&
                 s != Enemy::State::Escaping75 &&
@@ -327,11 +331,9 @@ void PlayState::update(float dt) {
             bool overlap = (pR > eL) && (pL < eR) && (pB > eT) && (pT < eB);
             if (!overlap) continue;
 
-            // Register hit, spawn hit-flash, kill the attack ball.
             m_enemies[e]->takeAttackHit();
             m_projectiles[i]->setAlive(false);
 
-            // Spawn the hit flash at impact point (center of attack ball).
             if (m_hitFlashCount < MAX_HIT_FLASHES) {
                 sf::Vector2f flashPos{ (pL + pR) * 0.5f - 6.f,
                                        (pT + pB) * 0.5f - 8.f };
@@ -373,19 +375,6 @@ void PlayState::update(float dt) {
     }
 
     // --- PLAYER KICKS SNOWBALLED ENEMY → Rolling ---
-    // Auto-kick on contact: if player's hitbox overlaps a Snowballed enemy,
-    // launch it rolling in the player's facing direction. Reset its chain
-    // count so the first kill scores the base, second adds 10%, etc.
-    // --- PLAYER KICKS SNOWBALLED ENEMY → Rolling ---
-    // Auto-kick on contact: if player's hitbox overlaps a Snowballed enemy,
-    // launch it rolling in the player's facing direction.
-    //
-    // Spec §9.1: an enemy is "defeated" the moment it's encased and rolled,
-    // so we award its base score here at kick-time. Any additional enemies
-    // the rolling snowball kills earn base + 10% × chain index on top
-    // (handled in the rolling-kill loop below). m_chainCount[e] is set to 1
-    // here so the first secondary kill is treated as chain index 2 (+10%),
-    // matching "Chain Kill Bonus +10% per enemy in chain".
     if (m_player) {
         sf::FloatRect pHit = m_player->getHitBox();
         float pL = pHit.position.x, pR = pL + pHit.size.x;
@@ -403,10 +392,8 @@ void PlayState::update(float dt) {
 
             m_enemies[e]->kickIntoRoll(m_player->isFacingRight());
 
-            // Award base score for the enemy that just got rolled.
             int kickedScore = randomScore(100, 500);
             m_score += kickedScore;
-            // Chain count = 1 → next victim is chain index 2 → base + 10%.
             m_chainCount[e] = 1;
 
             std::cout << "[PlayState] Kicked Botom into roll. +"
@@ -417,16 +404,6 @@ void PlayState::update(float dt) {
     }
 
     // --- ROLLING ENEMY KILLS (spec §9.1) ---
-    // Every enemy a rolling snowball touches awards score immediately.
-    //   First kill  = base (100-500 for Botom)
-    //   Second kill = base + 10%
-    //   Third kill  = base + 20%
-    //   etc.
-    // Chain counter m_chainCount[r] is reset to 1 by the kick handler above
-    // (the kicked enemy IS the first kill), then incremented per chain
-    // victim here. So the first victim hit by the rolling ball already
-    // gets index 2 → +10%. Spec §8.1: enemies defeated via chain roll
-    // also drop a power-up.
     for (int r = 0; r < m_enemyCount; ++r) {
         if (!m_enemies[r]) continue;
         if (m_enemies[r]->getState() != Enemy::State::Rolling) continue;
@@ -437,10 +414,9 @@ void PlayState::update(float dt) {
 
         for (int v = 0; v < m_enemyCount; ++v) {
             if (v == r || !m_enemies[v]) continue;
-            if (!m_enemies[v]->isAlive()) continue;   // already killed this frame
+            if (!m_enemies[v]->isAlive()) continue;
 
             Enemy::State vs = m_enemies[v]->getState();
-            // Rolling snowballs pass through each other; dead enemies ignored.
             if (vs == Enemy::State::Dead || vs == Enemy::State::Rolling) continue;
 
             sf::FloatRect vHit = m_enemies[v]->getHitBox();
@@ -449,30 +425,37 @@ void PlayState::update(float dt) {
             bool overlap = (rR > vL) && (rL < vR) && (rB > vT) && (rT < vB);
             if (!overlap) continue;
 
-            // chainCount was 1 at kick (kicked enemy = first kill);
-            // ++ here makes this victim chain index 2 → +10%, then 3, ...
             m_chainCount[r]++;
             int chainIndex = m_chainCount[r];
+            
+            // --- NEW LOGIC: Tracker for the Combo Event itself ---
+            if (chainIndex == 2) {
+                // When chainIndex == 2, it means this rolling ball has hit its FIRST victim.
+                // We register this as a brand new "Double Kill Event" globally!
+                g_globalDoubleKillEvents++;
+                std::cout << "[PlayState] Double Kill Event #" << g_globalDoubleKillEvents << " registered!\n";
+            }
+
             int base  = randomScore(100, 500);
             int bonus = static_cast<int>(base * 0.10f * (chainIndex - 1));
             int award = base + bonus;
             m_score += award;
 
-            std::cout << "[PlayState] Roll kill #" << chainIndex
-                      << " +" << award
-                      << " (base " << base << " + bonus " << bonus
-                      << "). Score: " << m_score << "\n";
-
-            // --- Power-up drop (spec §8.1) ---
-            // Chain kill = victim index >= 2. Spawn at victim's position,
-            // randomly choose one of the 4 Level-1 power-ups.
+            // --- Drop logic ---
+            sf::Vector2f spawnPos = m_enemies[v]->getPosition();
+            
+            // 1. ALWAYS drop a random Power-up for any victim of a chain kill
             if (m_powerUpCount < MAX_POWERUPS) {
                 int typeIdx = std::rand() % static_cast<int>(PowerUp::Type::Count_);
                 PowerUp::Type chosen = static_cast<PowerUp::Type>(typeIdx);
-                sf::Vector2f spawnPos = m_enemies[v]->getPosition();
                 m_powerUps[m_powerUpCount++] = new PowerUp(spawnPos, chosen);
-                std::cout << "[PlayState] Dropped power-up: "
-                          << PowerUp::typeName(chosen) << "\n";
+            }
+
+            // 2. Drop Diamond ONLY if this entire rolling event is an EVEN event (2nd roll combo, 4th roll combo...)
+            if (g_globalDoubleKillEvents % 2 == 0) {
+                if (m_diamondCount < MAX_DIAMONDS) {
+                    m_diamonds[m_diamondCount++] = new Diamond(spawnPos);
+                }
             }
 
             m_enemies[v]->setAlive(false);
@@ -521,11 +504,53 @@ void PlayState::update(float dt) {
         m_powerUpCount = write;
     }
 
+    // --- DIAMONDS: physics + collision against platforms + pickup ---
+    for (int i = 0; i < m_diamondCount; ++i) {
+        if (!m_diamonds[i]) continue;
+        float prevX = m_diamonds[i]->getPosition().x;
+        float prevY = m_diamonds[i]->getPosition().y;
+        m_diamonds[i]->update(dt);
+        m_collider.resolve(*m_diamonds[i], m_platforms, m_platformCount,
+                           prevX, prevY);
+    }
+
+    // Player picks up diamond on hitbox overlap → add 15 gems
+    if (m_player) {
+        sf::FloatRect pHit = m_player->getHitBox();
+        float pL = pHit.position.x, pR = pL + pHit.size.x;
+        float pT = pHit.position.y, pB = pT + pHit.size.y;
+        for (int i = 0; i < m_diamondCount; ++i) {
+            if (!m_diamonds[i] || !m_diamonds[i]->isAlive()) continue;
+            sf::FloatRect h = m_diamonds[i]->getHitBox();
+            float hL = h.position.x, hR = hL + h.size.x;
+            float hT = h.position.y, hB = hT + h.size.y;
+            bool overlap = (pR > hL) && (pL < hR) && (pB > hT) && (pT < hB);
+            if (!overlap) continue;
+
+            m_gems += Diamond::GEM_VALUE;
+            std::cout << "[PlayState] Diamond picked! +" << Diamond::GEM_VALUE 
+                      << " gems. Total gems: " << m_gems << "\n";
+            m_diamonds[i]->setAlive(false);
+        }
+    }
+
+    // GC dead diamonds
+    {
+        int write = 0;
+        for (int read = 0; read < m_diamondCount; ++read) {
+            if (m_diamonds[read] && m_diamonds[read]->isAlive()) {
+                m_diamonds[write++] = m_diamonds[read];
+            } else {
+                delete m_diamonds[read];
+                m_diamonds[read] = nullptr;
+            }
+        }
+        m_diamondCount = write;
+    }
+
     updatePowerUpTimers(dt);
-    // --- GC dead enemies (compact array) ---
-    // Carry chain count along with the enemy pointer when indices shift.
-    // Reading m_chainCount[read] then writing to [write] preserves the
-    // rolling enemy's kill count across compaction.
+
+    // --- GC dead enemies ---
     {
         int write = 0;
         for (int read = 0; read < m_enemyCount; ++read) {
@@ -549,7 +574,7 @@ void PlayState::update(float dt) {
         m_enemyCount = write;
     }
 
-    // --- Player-Enemy contact (lethal only on Alive) ---
+    // --- Player-Enemy contact ---
     if (!m_gameOver && m_player && !m_player->isInvincible()
         && m_collider.checkEnemyContact(*m_player, m_enemies, m_enemyCount)) {
         m_player->loseLife();
@@ -581,7 +606,6 @@ void PlayState::draw(sf::RenderWindow& window) {
         if (m_enemies[i]) m_enemies[i]->draw(window);
     }
 
-    // Projectiles drawn above enemies, below player — AttackBalls read cleanly.
     for (int i = 0; i < m_projectileCount; ++i) {
         if (m_projectiles[i]) m_projectiles[i]->draw(window);
     }
@@ -590,10 +614,12 @@ void PlayState::draw(sf::RenderWindow& window) {
         if (m_powerUps[i]) m_powerUps[i]->draw(window);
     }
 
+    for (int i = 0; i < m_diamondCount; ++i) {
+        if (m_diamonds[i]) m_diamonds[i]->draw(window);
+    }
+
     if (m_player) m_player->draw(window);
 
-    // Hit flashes — always drawn (not a debug-only element).
-    // Above projectiles/player so impact spark pops on top.
     for (int i = 0; i < m_hitFlashCount; ++i) {
         if (m_hitFlashes[i]) m_hitFlashes[i]->draw(window);
     }
@@ -607,17 +633,19 @@ void PlayState::draw(sf::RenderWindow& window) {
                 m_enemies[i]->drawHitBoxDebug(window, sf::Color::Red);
             }
         }
-        // Yellow projectile hitboxes per spec §7.2
         for (int i = 0; i < m_projectileCount; ++i) {
             if (m_projectiles[i]) {
                 m_projectiles[i]->drawHitBoxDebug(window, sf::Color::Yellow);
             }
         }
-
-        // Magenta power-up hitboxes (not in spec — debug-only convenience)
         for (int i = 0; i < m_powerUpCount; ++i) {
             if (m_powerUps[i]) {
                 m_powerUps[i]->drawHitBoxDebug(window, sf::Color::Magenta);
+            }
+        }
+        for (int i = 0; i < m_diamondCount; ++i) {
+            if (m_diamonds[i]) {
+                m_diamonds[i]->drawHitBoxDebug(window, sf::Color::Cyan);
             }
         }
 
@@ -641,7 +669,6 @@ void PlayState::draw(sf::RenderWindow& window) {
 void PlayState::drawHUD(sf::RenderWindow& window) {
     if (!m_hudFontLoaded) return;
 
-    // Anchor HUD just inside the top ice border (over the dark sky area).
     const float HUD_Y       = 14.f;
     const float LEFT_X      = 18.f;
     const float RIGHT_PAD   = 18.f;
@@ -649,7 +676,7 @@ void PlayState::drawHUD(sf::RenderWindow& window) {
     const float ICON_TEXT_GAP = 6.f;
     const unsigned int TEXT_SIZE = 14;
 
-    // --- Score (top-left, top row) ---
+    // --- Score ---
     {
         sf::Text scoreText(m_hudFont, "SCORE " + std::to_string(m_score), TEXT_SIZE);
         scoreText.setFillColor(sf::Color::White);
@@ -659,7 +686,7 @@ void PlayState::drawHUD(sf::RenderWindow& window) {
         window.draw(scoreText);
     }
 
-    // --- Lives (top-left, below score) ---
+    // --- Lives ---
     {
         float livesY = HUD_Y + 22.f;
         int lives = (m_player ? m_player->getLives() : 0);
@@ -683,7 +710,7 @@ void PlayState::drawHUD(sf::RenderWindow& window) {
         window.draw(livesText);
     }
 
-    // --- Gems (top-right) ---
+    // --- Gems ---
     {
         std::string gemStr = std::to_string(m_gems);
         sf::Text gemText(m_hudFont, gemStr, TEXT_SIZE);
@@ -692,7 +719,6 @@ void PlayState::drawHUD(sf::RenderWindow& window) {
         gemText.setOutlineThickness(2.f);
         auto tb = gemText.getLocalBounds();
 
-        // Right-anchored: text first, icon to its left
         float textX = 800.f - RIGHT_PAD - tb.size.x - tb.position.x;
         gemText.setPosition({ textX, HUD_Y });
         window.draw(gemText);
@@ -709,7 +735,7 @@ void PlayState::drawHUD(sf::RenderWindow& window) {
         }
     }
 
-    // --- Level indicator (top-center) ---
+    // --- Level indicator ---
     {
         std::string levelStr =
             "LEVEL " + std::to_string(m_currentLevel) +
@@ -726,7 +752,6 @@ void PlayState::drawHUD(sf::RenderWindow& window) {
         window.draw(levelText);
     }
 
-    // --- Power-up status (bottom-center, placeholder) ---
     drawPowerUpHUD(window);
 }
 
@@ -754,16 +779,13 @@ void PlayState::activatePowerUp(PowerUp::Type type) {
     switch (type) {
         case PowerUp::Type::SpeedBoost:
             m_speedActive = true;
-            m_speedTimer  = 15.0f;   // spec §8.2
-            // ===== APPLY SPEED BOOST EFFECT =====
+            m_speedTimer  = 15.0f;
             if (m_player) {
-                m_player->setSpeedMultiplier(1.5f);  // +50% speed boost
+                m_player->setSpeedMultiplier(1.5f);
             }
             break;
         case PowerUp::Type::SnowballPower:
             m_snowballPowerActive = true;
-            // ===== APPLY SNOWBALL POWER EFFECT =====
-            // Set all enemies to one-hit encase mode
             for (int i = 0; i < m_enemyCount; ++i) {
                 if (m_enemies[i]) {
                     m_enemies[i]->setOneHitEncase(true);
@@ -772,13 +794,10 @@ void PlayState::activatePowerUp(PowerUp::Type type) {
             break;
         case PowerUp::Type::DistanceIncrease:
             m_distanceActive = true;
-            // Distance effect is applied when spawning new AttackBalls
-            // (checked in spawn code below around line 274)
             break;
         case PowerUp::Type::BalloonMode:
             m_balloonActive = true;
-            m_balloonTimer  = 10.0f; // spec §8.2
-            // ===== APPLY BALLOON MODE EFFECT =====
+            m_balloonTimer  = 10.0f;
             if (m_player) {
                 m_player->setBalloonMode(true);
             }
@@ -797,12 +816,10 @@ void PlayState::updatePowerUpTimers(float dt) {
         if (m_speedTimer <= 0.f) {
             m_speedActive = false;
             m_speedTimer  = 0.f;
-            // ===== DEACTIVATE SPEED BOOST =====
             if (m_player) {
-                m_player->setSpeedMultiplier(1.0f);  // back to normal speed
+                m_player->setSpeedMultiplier(1.0f);
             }
             if (m_hasDisplayed && m_displayedType == PowerUp::Type::SpeedBoost) {
-                // Fall back to any other still-active power-up, else hide.
                 if      (m_balloonActive)        m_displayedType = PowerUp::Type::BalloonMode;
                 else if (m_snowballPowerActive)  m_displayedType = PowerUp::Type::SnowballPower;
                 else if (m_distanceActive)       m_displayedType = PowerUp::Type::DistanceIncrease;
@@ -815,7 +832,6 @@ void PlayState::updatePowerUpTimers(float dt) {
         if (m_balloonTimer <= 0.f) {
             m_balloonActive = false;
             m_balloonTimer  = 0.f;
-            // ===== DEACTIVATE BALLOON MODE =====
             if (m_player) {
                 m_player->setBalloonMode(false);
             }
@@ -832,7 +848,6 @@ void PlayState::updatePowerUpTimers(float dt) {
 void PlayState::drawPowerUpHUD(sf::RenderWindow& window) {
     if (!m_hasDisplayed) return;
 
-    // Layout: bottom-center, icon | bar to the right.
     const float HUD_BOTTOM_Y = 568.f;
     const float ICON_SIZE    = 22.f;
     const float BAR_WIDTH    = 160.f;
@@ -846,7 +861,6 @@ void PlayState::drawPowerUpHUD(sf::RenderWindow& window) {
     const float iconY   = HUD_BOTTOM_Y;
     const float barY    = HUD_BOTTOM_Y + (ICON_SIZE - BAR_HEIGHT) / 2.f;
 
-    // Pick texture + fill ratio (1.0 = full / permanent)
     sf::Texture* tex = nullptr;
     bool         loaded = false;
     float        fillRatio = 1.0f;
@@ -860,7 +874,7 @@ void PlayState::drawPowerUpHUD(sf::RenderWindow& window) {
             break;
         case PowerUp::Type::SnowballPower:
             tex = &m_puIconSnowball;  loaded = m_puIconSnowballLoaded;
-            fillRatio = 1.0f;          // permanent for level
+            fillRatio = 1.0f;
             barColor  = sf::Color(255, 120, 200);
             break;
         case PowerUp::Type::DistanceIncrease:
@@ -876,7 +890,6 @@ void PlayState::drawPowerUpHUD(sf::RenderWindow& window) {
         default: return;
     }
 
-    // Icon
     if (loaded && tex) {
         sf::Sprite icon(*tex);
         auto ts = tex->getSize();
@@ -888,7 +901,6 @@ void PlayState::drawPowerUpHUD(sf::RenderWindow& window) {
         window.draw(icon);
     }
 
-    // Bar background
     sf::RectangleShape bg({ BAR_WIDTH, BAR_HEIGHT });
     bg.setPosition({ barX, barY });
     bg.setFillColor(sf::Color(20, 20, 30, 200));
@@ -896,7 +908,6 @@ void PlayState::drawPowerUpHUD(sf::RenderWindow& window) {
     bg.setOutlineThickness(1.f);
     window.draw(bg);
 
-    // Bar fill
     if (fillRatio > 0.f) {
         sf::RectangleShape fill({ BAR_WIDTH * fillRatio, BAR_HEIGHT });
         fill.setPosition({ barX, barY });

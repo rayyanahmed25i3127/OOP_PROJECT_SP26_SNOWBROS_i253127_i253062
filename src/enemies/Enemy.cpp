@@ -3,18 +3,18 @@
 #include <iostream>
 
 namespace {
-    // Lifecycle timings
-    const float SNOWBALLED_DURATION   = 3.0f;   // before shake-free chain begins
-    const float ESCAPE_STAGE_DURATION = 1.0f;   // each of 75 / 50 / 25
+    const float SNOWBALLED_DURATION   = 3.0f;
+    const float ESCAPE_STAGE_DURATION = 1.0f;
 
-    // Rolling physics
-    const float ROLL_SPEED = 650.f;             // 600-700 range (design choice)
+    const float ROLL_SPEED   = 650.f;
     const float WINDOW_WIDTH = 800.f;
-    const float WINDOW_LEFT  = 30.f;            // matches CollisionDetector
+    const float WINDOW_LEFT  = 30.f;
     const float WINDOW_RIGHT = 770.f;
 
-    // Fallback visual tint when a snow overlay asset is missing.
     const sf::Color FROSTY_TINT(180, 220, 255);
+
+    // Walk animation timing (same as player: 0.33s per frame, 1s full cycle)
+    const float WALK_FRAME_TIME = 0.33f;
 }
 
 bool Enemy::tryLoadTexture(sf::Texture& out, const std::string& path,
@@ -75,6 +75,11 @@ Enemy::Enemy(sf::Vector2f pos,
     , m_snowEscape25Loaded(false)
     , m_overlaySprite(m_snowEncase100Texture)
     , m_overlayVisible(false)
+    , m_walkLoaded(false)
+    , m_jumpLoaded(false)
+    , m_fallLoaded(false)
+    , m_walkFrame(0)
+    , m_walkTimer(0.f)
     , m_spriteWidth(spriteW)
     , m_spriteHeight(spriteH)
     , m_overlayWidth(spriteW + 4.f)
@@ -115,10 +120,13 @@ void Enemy::syncSpritePositions() {
         float sx = m_spriteWidth  / static_cast<float>(bodySize.x);
         float sy = m_spriteHeight / static_cast<float>(bodySize.y);
         m_bodySprite.setOrigin({ static_cast<float>(bodySize.x) / 2.f, 0.f });
-        bool flip = !m_facingRight
+
+        // Default sprites face LEFT. Flip when facing RIGHT and alive/rolling.
+        bool flip = m_facingRight
                  && (m_state == State::Alive || m_state == State::Rolling);
         if (flip) m_bodySprite.setScale({ -sx, sy });
         else      m_bodySprite.setScale({  sx, sy });
+
         m_bodySprite.setPosition({ position.x + m_spriteWidth / 2.f,
                                    position.y });
     }
@@ -147,7 +155,6 @@ void Enemy::updateStateTimers(float dt) {
         case State::PartialEncase:
             m_stateTimer -= dt;
             if (m_stateTimer <= 0.f) {
-                // Partial coat shakes off — back to Alive with no hits.
                 m_state = State::Alive;
                 m_hitsTaken = 0;
                 m_stateTimer = 0.f;
@@ -204,10 +211,9 @@ void Enemy::applyStateSprite() {
 
     switch (m_state) {
         case State::Alive:
-            setBody(m_idleTexture, m_idleLoaded);
+            // Animation handles texture for Alive state — don't override here
             break;
         case State::PartialEncase:
-            // Body = trapped pose; overlay = 50% snow.
             setBody(m_trappedTexture, m_trappedLoaded);
             if (m_snowEncase50Loaded) setOverlay(m_snowEncase50Texture, true);
             else m_bodySprite.setColor(FROSTY_TINT);
@@ -233,7 +239,6 @@ void Enemy::applyStateSprite() {
             else m_bodySprite.setColor(sf::Color(235, 245, 255));
             break;
         case State::Rolling:
-            // Rolling enemy looks like a Snowballed one, but moving.
             setBody(m_trappedTexture, m_trappedLoaded);
             if (m_snowEncase100Loaded) setOverlay(m_snowEncase100Texture, true);
             break;
@@ -243,28 +248,20 @@ void Enemy::applyStateSprite() {
 }
 
 void Enemy::integrateRolling(float dt) {
-    // Rolling enemies ignore gravity (keep y constant — arcade-style behavior)
-    // and travel horizontally at ROLL_SPEED. Wrap screen once. Die when we
-    // return to kick-origin x.
     float dx = (m_rollDirectionRight ? 1.f : -1.f) * m_rollSpeed * dt;
     position.x += dx;
     m_rollDistanceTravelled += (dx < 0 ? -dx : dx);
     velocity.x = 0.f;
-    velocity.y = 0.f;   // stay aloft (simple arcade rule)
+    velocity.y = 0.f;
 
-    // Wrap edges
     float hitW = hitBox.size.x;
     if (position.x + hitW < WINDOW_LEFT) {
-        position.x = WINDOW_RIGHT;   // enter from right
+        position.x = WINDOW_RIGHT;
     } else if (position.x > WINDOW_RIGHT) {
-        position.x = WINDOW_LEFT - hitW;  // enter from left
+        position.x = WINDOW_LEFT - hitW;
     }
 
-    // Die when we've travelled roughly one full screen width and we're
-    // back near the kick origin. Use distance threshold (WINDOW_WIDTH)
-    // so we don't die on the first frame by accident.
     if (m_rollDistanceTravelled >= WINDOW_RIGHT - WINDOW_LEFT) {
-        // Check if position is near origin (within half a sprite)
         float dx_origin = position.x - m_rollOriginX;
         if (dx_origin < 0) dx_origin = -dx_origin;
         if (dx_origin < m_spriteWidth * 0.5f) {
@@ -276,8 +273,7 @@ void Enemy::integrateRolling(float dt) {
 
 void Enemy::update(float dt) {
     if (m_state == State::Rolling) {
-        // Rolling state has its own motion integration — skip gravity + AI.
-        updateStateTimers(dt);       // no-op for Rolling, but kept for consistency
+        updateStateTimers(dt);
         integrateRolling(dt);
         syncHitBox();
         applyStateSprite();
@@ -288,17 +284,23 @@ void Enemy::update(float dt) {
     applyGravity(dt);
     updateStateTimers(dt);
 
-    // Only Alive enemies run AI. Frozen states keep velocity zeroed.
     if (m_state == State::Alive) {
         updateAI(dt);
     } else {
         velocity.x = 0.f;
-        // gravity already applied — still let them fall if mid-air
     }
 
     position += velocity * dt;
     syncHitBox();
+
+    // Always call applyStateSprite — it resets m_overlayVisible to false
+    // at the top, so when enemy returns to Alive the snow overlay disappears.
+    // For Alive state it won't override the body texture (animation handles that).
     applyStateSprite();
+
+    // For Alive state, animation swaps the body texture directly
+    updateAnimation(dt);
+
     syncSpritePositions();
 }
 
@@ -314,8 +316,6 @@ void Enemy::setPosition(sf::Vector2f pos) {
 }
 
 void Enemy::takeAttackHit() {
-    // Accept hits in Alive, PartialEncase, and any Escaping stage.
-    // Snowballed / Rolling / Dead ignore further hits.
     if (m_state != State::Alive &&
         m_state != State::PartialEncase &&
         m_state != State::Escaping75 &&
@@ -325,8 +325,6 @@ void Enemy::takeAttackHit() {
         return;
     }
 
-    // Escaping75 / Escaping50 — lots of snow still on the enemy.
-    // One hit packs it back into a full Snowball (resets the 3s timer).
     if (m_state == State::Escaping75 || m_state == State::Escaping50) {
         m_state = State::Snowballed;
         m_stateTimer = SNOWBALLED_DURATION;
@@ -335,8 +333,6 @@ void Enemy::takeAttackHit() {
         return;
     }
 
-    // Escaping25 — barely any snow left. Fresh encase cycle needed:
-    // first hit -> PartialEncase, second hit -> Snowballed.
     if (m_state == State::Escaping25) {
         m_state = State::PartialEncase;
         m_hitsTaken = 1;
@@ -345,7 +341,6 @@ void Enemy::takeAttackHit() {
         return;
     }
 
-    // --- Standard path: Alive or PartialEncase ---
     ++m_hitsTaken;
     if (m_hitsTaken >= m_hitsToEncase) {
         m_state = State::Snowballed;
@@ -366,6 +361,86 @@ void Enemy::kickIntoRoll(bool facingRight) {
     m_rollDirectionRight = facingRight;
     m_rollDistanceTravelled = 0.f;
     m_facingRight = facingRight;
-    // velocity set to zero — integrateRolling handles motion via m_rollSpeed
     velocity = { 0.f, 0.f };
+}
+
+// ---------------------------------------------------------------
+// loadAnimations — loads walk/jump/fall textures into PERSISTENT
+// class member arrays. These textures live as long as the enemy.
+// ---------------------------------------------------------------
+void Enemy::loadAnimations(const std::string& walkBasePath, const std::string& jumpBasePath) {
+    // walkBasePath = "assets/sprites/botom_red_walking_frame"  (no number, no .png)
+    // jumpBasePath = "assets/sprites/botom_red_jumping"        (no .png)
+
+    // === WALK (3 frames — stored in m_walkTextures[]) ===
+    m_walkLoaded = true;
+    for (int i = 0; i < 3; ++i) {
+        std::string path = walkBasePath + std::to_string(i + 1) + ".png";
+        if (!m_walkTextures[i].loadFromFile(path)) {
+            std::cerr << "[Enemy] Failed to load " << path << "\n";
+            m_walkLoaded = false;
+            break;
+        }
+    }
+
+    // === JUMP (1 frame) ===
+    std::string jumpPath = jumpBasePath + ".png";
+    m_jumpLoaded = m_jumpTexture.loadFromFile(jumpPath);
+    if (!m_jumpLoaded)
+        std::cerr << "[Enemy] Failed to load " << jumpPath << "\n";
+
+    // === FALL (1 frame — derive path by replacing "jumping" with "falling") ===
+    std::string fallPath = jumpBasePath;
+    size_t pos = fallPath.find("jumping");
+    if (pos != std::string::npos) {
+        fallPath.replace(pos, 7, "falling");
+    }
+    fallPath += ".png";
+    m_fallLoaded = m_fallTexture.loadFromFile(fallPath);
+    if (!m_fallLoaded)
+        std::cerr << "[Enemy] Failed to load " << fallPath << "\n";
+}
+
+// ---------------------------------------------------------------
+// updateAnimation — direct texture swap based on enemy state.
+// Only runs for Alive enemies. Frozen states use applyStateSprite().
+// ---------------------------------------------------------------
+void Enemy::updateAnimation(float dt) {
+    if (m_state != State::Alive) return;
+
+    // --- AIRBORNE ---
+    if (!m_onGround) {
+        if (velocity.y < 0.f && m_jumpLoaded) {
+            // Going UP → jump frame
+            m_bodySprite.setTexture(m_jumpTexture, true);
+        } else if (m_fallLoaded) {
+            // Going DOWN → fall frame
+            m_bodySprite.setTexture(m_fallTexture, true);
+        } else if (m_jumpLoaded) {
+            // Fallback: use jump frame for fall too
+            m_bodySprite.setTexture(m_jumpTexture, true);
+        }
+        // Reset walk so it starts clean on landing
+        m_walkFrame = 0;
+        m_walkTimer = 0.f;
+        return;
+    }
+
+    // --- WALKING (on ground, moving) ---
+    if (velocity.x != 0.f && m_walkLoaded) {
+        m_walkTimer += dt;
+        if (m_walkTimer >= WALK_FRAME_TIME) {
+            m_walkTimer -= WALK_FRAME_TIME;
+            m_walkFrame = (m_walkFrame + 1) % 3;
+        }
+        m_bodySprite.setTexture(m_walkTextures[m_walkFrame], true);
+        return;
+    }
+
+    // --- IDLE (on ground, not moving) ---
+    if (m_idleLoaded) {
+        m_bodySprite.setTexture(m_idleTexture, true);
+    }
+    m_walkFrame = 0;
+    m_walkTimer = 0.f;
 }
