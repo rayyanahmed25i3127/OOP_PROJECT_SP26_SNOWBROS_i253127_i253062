@@ -34,8 +34,6 @@ Botom::Botom(sf::Vector2f pos)
     , m_maxJumpInterval(6.0f)
     , m_lastWalkVelocityX(0.f)
 {
-    // All textures (body poses + snow overlays) are loaded by the base
-    // class via a single call. Fallbacks in Enemy handle missing files.
     loadEnemyAssets(
         "assets/sprites/botom_idle.png",
         "assets/sprites/botom_trapped.png",
@@ -47,6 +45,14 @@ Botom::Botom(sf::Vector2f pos)
         "assets/sprites/snow_escape_75.png",
         "assets/sprites/snow_escape_50.png",
         "assets/sprites/snow_escape_25.png"
+    );
+
+    // Walk: botom_red_walking_frame1.png, frame2.png, frame3.png
+    // Jump: botom_red_jumping.png
+    // Fall: botom_red_falling.png  (auto-derived by replacing "jumping" → "falling")
+    loadAnimations(
+        "assets/sprites/botom_red_walking_frame",
+        "assets/sprites/botom_red_jumping"
     );
 
     m_facingRight = (std::rand() % 2 == 0);
@@ -69,37 +75,27 @@ void Botom::updateAI(float dt) {
         return;
     }
 
-    // --- Timed random direction flip ---
     m_directionTimer -= dt;
     if (m_directionTimer <= 0.f) {
         m_facingRight = !m_facingRight;
         rollDirectionTimer();
     }
 
-    // --- Wall-bounce detection ---
     if (m_lastWalkVelocityX != 0.f && velocity.x == 0.f) {
         m_facingRight = !m_facingRight;
         rollDirectionTimer();
     }
 
-    // --- Timed random jump ---
-    // Only grounded Botoms "decide" to jump. Airborne ones continue
-    // their trajectory. Enemy::jump() itself also guards on onGround
-    // but we check here to avoid resetting the timer while in the air.
     m_jumpTimer -= dt;
     if (m_jumpTimer <= 0.f) {
         if (m_onGround) {
             jump();
             rollJumpTimer();
         } else {
-            // Keep trying every frame until we land, then commit the jump
-            // on the first grounded frame. Short hold so we don't perma-jump.
             m_jumpTimer = 0.f;
         }
     }
 
-    // --- Apply walk velocity ---
     velocity.x = m_facingRight ? m_speed : -m_speed;
-
     m_lastWalkVelocityX = velocity.x;
 }
