@@ -3,62 +3,165 @@
 #include <iostream>
 
 namespace {
-    // Visual size — what's drawn on screen
     const float PLAYER_WIDTH  = 56.f;
     const float PLAYER_HEIGHT = 68.f;
+    const float HITBOX_WIDTH  = 24.f;
+    const float HITBOX_HEIGHT = 57.f;
+    const float HITBOX_OFFSET_X = (PLAYER_WIDTH  - HITBOX_WIDTH)  / 2.f;
+    const float HITBOX_OFFSET_Y =  PLAYER_HEIGHT - HITBOX_HEIGHT;
 
-    // Collision hitbox — smaller than visual. This is what physics uses.
-    // Narrower so you can squeeze past platform edges; slightly shorter
-    // so the sprite appears to touch surfaces instead of floating.
-    const float HITBOX_WIDTH   = 24.f;   // tighter   // ~65% of sprite width
-    const float HITBOX_HEIGHT  = 57.f;   // ~88% of sprite height
-
-    // Offset of hitbox WITHIN the sprite rectangle.
-    // The sprite's visible character occupies roughly the horizontal center
-    // and slightly below the top, so we offset the hitbox accordingly.
-    const float HITBOX_OFFSET_X = (PLAYER_WIDTH  - HITBOX_WIDTH)  / 2.f;  // = 10
-    const float HITBOX_OFFSET_Y =  PLAYER_HEIGHT - HITBOX_HEIGHT;         // = 8 (align bottom)
+    // Animation timing
+    const float WALK_FRAME_TIME  = 0.33f;   // each walk frame = 0.33s, full cycle = 1s
+    const float THROW_FRAME_TIME = 0.15f;   // each throw frame = 0.15s, full anim = 0.3s
 }
-
-
-
 
 Player::Player(sf::Vector2f pos)
     : Entity(pos)
-    , m_sprite(m_texture)
+    , m_idleLoaded(false)
+    , m_walkLoaded(false)
+    , m_jumpLoaded(false)
+    , m_throwLoaded(false)
+    , m_sprite(m_idleTexture)
+    , m_walkFrame(0)
+    , m_walkTimer(0.f)
+    , m_throwFrame(0)
+    , m_throwTimer(0.f)
+    , m_isThrowing(false)
+    , m_lives(2)
+    , m_invincibleTimer(0.f)
+    , m_blinkVisible(true)
+    , m_throwCooldown(0.f)
+    , m_throwInterval(0.18f)
+    , m_wantsToThrow(false)
     , speed(200.f)
     , jumpForce(-450.f)
     , gravity(800.f)
     , onGround(false)
     , m_facingRight(true)
-    , m_lives(2)
-    , m_invincibleTimer(0.f)
-    , m_blinkVisible(true)
-    , m_throwCooldown(0.f)
-    , m_throwInterval(0.18f)   // ~5.5 shots/sec — arcade feel
-    , m_wantsToThrow(false)
     , m_balloonMode(false)
-    , m_balloonGravity(-50.f)  // gentle upward pull
+    , m_balloonGravity(-50.f)
 {
-    if (!m_texture.loadFromFile("assets/sprites/player_blue_idle.png")) {
-        std::cerr << "[Player] Failed to load player_blue_idle.png\n";
-    } else {
-        m_sprite.setTexture(m_texture, true);
-        auto texSize = m_texture.getSize();
-        if (texSize.x > 0 && texSize.y > 0) {
-            float scaleX = PLAYER_WIDTH  / static_cast<float>(texSize.x);
-            float scaleY = PLAYER_HEIGHT / static_cast<float>(texSize.y);
-            m_sprite.setScale({scaleX, scaleY});
-        }
+    loadAnimations();
+
+    if (m_idleLoaded) {
+        m_sprite.setTexture(m_idleTexture, true);
     }
 
     m_sprite.setPosition(pos);
-
-    // Hitbox sits INSIDE the sprite rectangle, offset from its top-left.
-    // The hitbox's bottom is aligned with the sprite's bottom (so the player
-    // "feet" match visually when landing on platforms).
-    hitBox.size = { HITBOX_WIDTH, HITBOX_HEIGHT };
+    hitBox.size     = { HITBOX_WIDTH, HITBOX_HEIGHT };
     hitBox.position = { pos.x + HITBOX_OFFSET_X, pos.y + HITBOX_OFFSET_Y };
+}
+
+void Player::loadAnimations() {
+    // === IDLE (1 frame) ===
+    m_idleLoaded = m_idleTexture.loadFromFile("assets/sprites/player_blue_idle.png");
+    if (!m_idleLoaded)
+        std::cerr << "[Player] Failed to load player_blue_idle.png\n";
+
+    // === WALK (3 frames) ===
+    m_walkLoaded = true;
+    for (int i = 0; i < 3; ++i) {
+        std::string path = "assets/sprites/player_blue_walk_frame" + std::to_string(i + 1) + ".png";
+        if (!m_walkTextures[i].loadFromFile(path)) {
+            std::cerr << "[Player] Failed to load " << path << "\n";
+            m_walkLoaded = false;
+            break;
+        }
+    }
+
+    // === JUMP (1 frame — used for both jump and fall) ===
+    m_jumpLoaded = m_jumpTexture.loadFromFile("assets/sprites/player_blue_jump.png");
+    if (!m_jumpLoaded)
+        std::cerr << "[Player] Failed to load player_blue_jump.png\n";
+
+    // === THROW (2 frames) ===
+    m_throwLoaded = true;
+    for (int i = 0; i < 2; ++i) {
+        std::string path = "assets/sprites/player_blue_throw_frame" + std::to_string(i + 1) + ".png";
+        if (!m_throwTextures[i].loadFromFile(path)) {
+            std::cerr << "[Player] Failed to load " << path << "\n";
+            m_throwLoaded = false;
+            break;
+        }
+    }
+}
+
+// ---------------------------------------------------------------
+// updateAnimation — pick the right texture, swap it onto the sprite.
+// Priority: throw > airborne > walk > idle
+// Movement is NEVER blocked by any animation.
+// ---------------------------------------------------------------
+void Player::updateAnimation(float dt) {
+
+    // --- THROW ANIMATION (overlays on top of other states) ---
+    if (m_isThrowing && m_throwLoaded) {
+        m_throwTimer += dt;
+        if (m_throwTimer >= THROW_FRAME_TIME) {
+            m_throwTimer -= THROW_FRAME_TIME;
+            m_throwFrame++;
+            if (m_throwFrame >= 2) {
+                m_isThrowing = false;   // throw anim finished
+                m_throwFrame = 0;
+                m_throwTimer = 0.f;
+                // fall through to pick walk/idle/jump below
+            }
+        }
+        if (m_isThrowing) {
+            m_sprite.setTexture(m_throwTextures[m_throwFrame], true);
+            return;
+        }
+    }
+
+    // --- AIRBORNE (jump / fall — same frame) ---
+    if (!onGround && m_jumpLoaded) {
+        m_sprite.setTexture(m_jumpTexture, true);
+        // Reset walk frame so walk starts clean on landing
+        m_walkFrame = 0;
+        m_walkTimer = 0.f;
+        return;
+    }
+
+    // --- WALKING ---
+    if (velocity.x != 0.f && m_walkLoaded && onGround) {
+        m_walkTimer += dt;
+        if (m_walkTimer >= WALK_FRAME_TIME) {
+            m_walkTimer -= WALK_FRAME_TIME;
+            m_walkFrame = (m_walkFrame + 1) % 3;
+        }
+        m_sprite.setTexture(m_walkTextures[m_walkFrame], true);
+        return;
+    }
+
+    // --- IDLE (standing still on ground) ---
+    if (m_idleLoaded) {
+        m_sprite.setTexture(m_idleTexture, true);
+    }
+    // Reset walk so it starts from frame 0 next time
+    m_walkFrame = 0;
+    m_walkTimer = 0.f;
+}
+
+// ---------------------------------------------------------------
+// applySpriteTransform — scale, flip, and position the sprite.
+// Sprites face LEFT by default. Flip for right.
+// ---------------------------------------------------------------
+void Player::applySpriteTransform() {
+    const sf::Texture& tex = m_sprite.getTexture();
+    auto texSize = tex.getSize();
+    if (texSize.x == 0 || texSize.y == 0) return;
+
+    float absScaleX = PLAYER_WIDTH  / static_cast<float>(texSize.x);
+    float absScaleY = PLAYER_HEIGHT / static_cast<float>(texSize.y);
+
+    m_sprite.setOrigin({ static_cast<float>(texSize.x) / 2.f, 0.f });
+
+    // Default facing LEFT → flip X when facing right
+    if (m_facingRight)
+        m_sprite.setScale({-absScaleX, absScaleY});
+    else
+        m_sprite.setScale({ absScaleX, absScaleY});
+
+    m_sprite.setPosition({ position.x + PLAYER_WIDTH / 2.f, position.y });
 }
 
 void Player::handleInput() {
@@ -73,7 +176,7 @@ void Player::handleInput() {
         m_facingRight = true;
     }
 
-    // Jump: W or Up Arrow (spec §14). Space is now throw-only.
+    // Jump
     if ((sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W)
        || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
         && onGround) {
@@ -81,9 +184,7 @@ void Player::handleInput() {
         onGround = false;
     }
 
-    // Throw snowball: Space (or J as spec-valid alternate).
-    // We only FLAG the intent here — PlayState spawns the actual
-    // snowball so Player stays decoupled from the projectile array.
+    // Throw (movement continues normally)
     if ((sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space)
        || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::J))
         && m_throwCooldown <= 0.f) {
@@ -92,37 +193,28 @@ void Player::handleInput() {
 }
 
 void Player::applyGravity(float dt) {
-    // ===== POWER-UP: Balloon Mode =====
-    // When balloon mode is active, apply upward pull instead of downward gravity
-    if (m_balloonMode) {
-        velocity.y += m_balloonGravity * dt;  // gentle upward pull
-    } else {
-        velocity.y += gravity * dt;           // normal downward gravity
-    }
+    if (m_balloonMode)
+        velocity.y += m_balloonGravity * dt;
+    else
+        velocity.y += gravity * dt;
 }
 
 void Player::setSpeedMultiplier(float multiplier) {
-    // Reset to base speed first, then apply multiplier
-    // This prevents cumulative stacking if called multiple times
     const float BASE_SPEED = 200.f;
     speed = BASE_SPEED * multiplier;
 }
 
 void Player::update(float dt) {
-
     if (m_throwCooldown > 0.f) m_throwCooldown -= dt;
-    // --- Invincibility countdown + blink toggle ---
+
+    // Invincibility blink
     if (m_invincibleTimer > 0.f) {
         m_invincibleTimer -= dt;
-
-        // Flip visibility every 0.1 seconds for the blink effect.
-        // Using floor(timer * 10) parity keeps blinking framerate-stable.
         int phase = static_cast<int>(m_invincibleTimer * 10.f);
         m_blinkVisible = (phase % 2 == 0);
-
         if (m_invincibleTimer <= 0.f) {
             m_invincibleTimer = 0.f;
-            m_blinkVisible = true;  // ensure visible when invincibility ends
+            m_blinkVisible = true;
         }
     }
 
@@ -132,84 +224,37 @@ void Player::update(float dt) {
     position += velocity * dt;
     hitBox.position = { position.x + HITBOX_OFFSET_X, position.y + HITBOX_OFFSET_Y };
 
-    // ===== BALLOON MODE: Boundary Reflection =====
-    // When in balloon mode, player bounces off all 4 screen boundaries
+    // Balloon mode boundary reflection
     if (m_balloonMode) {
-        const float TOP_BOUNDARY    = 15.f;   // upper screen boundary
-        const float BOTTOM_BOUNDARY = 585.f;  // lower screen boundary (just above ground)
-        const float LEFT_BOUNDARY   = 30.f;   // left wall
-        const float RIGHT_BOUNDARY  = 770.f;  // right wall
-        
-        // Top boundary - reflect downward
-        if (position.y < TOP_BOUNDARY) {
-            position.y = TOP_BOUNDARY;
-            velocity.y = -velocity.y;  // reverse vertical direction
-        }
-        
-        // Bottom boundary - reflect upward
-        if (position.y + PLAYER_HEIGHT > BOTTOM_BOUNDARY) {
-            position.y = BOTTOM_BOUNDARY - PLAYER_HEIGHT;
-            velocity.y = -velocity.y;
-        }
-        
-        // Left boundary - reflect right
-        if (position.x < LEFT_BOUNDARY) {
-            position.x = LEFT_BOUNDARY;
-            velocity.x = -velocity.x;
-        }
-        
-        // Right boundary - reflect left
-        if (position.x + PLAYER_WIDTH > RIGHT_BOUNDARY) {
-            position.x = RIGHT_BOUNDARY - PLAYER_WIDTH;
-            velocity.x = -velocity.x;
-        }
-        
-        // Update hitbox after boundary correction
+        const float TOP = 15.f, BOTTOM = 585.f, LEFT = 30.f, RIGHT = 770.f;
+        if (position.y < TOP)                       { position.y = TOP;                     velocity.y = -velocity.y; }
+        if (position.y + PLAYER_HEIGHT > BOTTOM)    { position.y = BOTTOM - PLAYER_HEIGHT;  velocity.y = -velocity.y; }
+        if (position.x < LEFT)                      { position.x = LEFT;                    velocity.x = -velocity.x; }
+        if (position.x + PLAYER_WIDTH > RIGHT)      { position.x = RIGHT - PLAYER_WIDTH;    velocity.x = -velocity.x; }
         hitBox.position = { position.x + HITBOX_OFFSET_X, position.y + HITBOX_OFFSET_Y };
     }
 
-    auto texSize = m_texture.getSize();
-    if (texSize.x > 0 && texSize.y > 0) {
-        float absScaleX = PLAYER_WIDTH  / static_cast<float>(texSize.x);
-        float absScaleY = PLAYER_HEIGHT / static_cast<float>(texSize.y);
-
-        m_sprite.setOrigin({ static_cast<float>(texSize.x) / 2.f, 0.f });
-
-        // Source sprite is drawn facing LEFT, so flip X when facing right.
-        if (m_facingRight) {
-            m_sprite.setScale({-absScaleX, absScaleY});
-        } else {
-            m_sprite.setScale({ absScaleX, absScaleY});
-        }
-
-        m_sprite.setPosition({ position.x + PLAYER_WIDTH / 2.f, position.y });
-    }
+    updateAnimation(dt);
+    applySpriteTransform();
 }
+
 void Player::draw(sf::RenderWindow& window) {
-    // During invincibility, blink the sprite. Hit-box debug outline (drawn
-    // by PlayState) is unaffected — always shows actual collision shape.
     if (m_invincibleTimer > 0.f && !m_blinkVisible) return;
     window.draw(m_sprite);
 }
 
-// NEW: add this at the very bottom
 void Player::setPosition(sf::Vector2f pos) {
     position = pos;
     hitBox.position = { pos.x + HITBOX_OFFSET_X, pos.y + HITBOX_OFFSET_Y };
-    // Sprite origin is at its horizontal center, so offset position accordingly.
     m_sprite.setPosition({ pos.x + PLAYER_WIDTH / 2.f, pos.y });
 }
 
 void Player::loseLife() {
-    if (m_invincibleTimer > 0.f) return;   // already in grace period
-    if (m_lives <= 0) return;               // already dead
-
+    if (m_invincibleTimer > 0.f) return;
+    if (m_lives <= 0) return;
     --m_lives;
     m_invincibleTimer = 3.0f;
     m_blinkVisible = true;
-    // Respawn position is decided by the game state (PlayState owns the
-    // spawn coords). PlayState calls respawn() after loseLife() when
-    // m_lives > 0.
 }
 
 void Player::respawn(sf::Vector2f spawnPos) {
@@ -217,4 +262,5 @@ void Player::respawn(sf::Vector2f spawnPos) {
     velocity = { 0.f, 0.f };
     onGround = false;
     m_facingRight = true;
+    m_isThrowing = false;
 }

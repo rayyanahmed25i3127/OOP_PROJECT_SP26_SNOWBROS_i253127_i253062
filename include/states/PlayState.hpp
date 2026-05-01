@@ -8,6 +8,7 @@
 #include "projectiles/AttackBall.hpp"
 #include "effects/HitFlash.hpp"
 #include "powerups/PowerUp.hpp"
+#include "powerups/Diamond.hpp"
 #include <SFML/Graphics.hpp>
 #include <string>
 
@@ -36,6 +37,11 @@ private:
     static const int MAX_POWERUPS = 16;
     PowerUp* m_powerUps[MAX_POWERUPS];
     int      m_powerUpCount;
+
+    // --- Diamonds (collectible gems) ---
+    static const int MAX_DIAMONDS = 16;
+    Diamond* m_diamonds[MAX_DIAMONDS];
+    int      m_diamondCount;
 
     // Active player effects. Snowball Power & Distance Increase are
     // "until level end" so timers stay ≥0 forever once activated;

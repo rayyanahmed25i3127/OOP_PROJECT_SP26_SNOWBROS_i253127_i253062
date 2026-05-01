@@ -5,35 +5,40 @@
 /**
  * @brief The playable character (Nick).
  *
- * Inherits from Entity (position, velocity, hitbox, alive).
- * Uses composition with a single static sprite for now.
- *
- * Physics update flow:
- *   1. handleInput() reads keyboard, sets horizontal velocity + jump
- *   2. applyGravity() accelerates downward
- *   3. update() applies velocity to position
- *   4. CollisionDetector resolves against walls and platforms (external)
- *   5. setOnGround() informs the player whether they can jump next frame
- *
- * Note: ground/wall/platform collision is NOT handled inside Player.
- * Per spec 7.2 it's routed through a dedicated CollisionDetector.
- *
- * POWER-UP: Balloon Mode support (Phase 4.5)
- *   - When balloon mode is active, gravity is inverted (upward float)
- *   - CollisionDetector skips enemy contact checks
+ * Uses direct texture-swap animation for individual PNG frames.
+ * Each animation state has its own texture array. On each frame,
+ * the correct texture is applied to the sprite directly.
  */
 class Player : public Entity {
 private:
-    sf::Texture m_texture;
+    // ----- Textures (persistent — must outlive the sprite) -----
+    sf::Texture m_idleTexture;
+    sf::Texture m_walkTextures[3];      // 3 walk frames
+    sf::Texture m_jumpTexture;          // 1 jump/fall frame
+    sf::Texture m_throwTextures[2];     // 2 throw frames
+
+    bool m_idleLoaded;
+    bool m_walkLoaded;
+    bool m_jumpLoaded;
+    bool m_throwLoaded;
+
     sf::Sprite  m_sprite;
 
-    int   m_lives;
-    float m_invincibleTimer;   // seconds remaining; 0 = not invincible
-    bool  m_blinkVisible;      // flips during invincibility for blink effect
+    // ----- Animation timer -----
+    int   m_walkFrame;         // current walk frame index (0-2)
+    float m_walkTimer;         // counts up, switches frame at threshold
+    int   m_throwFrame;        // current throw frame index (0-1)
+    float m_throwTimer;        // counts up, switches frame at threshold
+    bool  m_isThrowing;        // true while throw animation plays (does NOT block movement)
 
-    float m_throwCooldown;     // seconds until next throw allowed
-    float m_throwInterval;     // cooldown reset value (0.4s)
-    bool  m_wantsToThrow;      // set true on throw-key press, cleared by PlayState after spawning snowball
+    // ----- Player State -----
+    int   m_lives;
+    float m_invincibleTimer;
+    bool  m_blinkVisible;
+
+    float m_throwCooldown;
+    float m_throwInterval;     // 0.18s
+    bool  m_wantsToThrow;
 
     float speed;
     float jumpForce;
@@ -42,46 +47,37 @@ private:
     bool  m_facingRight;
 
     // ===== POWER-UP: Balloon Mode =====
-    bool  m_balloonMode;       // true when balloon power-up is active
-    float m_balloonGravity;    // upward pull (-50.f by default)
+    bool  m_balloonMode;
+    float m_balloonGravity;
+
+    // ----- Helpers -----
+    void loadAnimations();
+    void updateAnimation(float dt);
+    void applySpriteTransform();       // scale + flip + position
 
 public:
     Player(sf::Vector2f pos);
     void setPosition(sf::Vector2f pos) override;
-    // Override so hitbox stays offset correctly after external repositioning
-    // void setPosition(sf::Vector2f pos);
 
     void handleInput();
     void applyGravity(float dt);
 
     bool wantsToThrow() const     { return m_wantsToThrow; }
-    void consumeThrowRequest()    { m_wantsToThrow = false; m_throwCooldown = m_throwInterval; }
+    void consumeThrowRequest()    { m_wantsToThrow = false; m_throwCooldown = m_throwInterval; m_isThrowing = true; m_throwFrame = 0; m_throwTimer = 0.f; }
     bool isFacingRight() const    { return m_facingRight; }
-    
+
     virtual void update(float dt) override;
     virtual void draw(sf::RenderWindow& window) override;
 
-    // Called by CollisionDetector after resolving the player's movement
-    // against the world. Determines whether jumping is available next frame.
     void setOnGround(bool value) override { onGround = value; }
     bool isOnGround() const      { return onGround; }
     int  getLives() const        { return m_lives; }
     bool isInvincible() const    { return m_invincibleTimer > 0.f; }
-    void loseLife();             // called on enemy contact; triggers invincibility + respawn
+    void loseLife();
     void respawn(sf::Vector2f spawnPos);
 
-    // ===== POWER-UP: Balloon Mode getters/setters =====
-    /**
-     * @brief Enable/disable balloon mode. When active, player floats upward
-     *        and is invulnerable to ground enemies.
-     */
     void setBalloonMode(bool val) { m_balloonMode = val; }
     bool isBalloonMode() const    { return m_balloonMode; }
 
-    // ===== POWER-UP: Speed Boost =====
-    /**
-     * @brief Set speed multiplier for Speed Boost power-up.
-     * @param multiplier Speed multiplier (1.0 = normal, 1.5 = +50% speed boost)
-     */
     void setSpeedMultiplier(float multiplier);
 };
