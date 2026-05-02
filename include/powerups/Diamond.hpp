@@ -4,15 +4,15 @@
 
 /**
  * @brief Collectible diamond dropped on every second chain kill.
- * 
+ *
  * Lifecycle:
  *   - Spawned by PlayState at chain-kill position on every 2nd chain kill.
  *   - Falls under gravity, lands on platforms.
  *   - Despawns on player-hitbox overlap (PlayState adds 15 gems).
  *   - Auto-despawns after DIAMOND_TIMEOUT seconds.
- * 
+ *
  * INHERITANCE:
- *   Entity → Diamond.
+ *   Entity -> Diamond.
  */
 class Diamond : public Entity {
 private:

@@ -16,18 +16,13 @@
 
 class PlayState : public GameState {
 public:
-    static const int MAX_PLATFORMS   = 16;
-    static const int MAX_ENEMIES     = 16;
-    static const int MAX_PROJECTILES = 8;
-static const int MAX_PLATFORMS   = 16;
-static const int MAX_ENEMIES     = 16;
-static const int MAX_PROJECTILES = 8;
-
-static const int MAX_HIT_FLASHES = 16;
-static const int MAX_POWERUPS    = 16;
-static const int MAX_DIAMONDS    = 16;
-
-static const int MAX_MOGERA_CHILDREN = 32;
+    static const int MAX_PLATFORMS       = 16;
+    static const int MAX_ENEMIES         = 16;
+    static const int MAX_PROJECTILES     = 8;
+    static const int MAX_HIT_FLASHES     = 16;
+    static const int MAX_POWERUPS        = 16;
+    static const int MAX_DIAMONDS        = 16;
+    static const int MAX_MOGERA_CHILDREN = 32;
 
 private:
     std::string m_playerName;
@@ -53,7 +48,6 @@ private:
     float m_speedTimer;
     bool  m_balloonActive;
     float m_balloonTimer;
-
     bool  m_snowballPowerActive;
     bool  m_distanceActive;
 
@@ -61,16 +55,13 @@ private:
     bool          m_hasDisplayed;
 
     sf::Texture m_puIconSpeed;
-    bool m_puIconSpeedLoaded;
-
+    bool        m_puIconSpeedLoaded;
     sf::Texture m_puIconSnowball;
-    bool m_puIconSnowballLoaded;
-
+    bool        m_puIconSnowballLoaded;
     sf::Texture m_puIconDistance;
-    bool m_puIconDistanceLoaded;
-
+    bool        m_puIconDistanceLoaded;
     sf::Texture m_puIconBalloon;
-    bool m_puIconBalloonLoaded;
+    bool        m_puIconBalloonLoaded;
 
     void activatePowerUp(PowerUp::Type type);
     void updatePowerUpTimers(float dt);
@@ -134,7 +125,7 @@ private:
     void drawBossHealthBar(sf::RenderWindow& window);
     void spawnMogeraChildren(sf::Vector2f mouthPos);
     void updateMogera(float dt);
-    // =========================================
+    // ======================================
 
     void buildLevel();
     void spawnEnemies();
@@ -154,6 +145,6 @@ public:
     void onEnter() override;
     void onExit() override;
 
-    bool isSpeedActive() const { return m_speedActive; }
+    bool isSpeedActive()    const { return m_speedActive;    }
     bool isDistanceActive() const { return m_distanceActive; }
 };
