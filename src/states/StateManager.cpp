@@ -4,13 +4,8 @@
 StateManager::StateManager()
     : m_stateCount(0)
     , m_pendingCount(0)
-    , m_speedBought(false)
-    , m_snowballBought(false)
-    , m_distanceBought(false)
-    , m_balloonBought(false)
-    , m_extraLifeBought(false)
 {
-    for (int i = 0; i < MAX_STATES;  ++i) m_states[i]               = nullptr;
+    for (int i = 0; i < MAX_STATES;  ++i) m_states[i] = nullptr;
     for (int i = 0; i < MAX_PENDING; ++i) m_pendingActions[i].state = nullptr;
 }
 

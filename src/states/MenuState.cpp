@@ -3,6 +3,7 @@
 #include "audio/AudioManager.hpp"
 #include "states/CharacterSelectState.hpp"   // ← replaces PlayState include
 #include "states/LeaderboardState.hpp"
+#include "states/LoginState.hpp"
 #include <iostream>
 
 namespace {
@@ -259,7 +260,9 @@ void MenuState::activateButton(int index) {
             break;
 
         case ButtonAction::Logout:
-            std::cout << "[MenuState] Logout — not yet implemented\n";
+            std::cout << "[MenuState] Logout → LoginState\n";
+            if (m_clickSoundLoaded) sf::sleep(sf::milliseconds(100));
+            m_manager->replaceState(new LoginState());
             break;
 
         case ButtonAction::Exit:

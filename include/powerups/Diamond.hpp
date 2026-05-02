@@ -12,7 +12,7 @@
  *   - Auto-despawns after DIAMOND_TIMEOUT seconds.
  * 
  * INHERITANCE:
- *   Entity → Diamond.
+ *   Entity Ã¢â€ â€™ Diamond.
  */
 class Diamond : public Entity {
 private:

@@ -37,7 +37,7 @@ private:
      * a center rectangle + two end-cap circles. A semi-transparent white
      * ellipse on the upper half provides the glossy highlight.
      *
-     * All of this is hidden behind the Button's own draw() method —
+     * All of this is hidden behind the Button's own draw() method â€”
      * encapsulation in action.
      */
     struct Button {
@@ -51,7 +51,7 @@ private:
         sf::CircleShape    shineRight;
         sf::RectangleShape shineCenter;
 
-        // Dark outline ring — drawn first, slightly larger than the capsule
+        // Dark outline ring â€” drawn first, slightly larger than the capsule
         sf::RectangleShape outlineRect;
         sf::CircleShape    outlineLeft;
         sf::CircleShape    outlineRight;
@@ -80,7 +80,7 @@ private:
                        sf::Color baseFill,
                        const std::string& label);
 
-        // Called every frame — smoothly eases currentScale toward targetScale,
+        // Called every frame â€” smoothly eases currentScale toward targetScale,
         // then re-lays-out all the shapes based on the current scale.
         void update(float dt);
 

@@ -7,15 +7,15 @@
 class LeaderboardState : public GameState {
 private:
     sf::Texture bgTexture;
-    sf::Sprite* bgSprite  = nullptr;   // raw pointer — no optional
-    sf::Text*   backText  = nullptr;   // raw pointer — no optional
+    sf::Sprite* bgSprite  = nullptr;   // raw pointer â€” no optional
+    sf::Text*   backText  = nullptr;   // raw pointer â€” no optional
 
     sf::Font       font;
     Leaderboard    leaderboard;
     bool           isBackHovered = false;
 
-    // Draws a smooth capsule as a single TriangleFan — no vector, no seam.
-    // outlineColor / outlineThickness are optional params — default = no outline.
+    // Draws a smooth capsule as a single TriangleFan â€” no vector, no seam.
+    // outlineColor / outlineThickness are optional params â€” default = no outline.
     void drawCapsule(sf::RenderWindow& window,
                      float x, float y,
                      float width, float height,

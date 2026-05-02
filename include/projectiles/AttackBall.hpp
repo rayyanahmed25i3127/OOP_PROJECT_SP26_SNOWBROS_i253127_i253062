@@ -3,11 +3,11 @@
 #include <string>
 
 /**
- * @brief Player's thrown attack projectile (spec §7.1).
+ * @brief Player's thrown attack projectile (spec Â§7.1).
  *
  * CHANGES in Phase 3:
  *   - Real sprite (attackball_blue.png / attackball_orange.png) replaces circle
- *   - No screen wrap — flies ~192px (2 inches) then dies
+ *   - No screen wrap â€” flies ~192px (2 inches) then dies
  *   - Rolling wrap-around behavior belongs to the rolling snowball, not this
  *
  * Lifecycle:
@@ -16,7 +16,7 @@
  *     (b) enemy hit (PlayState marks alive=false after registering hit)
  *
  * INHERITANCE:
- *   Entity → Projectile → AttackBall
+ *   Entity â†’ Projectile â†’ AttackBall
  *
  * POWER-UP: Distance Increase (Phase 4.5)
  *   - When m_maxRangeMode is true, snowball travels full screen width (800px)

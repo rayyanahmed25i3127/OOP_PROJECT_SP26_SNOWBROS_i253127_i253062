@@ -9,38 +9,24 @@
 
 #include <iostream>
 #include <cstdlib>
-#include <ctime>   // for date
-#include <fstream> // for file handling
+#include <ctime>
+#include <fstream>
 
-// Function to get current date
 std::string getCurrentDate() {
     time_t now = time(0);
     tm* ltm = localtime(&now);
-
     char buffer[11];
-    sprintf(buffer, "%04d-%02d-%02d",
-        1900 + ltm->tm_year,
-        1 + ltm->tm_mon,
-        ltm->tm_mday);
-
+    sprintf(buffer, "%04d-%02d-%02d", 1900 + ltm->tm_year, 1 + ltm->tm_mon, ltm->tm_mday);
     return std::string(buffer);
 }
 
-// Function to save score to leaderboard
 void saveScore(const std::string& name, int score, int level) {
     std::ofstream file("leaderboard.txt", std::ios::app);
-
     if (!file.is_open()) {
         std::cerr << "Failed to open leaderboard.txt\n";
         return;
     }
-
-    file << name << ","
-         << score << ","
-         << level << ","
-         << getCurrentDate()
-         << "\n";
-
+    file << name << "," << score << "," << level << "," << getCurrentDate() << "\n";
     file.close();
 }
 
@@ -52,26 +38,21 @@ namespace {
 PlayState::PlayState(int characterIndex)
     : m_playerName("")
     , m_characterIndex(characterIndex)
-
     , m_backgroundTexture()
     , m_backgroundSprite(m_backgroundTexture)
     , m_backgroundLoaded(false)
-
     , m_projectileCount(0)
     , m_hitFlashCount(0)
     , m_powerUpCount(0)
     , m_diamondCount(0)
-
     , m_speedActive(false)
     , m_speedTimer(0.f)
     , m_balloonActive(false)
     , m_balloonTimer(0.f)
     , m_snowballPowerActive(false)
     , m_distanceActive(false)
-
     , m_displayedType(PowerUp::Type::SpeedBoost)
     , m_hasDisplayed(false)
-
     , m_puIconSpeed()
     , m_puIconSpeedLoaded(false)
     , m_puIconSnowball()
@@ -80,54 +61,41 @@ PlayState::PlayState(int characterIndex)
     , m_puIconDistanceLoaded(false)
     , m_puIconBalloon()
     , m_puIconBalloonLoaded(false)
-
     , m_hudFont()
     , m_hudFontLoaded(false)
-
     , m_heartTexture()
     , m_diamondTexture()
     , m_heartLoaded(false)
     , m_diamondLoaded(false)
-
     , m_score(0)
     , m_gems(0)
-
     , m_currentLevel(1)
     , m_totalLevels(10)
     , m_playerSpawn(100.f, 450.f)
-
     , m_platformTexture()
     , m_platformTopTexture()
     , m_platformTextureLoaded(false)
     , m_platformTopTextureLoaded(false)
-
     , m_player(nullptr)
     , m_platformCount(0)
     , m_enemyCount(0)
-
     , m_playerPrevX(0.f)
     , m_playerPrevY(0.f)
-
     , m_collider(30.f, 770.f)
-
     , m_showHitboxes(false)
     , m_gameOver(false)
-
     , m_levelComplete(false)
     , m_levelTransitionTimer(0.f)
     , m_levelSlideOffset(0.f)
     , m_showLevelCompleteText(false)
-
-
 {
-    for (int i = 0; i < MAX_DIAMONDS; ++i)
-    m_diamonds[i] = nullptr;
+    for (int i = 0; i < MAX_DIAMONDS; ++i) m_diamonds[i] = nullptr;
     for (int i = 0; i < MAX_HIT_FLASHES; ++i) m_hitFlashes[i] = nullptr;
     for (int i = 0; i < MAX_ENEMIES; ++i) m_chainCount[i] = 0;
     for (int i = 0; i < MAX_PROJECTILES; ++i) m_projectiles[i] = nullptr;
     for (int i = 0; i < MAX_PLATFORMS; ++i) m_platforms[i] = nullptr;
     for (int i = 0; i < MAX_ENEMIES; ++i) {
-        m_enemies[i]    = nullptr;
+        m_enemies[i] = nullptr;
         m_enemyPrevX[i] = 0.f;
         m_enemyPrevY[i] = 0.f;
     }
@@ -158,11 +126,13 @@ PlayState::~PlayState() {
         delete m_powerUps[i];
         m_powerUps[i] = nullptr;
     }
+    for (int i = 0; i < m_diamondCount; ++i) {
+        delete m_diamonds[i];
+        m_diamonds[i] = nullptr;
+    }
 }
 
 void PlayState::onEnter() {
-    //mlf
-    //nff
     m_playerName = m_manager->getCurrentUserName();
 
     std::cout << "[PlayState] Entering gameplay\n";
@@ -193,10 +163,35 @@ void PlayState::onEnter() {
         m_platformTopTextureLoaded = true;
     }
 
-    // --- Spawn player ---
     m_player = new Player(m_playerSpawn, m_characterIndex);
 
-    // --- Load HUD assets ---
+    // === APPLY SHOP PURCHASES ===
+    PlayerProgress& prog = m_manager->getProgress();
+    m_gems = prog.gems;
+    
+    if (prog.pendingSpeed) {
+        activatePowerUp(PowerUp::Type::SpeedBoost);
+        std::cout << "[PlayState] Applied Speed Boost from shop\n";
+    }
+    if (prog.pendingSnowball) {
+        activatePowerUp(PowerUp::Type::SnowballPower);
+        std::cout << "[PlayState] Applied Snowball Power from shop\n";
+    }
+    if (prog.pendingDistance) {
+        activatePowerUp(PowerUp::Type::DistanceIncrease);
+        std::cout << "[PlayState] Applied Distance Increase from shop\n";
+    }
+    if (prog.pendingBalloon) {
+        activatePowerUp(PowerUp::Type::BalloonMode);
+        std::cout << "[PlayState] Applied Balloon Mode from shop\n";
+    }
+    if (prog.pendingExtraLifeCount > 0 && m_player) {
+        for (int li = 0; li < prog.pendingExtraLifeCount; ++li)
+            m_player->addLife();
+        std::cout << "[PlayState] Applied " << prog.pendingExtraLifeCount << " Extra Life(s) from shop\n";
+    }
+    prog.clearPending();
+
     if (!m_hudFont.openFromFile("assets/fonts/PressStart2P-Regular.ttf")) {
         std::cerr << "[PlayState] Could not load PressStart2P-Regular.ttf\n";
         m_hudFontLoaded = false;
@@ -219,8 +214,6 @@ void PlayState::onEnter() {
     }
 
     loadPowerUpIcons();
-
-    // --- Build level + enemies ---
     buildLevel();
     spawnEnemies();
     AudioManager::get().playGameMusic();
@@ -230,149 +223,41 @@ void PlayState::onExit() {
     std::cout << "[PlayState] Exiting gameplay\n";
     AudioManager::get().playMenuMusic();
 }
-
-void PlayState::buildLevel() {
-    if (!m_platformTextureLoaded) {
-        std::cerr << "[PlayState] Skipping platform build — texture missing\n";
-        return;
-    }
-
-    const float BORDER_W   = 8.5f;
-    const float LEFT_EXTRA = 22.f;
-
-    const float p1H = 78.75f;
-    const float p2H = 150.f;
-    const float p2W = 630.f;
-
-    // Top-center stepped platform (multi-hitbox)
-    {
-        const sf::Texture& topTex = m_platformTopTextureLoaded
-            ? m_platformTopTexture
-            : m_platformTexture;
-
-        sf::Vector2f p2Size = { p2W, p2H };
-        sf::Vector2f p2Pos  = { (WINDOW_WIDTH - p2W) / 2.f, 49.f };
-
-        sf::FloatRect lower;
-        lower.position = { 30.f, 88.f };
-        lower.size     = { p2W - 60.f, 35.f };
-
-        sf::FloatRect upper;
-        upper.position = { 130.f, 45.5f };
-        upper.size     = { p2W - 265.f, 35.f };
-
-        sf::FloatRect boxes[2] = { lower, upper };
-        bool solids[2]         = { false, true };
-
-        m_platforms[m_platformCount++] =
-            new Platform(topTex, p2Size, p2Pos, boxes, 2, solids);
-    }
-
-    // Upper L & R
-    {
-        float w = 300.f;
-        m_platforms[m_platformCount++] =
-            new Platform(m_platformTexture, {w, p1H}, {BORDER_W + LEFT_EXTRA, 220.f});
-        m_platforms[m_platformCount++] =
-            new Platform(m_platformTexture, {w, p1H}, {WINDOW_WIDTH - BORDER_W - w, 220.f});
-    }
-
-    // Mid-center
-    {
-        float w = 390.f;
-        m_platforms[m_platformCount++] =
-            new Platform(m_platformTexture, {w, p1H}, {(WINDOW_WIDTH - w) / 2.f, 329.f});
-    }
-
-    // Lower L & R
-    {
-        float w = 300.f;
-        m_platforms[m_platformCount++] =
-            new Platform(m_platformTexture, {w, p1H}, {BORDER_W + LEFT_EXTRA, 437.f});
-        m_platforms[m_platformCount++] =
-            new Platform(m_platformTexture, {w, p1H}, {WINDOW_WIDTH - BORDER_W - w, 437.f});
-    }
-}
-
-void PlayState::spawnEnemies() {
-    // Level-specific enemy counts and positions
-    if (m_currentLevel == 1) {
-        // Level 1: 5 enemies
-        m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(140.f, 400.f));
-        m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(600.f, 400.f));
-        m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(300.f, 290.f));
-        m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(150.f, 180.f));
-        m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(620.f, 180.f));
-    } else {
-        // Levels 2-10: 8 enemies - random positions on platforms
-        std::srand(static_cast<unsigned>(std::time(nullptr)) + m_currentLevel);
-        float positions[] = {140.f, 300.f, 450.f, 600.f, 150.f, 350.f, 500.f, 650.f};
-        float yLevels[] = {400.f, 290.f, 180.f};
-        
-        for (int i = 0; i < 8; ++i) {
-            float x = positions[i];
-            float y = yLevels[std::rand() % 3];
-            m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(x, y));
-        }
-    }
-
-    // ===== Apply Snowball Power if active =====
-    // If Snowball Power was already activated before these enemies spawned,
-    // make sure they also get the one-hit encase effect
-    if (m_snowballPowerActive) {
-        for (int i = 0; i < m_enemyCount; ++i) {
-            if (m_enemies[i]) {
-                m_enemies[i]->setOneHitEncase(true);
-            }
-        }
-    }
-
-    std::cout << "[PlayState] Level " << m_currentLevel 
-              << " - Spawned " << m_enemyCount << " Botoms\n";
-}
-
-void PlayState::handleEvent(const sf::Event& event) {
-    if (const auto* keyEvent = event.getIf<sf::Event::KeyPressed>()) {
-        if (keyEvent->code == sf::Keyboard::Key::Escape) {
-            if (!m_gameOver) {
-                m_manager->pushState(new PauseState());
-            }
-        }
-        else if (keyEvent->code == sf::Keyboard::Key::F1
-              || keyEvent->code == sf::Keyboard::Key::H) {
-            m_showHitboxes = !m_showHitboxes;
-            std::cout << "[PlayState] Hitboxes "
-                      << (m_showHitboxes ? "ON" : "OFF") << "\n";
-        }
-    }
-}
-
 void PlayState::update(float dt) {
-    // --- Player ---
+    // === APPLY PENDING SHOP POWERUPS (bought mid-game from pause menu shop) ===
+    {
+        PlayerProgress& prog = m_manager->getProgress();
+        if (prog.pendingSpeed)     { activatePowerUp(PowerUp::Type::SpeedBoost);       prog.pendingSpeed     = false; }
+        if (prog.pendingSnowball)  { activatePowerUp(PowerUp::Type::SnowballPower);    prog.pendingSnowball  = false; }
+        if (prog.pendingDistance)  { activatePowerUp(PowerUp::Type::DistanceIncrease); prog.pendingDistance  = false; }
+        if (prog.pendingBalloon)   { activatePowerUp(PowerUp::Type::BalloonMode);      prog.pendingBalloon   = false; }
+        if (prog.pendingExtraLifeCount > 0 && m_player) {
+            for (int li = 0; li < prog.pendingExtraLifeCount; ++li)
+                m_player->addLife();
+            prog.pendingExtraLifeCount = 0;
+        }
+        // Keep gems in sync (shop may have deducted them)
+        m_gems = prog.gems;
+    }
+
     if (m_player) {
         m_playerPrevX = m_player->getPosition().x;
         m_playerPrevY = m_player->getPosition().y;
         m_player->update(dt);
-        m_collider.resolve(*m_player, m_platforms, m_platformCount,
-                           m_playerPrevX, m_playerPrevY);
+        m_collider.resolve(*m_player, m_platforms, m_platformCount, m_playerPrevX, m_playerPrevY);
     }
 
-    // --- Enemies ---
     for (int i = 0; i < m_enemyCount; ++i) {
         if (!m_enemies[i]) continue;
         m_enemyPrevX[i] = m_enemies[i]->getPosition().x;
         m_enemyPrevY[i] = m_enemies[i]->getPosition().y;
         m_enemies[i]->update(dt);
-        // Rolling enemies have their own motion — don't route through collider.
         if (m_enemies[i]->getState() != Enemy::State::Rolling) {
-            m_collider.resolve(*m_enemies[i], m_platforms, m_platformCount,
-                               m_enemyPrevX[i], m_enemyPrevY[i]);
+            m_collider.resolve(*m_enemies[i], m_platforms, m_platformCount, m_enemyPrevX[i], m_enemyPrevY[i]);
         }
     }
 
-    // --- Spawn attack ball ---
-    if (m_player && m_player->wantsToThrow()
-        && m_projectileCount < MAX_PROJECTILES) {
+    if (m_player && m_player->wantsToThrow() && m_projectileCount < MAX_PROJECTILES) {
         sf::Vector2f pPos = m_player->getPosition();
         sf::FloatRect pHit = m_player->getHitBox();
         float spawnY = pHit.position.y + pHit.size.y * 0.3f;
@@ -380,24 +265,16 @@ void PlayState::update(float dt) {
             ? pHit.position.x + pHit.size.x + 2.f
             : pHit.position.x - 16.f - 2.f;
         
-        // Create the attack ball
         AttackBall* newBall = new AttackBall({spawnX, spawnY}, m_player->isFacingRight());
-        
-        // ===== APPLY DISTANCE INCREASE POWER-UP =====
-        if (m_distanceActive) {
-            newBall->setMaxRangeMode(true);
-        }
-        
+        if (m_distanceActive) newBall->setMaxRangeMode(true);
         m_projectiles[m_projectileCount++] = newBall;
         m_player->consumeThrowRequest();
     }
 
-    // --- Update projectiles ---
     for (int i = 0; i < m_projectileCount; ++i) {
         if (m_projectiles[i]) m_projectiles[i]->update(dt);
     }
 
-    // --- Attack ball vs enemy collision ---
     for (int i = 0; i < m_projectileCount; ++i) {
         if (!m_projectiles[i] || !m_projectiles[i]->isAlive()) continue;
         sf::FloatRect pHit = m_projectiles[i]->getHitBox();
@@ -407,14 +284,11 @@ void PlayState::update(float dt) {
         for (int e = 0; e < m_enemyCount; ++e) {
             if (!m_enemies[e]) continue;
             Enemy::State s = m_enemies[e]->getState();
-            // Skip states that never react to attack balls.
             if (s != Enemy::State::Alive &&
                 s != Enemy::State::PartialEncase &&
                 s != Enemy::State::Escaping75 &&
                 s != Enemy::State::Escaping50 &&
-                s != Enemy::State::Escaping25) {
-                continue;
-            }
+                s != Enemy::State::Escaping25) continue;
 
             sf::FloatRect eHit = m_enemies[e]->getHitBox();
             float eL = eHit.position.x, eR = eL + eHit.size.x;
@@ -422,21 +296,17 @@ void PlayState::update(float dt) {
             bool overlap = (pR > eL) && (pL < eR) && (pB > eT) && (pT < eB);
             if (!overlap) continue;
 
-            // Register hit, spawn hit-flash, kill the attack ball.
             m_enemies[e]->takeAttackHit();
             m_projectiles[i]->setAlive(false);
 
-            // Spawn the hit flash at impact point (center of attack ball).
             if (m_hitFlashCount < MAX_HIT_FLASHES) {
-                sf::Vector2f flashPos{ (pL + pR) * 0.5f - 6.f,
-                                       (pT + pB) * 0.5f - 8.f };
+                sf::Vector2f flashPos{ (pL + pR) * 0.5f - 6.f, (pT + pB) * 0.5f - 8.f };
                 m_hitFlashes[m_hitFlashCount++] = new HitFlash(flashPos);
             }
             break;
         }
     }
 
-    // --- GC dead projectiles ---
     {
         int write = 0;
         for (int read = 0; read < m_projectileCount; ++read) {
@@ -450,7 +320,6 @@ void PlayState::update(float dt) {
         m_projectileCount = write;
     }
 
-    // --- Update & GC hit flashes ---
     for (int i = 0; i < m_hitFlashCount; ++i) {
         if (m_hitFlashes[i]) m_hitFlashes[i]->update(dt);
     }
@@ -467,7 +336,6 @@ void PlayState::update(float dt) {
         m_hitFlashCount = write;
     }
 
-    // --- PLAYER KICKS SNOWBALLED ENEMY → Rolling ---
     if (m_player) {
         sf::FloatRect pHit = m_player->getHitBox();
         float pL = pHit.position.x, pR = pL + pHit.size.x;
@@ -484,21 +352,15 @@ void PlayState::update(float dt) {
             if (!overlap) continue;
 
             m_enemies[e]->kickIntoRoll(m_player->isFacingRight());
-
-            // Award base score for the enemy that just got rolled.
             int kickedScore = randomScore(100, 500);
             m_score += kickedScore;
-            // Chain count = 1 → next victim is chain index 2 → base + 10%.
             m_chainCount[e] = 1;
-
-            std::cout << "[PlayState] Kicked Botom into roll. +"
-                      << kickedScore << " (base). Score: "
-                      << m_score << "\n";
+            std::cout << "[PlayState] Kicked Botom into roll. +" << kickedScore << "\n";
             break;
         }
     }
 
-    // --- ROLLING ENEMY KILLS ---
+    // === ROLLING ENEMY KILLS + DIAMOND SPAWN ===
     for (int r = 0; r < m_enemyCount; ++r) {
         if (!m_enemies[r]) continue;
         if (m_enemies[r]->getState() != Enemy::State::Rolling) continue;
@@ -527,36 +389,76 @@ void PlayState::update(float dt) {
             int award = base + bonus;
             m_score += award;
 
-            std::cout << "[PlayState] Roll kill #" << chainIndex
-                      << " +" << award
-                      << " (base " << base << " + bonus " << bonus
-                      << "). Score: " << m_score << "\n";
+            std::cout << "[PlayState] Roll kill #" << chainIndex << " +" << award << "\n";
 
-            // --- Power-up drop ---
+            // === SPAWN DIAMOND ON EVERY 2ND CHAIN KILL ===
+            if (chainIndex % 2 == 0 && m_diamondCount < MAX_DIAMONDS) {
+                sf::Vector2f dropPos = m_enemies[v]->getPosition();
+                m_diamonds[m_diamondCount++] = new Diamond(dropPos);
+                std::cout << "[PlayState] *** DIAMOND SPAWNED at chain kill #" << chainIndex << " ***\n";
+            }
+
             if (m_powerUpCount < MAX_POWERUPS) {
                 int typeIdx = std::rand() % static_cast<int>(PowerUp::Type::Count_);
                 PowerUp::Type chosen = static_cast<PowerUp::Type>(typeIdx);
                 sf::Vector2f spawnPos = m_enemies[v]->getPosition();
                 m_powerUps[m_powerUpCount++] = new PowerUp(spawnPos, chosen);
-                std::cout << "[PlayState] Dropped power-up: "
-                          << PowerUp::typeName(chosen) << "\n";
             }
 
             m_enemies[v]->setAlive(false);
         }
     }
 
-    // --- POWER-UPS: physics + collision against platforms + pickup ---
+    // === UPDATE DIAMONDS ===
+    for (int i = 0; i < m_diamondCount; ++i) {
+        if (!m_diamonds[i]) continue;
+        float prevX = m_diamonds[i]->getPosition().x;
+        float prevY = m_diamonds[i]->getPosition().y;
+        m_diamonds[i]->update(dt);
+        m_collider.resolve(*m_diamonds[i], m_platforms, m_platformCount, prevX, prevY);
+    }
+
+    // === COLLECT DIAMONDS ===
+    if (m_player) {
+        sf::FloatRect pHit = m_player->getHitBox();
+        for (int i = 0; i < m_diamondCount; ++i) {
+            if (!m_diamonds[i] || !m_diamonds[i]->isAlive()) continue;
+            sf::FloatRect dHit = m_diamonds[i]->getHitBox();
+            bool overlap = (pHit.position.x + pHit.size.x > dHit.position.x) &&
+                           (pHit.position.x < dHit.position.x + dHit.size.x) &&
+                           (pHit.position.y + pHit.size.y > dHit.position.y) &&
+                           (pHit.position.y < dHit.position.y + dHit.size.y);
+            if (overlap) {
+                m_gems += Diamond::GEM_VALUE;
+                m_manager->getProgress().gems = m_gems;
+                m_diamonds[i]->setAlive(false);
+                std::cout << "[PlayState] *** DIAMOND COLLECTED! +" << Diamond::GEM_VALUE << " gems (Total: " << m_gems << ") ***\n";
+            }
+        }
+    }
+
+    // === GC DEAD DIAMONDS ===
+    {
+        int write = 0;
+        for (int read = 0; read < m_diamondCount; ++read) {
+            if (m_diamonds[read] && m_diamonds[read]->isAlive()) {
+                m_diamonds[write++] = m_diamonds[read];
+            } else {
+                delete m_diamonds[read];
+                m_diamonds[read] = nullptr;
+            }
+        }
+        m_diamondCount = write;
+    }
+
     for (int i = 0; i < m_powerUpCount; ++i) {
         if (!m_powerUps[i]) continue;
         float prevX = m_powerUps[i]->getPosition().x;
         float prevY = m_powerUps[i]->getPosition().y;
         m_powerUps[i]->update(dt);
-        m_collider.resolve(*m_powerUps[i], m_platforms, m_platformCount,
-                           prevX, prevY);
+        m_collider.resolve(*m_powerUps[i], m_platforms, m_platformCount, prevX, prevY);
     }
 
-    // Player picks up power-up on hitbox overlap
     if (m_player) {
         sf::FloatRect pHit = m_player->getHitBox();
         float pL = pHit.position.x, pR = pL + pHit.size.x;
@@ -574,7 +476,6 @@ void PlayState::update(float dt) {
         }
     }
 
-    // GC dead power-ups
     {
         int write = 0;
         for (int read = 0; read < m_powerUpCount; ++read) {
@@ -590,16 +491,14 @@ void PlayState::update(float dt) {
 
     updatePowerUpTimers(dt);
 
-    // --- GC dead enemies ---
     {
         int write = 0;
         for (int read = 0; read < m_enemyCount; ++read) {
             Enemy* e = m_enemies[read];
-            bool keep = e && e->isAlive()
-                     && e->getState() != Enemy::State::Dead;
+            bool keep = e && e->isAlive() && e->getState() != Enemy::State::Dead;
             if (keep) {
                 int carriedChain = m_chainCount[read];
-                m_enemies[write]    = e;
+                m_enemies[write] = e;
                 m_chainCount[write] = carriedChain;
                 ++write;
             } else {
@@ -608,13 +507,12 @@ void PlayState::update(float dt) {
             }
         }
         for (int i = write; i < m_enemyCount; ++i) {
-            m_enemies[i]    = nullptr;
+            m_enemies[i] = nullptr;
             m_chainCount[i] = 0;
         }
         m_enemyCount = write;
     }
 
-    // --- Level Complete Check ---
     if (!m_levelComplete && m_enemyCount == 0) {
         m_levelComplete = true;
         m_showLevelCompleteText = true;
@@ -622,39 +520,28 @@ void PlayState::update(float dt) {
         std::cout << "[PlayState] Level " << m_currentLevel << " Complete!\n";
     }
 
-    // --- Level Transition ---
     if (m_levelComplete) {
         m_levelTransitionTimer += dt;
-        
-        // Show "Level X Complete!" for 2 seconds
-        if (m_levelTransitionTimer < 2.0f) {
-            return; // Freeze gameplay
-        }
-        
-        // Slide transition (2s to 3s)
+        if (m_levelTransitionTimer < 2.0f) return;
         if (m_levelTransitionTimer < 3.0f) {
             m_showLevelCompleteText = false;
             float progress = (m_levelTransitionTimer - 2.0f) / 1.0f;
-            m_levelSlideOffset = progress * 600.f; // Slide down
-            return; // Skip all other updates during slide
+            m_levelSlideOffset = progress * 600.f;
+            return;
         } else {
-            // Transition complete - load next level
             nextLevel();
             return;
         }
     }
 
-    // --- Player-Enemy contact ---
     if (!m_gameOver && m_player && !m_player->isInvincible()
         && m_collider.checkEnemyContact(*m_player, m_enemies, m_enemyCount)) {
         m_player->loseLife();
-        std::cout << "[PlayState] Player lost a life. Lives left: "
-                  << m_player->getLives() << "\n";
+        std::cout << "[PlayState] Player lost a life. Lives left: " << m_player->getLives() << "\n";
         if (m_player->getLives() <= 0) {
             m_gameOver = true;
             int score = m_score;
             std::string currentUser = m_manager->getCurrentUserName();
-            std::cout << "Saving score now...\n";
             saveScore(currentUser, score, m_currentLevel);
             m_manager->pushState(new GameOverState());
         } else {
@@ -688,6 +575,10 @@ void PlayState::draw(sf::RenderWindow& window) {
         if (m_powerUps[i]) m_powerUps[i]->draw(window);
     }
 
+    for (int i = 0; i < m_diamondCount; ++i) {
+        if (m_diamonds[i]) m_diamonds[i]->draw(window);
+    }
+
     if (m_player) m_player->draw(window);
 
     for (int i = 0; i < m_hitFlashCount; ++i) {
@@ -695,23 +586,18 @@ void PlayState::draw(sf::RenderWindow& window) {
     }
 
     if (m_showHitboxes) {
-        if (m_player) {
-            m_player->drawHitBoxDebug(window, sf::Color::Green);
-        }
+        if (m_player) m_player->drawHitBoxDebug(window, sf::Color::Green);
         for (int i = 0; i < m_enemyCount; ++i) {
-            if (m_enemies[i]) {
-                m_enemies[i]->drawHitBoxDebug(window, sf::Color::Red);
-            }
+            if (m_enemies[i]) m_enemies[i]->drawHitBoxDebug(window, sf::Color::Red);
         }
         for (int i = 0; i < m_projectileCount; ++i) {
-            if (m_projectiles[i]) {
-                m_projectiles[i]->drawHitBoxDebug(window, sf::Color::Yellow);
-            }
+            if (m_projectiles[i]) m_projectiles[i]->drawHitBoxDebug(window, sf::Color::Yellow);
         }
         for (int i = 0; i < m_powerUpCount; ++i) {
-            if (m_powerUps[i]) {
-                m_powerUps[i]->drawHitBoxDebug(window, sf::Color::Magenta);
-            }
+            if (m_powerUps[i]) m_powerUps[i]->drawHitBoxDebug(window, sf::Color::Magenta);
+        }
+        for (int i = 0; i < m_diamondCount; ++i) {
+            if (m_diamonds[i]) m_diamonds[i]->drawHitBoxDebug(window, sf::Color::Cyan);
         }
         for (int i = 0; i < m_platformCount; ++i) {
             if (!m_platforms[i]) continue;
@@ -729,30 +615,19 @@ void PlayState::draw(sf::RenderWindow& window) {
 
     drawHUD(window);
     
-    // --- Level Complete Text ---
     if (m_showLevelCompleteText && m_hudFontLoaded) {
         sf::Text levelCompleteText(m_hudFont);
-        
         std::string message = "Level " + std::to_string(m_currentLevel) + " Complete!";
-        if (m_currentLevel == 4) {
-            message += "\nGet ready to face the Boss Mogera!";
-        } else if (m_currentLevel == 9) {
-            message += "\nGet ready to face the Boss Gamakichi!";
-        }
-        
         levelCompleteText.setString(message);
         levelCompleteText.setCharacterSize(40);
         levelCompleteText.setFillColor(sf::Color::Yellow);
         levelCompleteText.setOutlineColor(sf::Color::Black);
         levelCompleteText.setOutlineThickness(2.f);
-        
         sf::FloatRect bounds = levelCompleteText.getLocalBounds();
-        levelCompleteText.setPosition({400.f - bounds.size.x / 2.f, 
-                                       m_currentLevel == 4 || m_currentLevel == 9 ? 220.f : 250.f});
+        levelCompleteText.setPosition({400.f - bounds.size.x / 2.f, 250.f});
         window.draw(levelCompleteText);
     }
     
-    // --- Slide Transition Overlay ---
     if (m_levelSlideOffset > 0.f) {
         sf::RectangleShape overlay({800.f, 600.f});
         overlay.setFillColor(sf::Color::Black);
@@ -761,286 +636,86 @@ void PlayState::draw(sf::RenderWindow& window) {
     }
 }
 
-void PlayState::drawHUD(sf::RenderWindow& window) {
-    if (!m_hudFontLoaded) return;
+void PlayState::handleEvent(const sf::Event& event) {
+    if (const auto* keyEvent = event.getIf<sf::Event::KeyPressed>()) {
+        if (keyEvent->code == sf::Keyboard::Key::Escape) {
+            if (!m_gameOver) m_manager->pushState(new PauseState());
+        }
+        else if (keyEvent->code == sf::Keyboard::Key::F1 || keyEvent->code == sf::Keyboard::Key::H) {
+            m_showHitboxes = !m_showHitboxes;
+            std::cout << "[PlayState] Hitboxes " << (m_showHitboxes ? "ON" : "OFF") << "\n";
+        }
+    }
+}
 
-    const float HUD_Y       = 14.f;
-    const float LEFT_X      = 18.f;
-    const float RIGHT_PAD   = 18.f;
-    const float ICON_SIZE   = 16.f;
-    const float ICON_TEXT_GAP = 6.f;
-    const unsigned int TEXT_SIZE = 14;
+// HELPER METHODS - Add all remaining methods here...
+void PlayState::buildLevel() {
+    if (!m_platformTextureLoaded) return;
+    const float BORDER_W = 8.5f, LEFT_EXTRA = 22.f;
+    const float p1H = 78.75f, p2H = 150.f, p2W = 630.f;
 
-    // --- Score ---
     {
-        sf::Text scoreText(m_hudFont, "SCORE " + std::to_string(m_score), TEXT_SIZE);
-        scoreText.setFillColor(sf::Color::White);
-        scoreText.setOutlineColor(sf::Color::Black);
-        scoreText.setOutlineThickness(2.f);
-        scoreText.setPosition({ LEFT_X, HUD_Y });
-        window.draw(scoreText);
+        const sf::Texture& topTex = m_platformTopTextureLoaded ? m_platformTopTexture : m_platformTexture;
+        sf::Vector2f p2Size = { p2W, p2H };
+        sf::Vector2f p2Pos  = { (WINDOW_WIDTH - p2W) / 2.f, 49.f };
+        sf::FloatRect lower; lower.position = { 30.f, 88.f }; lower.size = { p2W - 60.f, 35.f };
+        sf::FloatRect upper; upper.position = { 130.f, 45.5f }; upper.size = { p2W - 265.f, 35.f };
+        sf::FloatRect boxes[2] = { lower, upper };
+        bool solids[2] = { false, true };
+        m_platforms[m_platformCount++] = new Platform(topTex, p2Size, p2Pos, boxes, 2, solids);
     }
 
-    // --- Lives ---
-    {
-        float livesY = HUD_Y + 22.f;
-        int lives = (m_player ? m_player->getLives() : 0);
-
-        if (m_heartLoaded) {
-            sf::Sprite heart(m_heartTexture);
-            auto ts = m_heartTexture.getSize();
-            if (ts.x > 0 && ts.y > 0) {
-                heart.setScale({ ICON_SIZE / static_cast<float>(ts.x),
-                                 ICON_SIZE / static_cast<float>(ts.y) });
-            }
-            heart.setPosition({ LEFT_X, livesY });
-            window.draw(heart);
-        }
-
-        sf::Text livesText(m_hudFont, std::to_string(lives), TEXT_SIZE);
-        livesText.setFillColor(sf::Color::White);
-        livesText.setOutlineColor(sf::Color::Black);
-        livesText.setOutlineThickness(2.f);
-        livesText.setPosition({ LEFT_X + ICON_SIZE + ICON_TEXT_GAP, livesY });
-        window.draw(livesText);
-    }
-
-    // --- Gems ---
-    {
-        std::string gemStr = std::to_string(m_gems);
-        sf::Text gemText(m_hudFont, gemStr, TEXT_SIZE);
-        gemText.setFillColor(sf::Color::White);
-        gemText.setOutlineColor(sf::Color::Black);
-        gemText.setOutlineThickness(2.f);
-        auto tb = gemText.getLocalBounds();
-
-        float textX = 800.f - RIGHT_PAD - tb.size.x - tb.position.x;
-        gemText.setPosition({ textX, HUD_Y });
-        window.draw(gemText);
-
-        if (m_diamondLoaded) {
-            sf::Sprite diamond(m_diamondTexture);
-            auto ts = m_diamondTexture.getSize();
-            if (ts.x > 0 && ts.y > 0) {
-                diamond.setScale({ ICON_SIZE / static_cast<float>(ts.x),
-                                   ICON_SIZE / static_cast<float>(ts.y) });
-            }
-            diamond.setPosition({ textX - ICON_SIZE - ICON_TEXT_GAP, HUD_Y });
-            window.draw(diamond);
-        }
-    }
-
-    // --- Level indicator ---
-    {
-        std::string levelStr =
-            "LEVEL " + std::to_string(m_currentLevel) +
-            "/"      + std::to_string(m_totalLevels);
-        sf::Text levelText(m_hudFont, levelStr, TEXT_SIZE);
-        levelText.setFillColor(sf::Color::White);
-        levelText.setOutlineColor(sf::Color::Black);
-        levelText.setOutlineThickness(2.f);
-        auto tb = levelText.getLocalBounds();
-        levelText.setPosition({
-            (800.f - tb.size.x) / 2.f - tb.position.x,
-            HUD_Y
-        });
-        window.draw(levelText);
-    }
-
-    drawPowerUpHUD(window);
+    float w = 300.f;
+    m_platforms[m_platformCount++] = new Platform(m_platformTexture, {w, p1H}, {BORDER_W + LEFT_EXTRA, 220.f});
+    m_platforms[m_platformCount++] = new Platform(m_platformTexture, {w, p1H}, {WINDOW_WIDTH - BORDER_W - w, 220.f});
+    
+    w = 390.f;
+    m_platforms[m_platformCount++] = new Platform(m_platformTexture, {w, p1H}, {(WINDOW_WIDTH - w) / 2.f, 329.f});
+    
+    w = 300.f;
+    m_platforms[m_platformCount++] = new Platform(m_platformTexture, {w, p1H}, {BORDER_W + LEFT_EXTRA, 437.f});
+    m_platforms[m_platformCount++] = new Platform(m_platformTexture, {w, p1H}, {WINDOW_WIDTH - BORDER_W - w, 437.f});
 }
 
-int PlayState::randomScore(int lo, int hi) const {
-    int range = hi - lo + 1;
-    return lo + (std::rand() % range);
-}
-
-void PlayState::loadPowerUpIcons() {
-    auto tryLoad = [](sf::Texture& tex, const char* path, bool& flag) {
-        if (std::FILE* f = std::fopen(path, "rb")) {
-            std::fclose(f);
-            flag = tex.loadFromFile(path);
-        } else {
-            flag = false;
-        }
-    };
-    tryLoad(m_puIconSpeed,    "assets/sprites/powerup_speed.png",    m_puIconSpeedLoaded);
-    tryLoad(m_puIconSnowball, "assets/sprites/powerup_snowball.png", m_puIconSnowballLoaded);
-    tryLoad(m_puIconDistance, "assets/sprites/powerup_distance.png", m_puIconDistanceLoaded);
-    tryLoad(m_puIconBalloon,  "assets/sprites/powerup_balloon.png",  m_puIconBalloonLoaded);
-}
-
-void PlayState::activatePowerUp(PowerUp::Type type) {
-    switch (type) {
-        case PowerUp::Type::SpeedBoost:
-            m_speedActive = true;
-            m_speedTimer  = 15.0f;
-            if (m_player) {
-                m_player->setSpeedMultiplier(1.5f);
-            }
-            break;
-        case PowerUp::Type::SnowballPower:
-            m_snowballPowerActive = true;
-            for (int i = 0; i < m_enemyCount; ++i) {
-                if (m_enemies[i]) {
-                    m_enemies[i]->setOneHitEncase(true);
-                }
-            }
-            break;
-        case PowerUp::Type::DistanceIncrease:
-            m_distanceActive = true;
-            break;
-        case PowerUp::Type::BalloonMode:
-            m_balloonActive = true;
-            m_balloonTimer  = 10.0f;
-            if (m_player) {
-                m_player->setBalloonMode(true);
-            }
-            break;
-        default: return;
-    }
-    m_displayedType = type;
-    m_hasDisplayed  = true;
-    std::cout << "[PlayState] Activated power-up: "
-              << PowerUp::typeName(type) << "\n";
-}
-
-void PlayState::updatePowerUpTimers(float dt) {
-    if (m_speedActive) {
-        m_speedTimer -= dt;
-        if (m_speedTimer <= 0.f) {
-            m_speedActive = false;
-            m_speedTimer  = 0.f;
-            if (m_player) {
-                m_player->setSpeedMultiplier(1.0f);
-            }
-            if (m_hasDisplayed && m_displayedType == PowerUp::Type::SpeedBoost) {
-                if      (m_balloonActive)        m_displayedType = PowerUp::Type::BalloonMode;
-                else if (m_snowballPowerActive)  m_displayedType = PowerUp::Type::SnowballPower;
-                else if (m_distanceActive)       m_displayedType = PowerUp::Type::DistanceIncrease;
-                else                             m_hasDisplayed  = false;
-            }
+void PlayState::spawnEnemies() {
+    if (m_currentLevel == 1) {
+        m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(140.f, 400.f));
+        m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(600.f, 400.f));
+        m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(300.f, 290.f));
+        m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(150.f, 180.f));
+        m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(620.f, 180.f));
+    } else {
+        std::srand(static_cast<unsigned>(std::time(nullptr)) + m_currentLevel);
+        float positions[] = {140.f, 300.f, 450.f, 600.f, 150.f, 350.f, 500.f, 650.f};
+        float yLevels[] = {400.f, 290.f, 180.f};
+        for (int i = 0; i < 8; ++i) {
+            float x = positions[i];
+            float y = yLevels[std::rand() % 3];
+            m_enemies[m_enemyCount++] = new Botom(sf::Vector2f(x, y));
         }
     }
-    if (m_balloonActive) {
-        m_balloonTimer -= dt;
-        if (m_balloonTimer <= 0.f) {
-            m_balloonActive = false;
-            m_balloonTimer  = 0.f;
-            if (m_player) {
-                m_player->setBalloonMode(false);
-            }
-            if (m_hasDisplayed && m_displayedType == PowerUp::Type::BalloonMode) {
-                if      (m_speedActive)          m_displayedType = PowerUp::Type::SpeedBoost;
-                else if (m_snowballPowerActive)  m_displayedType = PowerUp::Type::SnowballPower;
-                else if (m_distanceActive)       m_displayedType = PowerUp::Type::DistanceIncrease;
-                else                             m_hasDisplayed  = false;
-            }
+
+    if (m_snowballPowerActive) {
+        for (int i = 0; i < m_enemyCount; ++i) {
+            if (m_enemies[i]) m_enemies[i]->setOneHitEncase(true);
         }
-    }
-}
-
-void PlayState::drawPowerUpHUD(sf::RenderWindow& window) {
-    if (!m_hasDisplayed) return;
-
-    const float HUD_BOTTOM_Y = 568.f;
-    const float ICON_SIZE    = 22.f;
-    const float BAR_WIDTH    = 160.f;
-    const float BAR_HEIGHT   = 10.f;
-    const float GAP          = 8.f;
-
-    const float totalW  = ICON_SIZE + GAP + BAR_WIDTH;
-    const float startX  = (800.f - totalW) / 2.f;
-    const float iconX   = startX;
-    const float barX    = startX + ICON_SIZE + GAP;
-    const float iconY   = HUD_BOTTOM_Y;
-    const float barY    = HUD_BOTTOM_Y + (ICON_SIZE - BAR_HEIGHT) / 2.f;
-
-    sf::Texture* tex = nullptr;
-    bool         loaded = false;
-    float        fillRatio = 1.0f;
-    sf::Color    barColor  = sf::Color::White;
-
-    switch (m_displayedType) {
-        case PowerUp::Type::SpeedBoost:
-            tex = &m_puIconSpeed;     loaded = m_puIconSpeedLoaded;
-            fillRatio = (m_speedTimer <= 0.f) ? 0.f : (m_speedTimer / 15.0f);
-            barColor  = sf::Color(120, 200, 255);
-            break;
-        case PowerUp::Type::SnowballPower:
-            tex = &m_puIconSnowball;  loaded = m_puIconSnowballLoaded;
-            fillRatio = 1.0f;
-            barColor  = sf::Color(255, 120, 200);
-            break;
-        case PowerUp::Type::DistanceIncrease:
-            tex = &m_puIconDistance;  loaded = m_puIconDistanceLoaded;
-            fillRatio = 1.0f;
-            barColor  = sf::Color(80,  140, 255);
-            break;
-        case PowerUp::Type::BalloonMode:
-            tex = &m_puIconBalloon;   loaded = m_puIconBalloonLoaded;
-            fillRatio = (m_balloonTimer <= 0.f) ? 0.f : (m_balloonTimer / 10.0f);
-            barColor  = sf::Color(180, 220, 255);
-            break;
-        default: return;
-    }
-
-    // Icon
-    if (loaded && tex) {
-        sf::Sprite icon(*tex);
-        auto ts = tex->getSize();
-        if (ts.x > 0 && ts.y > 0) {
-            icon.setScale({ ICON_SIZE / static_cast<float>(ts.x),
-                            ICON_SIZE / static_cast<float>(ts.y) });
-        }
-        icon.setPosition({ iconX, iconY });
-        window.draw(icon);
-    }
-
-    // Bar background
-    sf::RectangleShape bg({ BAR_WIDTH, BAR_HEIGHT });
-    bg.setPosition({ barX, barY });
-    bg.setFillColor(sf::Color(20, 20, 30, 200));
-    bg.setOutlineColor(sf::Color::Black);
-    bg.setOutlineThickness(1.f);
-    window.draw(bg);
-
-    // Bar fill
-    if (fillRatio > 0.f) {
-        sf::RectangleShape fill({ BAR_WIDTH * fillRatio, BAR_HEIGHT });
-        fill.setPosition({ barX, barY });
-        fill.setFillColor(barColor);
-        window.draw(fill);
     }
 }
 
 void PlayState::nextLevel() {
     cleanupLevel();
     m_currentLevel++;
-    
-    if (m_currentLevel > m_totalLevels) {
-        std::cout << "[PlayState] All levels complete!\n";
-        // TODO: Victory screen
-        return;
-    }
-    
+    if (m_currentLevel > m_totalLevels) return;
     m_levelComplete = false;
     m_levelTransitionTimer = 0.f;
     m_levelSlideOffset = 0.f;
     m_showLevelCompleteText = false;
-    
     buildLevel();
     spawnEnemies();
-    
-    if (m_player) {
-        m_player->respawn(m_playerSpawn);
-    }
-    
-    std::cout << "[PlayState] Started Level " << m_currentLevel << "\n";
+    if (m_player) m_player->respawn(m_playerSpawn);
 }
 
 void PlayState::cleanupLevel() {
-    // Clean up platforms first
     for (int i = 0; i < m_platformCount; ++i) {
         delete m_platforms[i];
         m_platforms[i] = nullptr;
@@ -1077,4 +752,211 @@ void PlayState::cleanupLevel() {
         m_hitFlashes[i] = nullptr;
     }
     m_hitFlashCount = 0;
+}
+
+int PlayState::randomScore(int lo, int hi) const {
+    int range = hi - lo + 1;
+    return lo + (std::rand() % range);
+}
+
+void PlayState::drawHUD(sf::RenderWindow& window) {
+    if (!m_hudFontLoaded) return;
+    const float HUD_Y = 14.f, LEFT_X = 18.f, RIGHT_PAD = 18.f;
+    const float ICON_SIZE = 16.f, ICON_TEXT_GAP = 6.f;
+    const unsigned int TEXT_SIZE = 14;
+
+    {
+        sf::Text scoreText(m_hudFont, "SCORE " + std::to_string(m_score), TEXT_SIZE);
+        scoreText.setFillColor(sf::Color::White);
+        scoreText.setOutlineColor(sf::Color::Black);
+        scoreText.setOutlineThickness(2.f);
+        scoreText.setPosition({ LEFT_X, HUD_Y });
+        window.draw(scoreText);
+    }
+
+    {
+        float livesY = HUD_Y + 22.f;
+        int lives = (m_player ? m_player->getLives() : 0);
+        if (m_heartLoaded) {
+            sf::Sprite heart(m_heartTexture);
+            auto ts = m_heartTexture.getSize();
+            if (ts.x > 0 && ts.y > 0) heart.setScale({ ICON_SIZE / static_cast<float>(ts.x), ICON_SIZE / static_cast<float>(ts.y) });
+            heart.setPosition({ LEFT_X, livesY });
+            window.draw(heart);
+        }
+        sf::Text livesText(m_hudFont, std::to_string(lives), TEXT_SIZE);
+        livesText.setFillColor(sf::Color::White);
+        livesText.setOutlineColor(sf::Color::Black);
+        livesText.setOutlineThickness(2.f);
+        livesText.setPosition({ LEFT_X + ICON_SIZE + ICON_TEXT_GAP, livesY });
+        window.draw(livesText);
+    }
+
+    {
+        std::string gemStr = std::to_string(m_gems);
+        sf::Text gemText(m_hudFont, gemStr, TEXT_SIZE);
+        gemText.setFillColor(sf::Color::White);
+        gemText.setOutlineColor(sf::Color::Black);
+        gemText.setOutlineThickness(2.f);
+        auto tb = gemText.getLocalBounds();
+        float textX = 800.f - RIGHT_PAD - tb.size.x - tb.position.x;
+        gemText.setPosition({ textX, HUD_Y });
+        window.draw(gemText);
+
+        if (m_diamondLoaded) {
+            sf::Sprite diamond(m_diamondTexture);
+            auto ts = m_diamondTexture.getSize();
+            if (ts.x > 0 && ts.y > 0) diamond.setScale({ ICON_SIZE / static_cast<float>(ts.x), ICON_SIZE / static_cast<float>(ts.y) });
+            diamond.setPosition({ textX - ICON_SIZE - ICON_TEXT_GAP, HUD_Y });
+            window.draw(diamond);
+        }
+    }
+
+    {
+        std::string levelStr = "LEVEL " + std::to_string(m_currentLevel) + "/" + std::to_string(m_totalLevels);
+        sf::Text levelText(m_hudFont, levelStr, TEXT_SIZE);
+        levelText.setFillColor(sf::Color::White);
+        levelText.setOutlineColor(sf::Color::Black);
+        levelText.setOutlineThickness(2.f);
+        auto tb = levelText.getLocalBounds();
+        levelText.setPosition({ (800.f - tb.size.x) / 2.f - tb.position.x, HUD_Y });
+        window.draw(levelText);
+    }
+
+    drawPowerUpHUD(window);
+}
+
+void PlayState::loadPowerUpIcons() {
+    auto tryLoad = [](sf::Texture& tex, const char* path, bool& flag) {
+        if (std::FILE* f = std::fopen(path, "rb")) {
+            std::fclose(f);
+            flag = tex.loadFromFile(path);
+        } else {
+            flag = false;
+        }
+    };
+    tryLoad(m_puIconSpeed, "assets/sprites/powerup_speed.png", m_puIconSpeedLoaded);
+    tryLoad(m_puIconSnowball, "assets/sprites/powerup_snowball.png", m_puIconSnowballLoaded);
+    tryLoad(m_puIconDistance, "assets/sprites/powerup_distance.png", m_puIconDistanceLoaded);
+    tryLoad(m_puIconBalloon, "assets/sprites/powerup_balloon.png", m_puIconBalloonLoaded);
+}
+
+void PlayState::activatePowerUp(PowerUp::Type type) {
+    switch (type) {
+        case PowerUp::Type::SpeedBoost:
+            m_speedActive = true;
+            m_speedTimer = 15.0f;
+            if (m_player) m_player->setSpeedMultiplier(1.5f);
+            break;
+        case PowerUp::Type::SnowballPower:
+            m_snowballPowerActive = true;
+            for (int i = 0; i < m_enemyCount; ++i) {
+                if (m_enemies[i]) m_enemies[i]->setOneHitEncase(true);
+            }
+            break;
+        case PowerUp::Type::DistanceIncrease:
+            m_distanceActive = true;
+            break;
+        case PowerUp::Type::BalloonMode:
+            m_balloonActive = true;
+            m_balloonTimer = 10.0f;
+            if (m_player) m_player->setBalloonMode(true);
+            break;
+        default: return;
+    }
+    m_displayedType = type;
+    m_hasDisplayed = true;
+    std::cout << "[PlayState] Activated power-up: " << PowerUp::typeName(type) << "\n";
+}
+
+void PlayState::updatePowerUpTimers(float dt) {
+    if (m_speedActive) {
+        m_speedTimer -= dt;
+        if (m_speedTimer <= 0.f) {
+            m_speedActive = false;
+            m_speedTimer = 0.f;
+            if (m_player) m_player->setSpeedMultiplier(1.0f);
+            if (m_hasDisplayed && m_displayedType == PowerUp::Type::SpeedBoost) {
+                if (m_balloonActive) m_displayedType = PowerUp::Type::BalloonMode;
+                else if (m_snowballPowerActive) m_displayedType = PowerUp::Type::SnowballPower;
+                else if (m_distanceActive) m_displayedType = PowerUp::Type::DistanceIncrease;
+                else m_hasDisplayed = false;
+            }
+        }
+    }
+    if (m_balloonActive) {
+        m_balloonTimer -= dt;
+        if (m_balloonTimer <= 0.f) {
+            m_balloonActive = false;
+            m_balloonTimer = 0.f;
+            if (m_player) m_player->setBalloonMode(false);
+            if (m_hasDisplayed && m_displayedType == PowerUp::Type::BalloonMode) {
+                if (m_speedActive) m_displayedType = PowerUp::Type::SpeedBoost;
+                else if (m_snowballPowerActive) m_displayedType = PowerUp::Type::SnowballPower;
+                else if (m_distanceActive) m_displayedType = PowerUp::Type::DistanceIncrease;
+                else m_hasDisplayed = false;
+            }
+        }
+    }
+}
+
+void PlayState::drawPowerUpHUD(sf::RenderWindow& window) {
+    if (!m_hasDisplayed) return;
+    const float HUD_BOTTOM_Y = 568.f, ICON_SIZE = 22.f;
+    const float BAR_WIDTH = 160.f, BAR_HEIGHT = 10.f, GAP = 8.f;
+    const float totalW = ICON_SIZE + GAP + BAR_WIDTH;
+    const float startX = (800.f - totalW) / 2.f;
+    const float iconX = startX, barX = startX + ICON_SIZE + GAP;
+    const float iconY = HUD_BOTTOM_Y, barY = HUD_BOTTOM_Y + (ICON_SIZE - BAR_HEIGHT) / 2.f;
+
+    sf::Texture* tex = nullptr;
+    bool loaded = false;
+    float fillRatio = 1.0f;
+    sf::Color barColor = sf::Color::White;
+
+    switch (m_displayedType) {
+        case PowerUp::Type::SpeedBoost:
+            tex = &m_puIconSpeed; loaded = m_puIconSpeedLoaded;
+            fillRatio = (m_speedTimer <= 0.f) ? 0.f : (m_speedTimer / 15.0f);
+            barColor = sf::Color(120, 200, 255);
+            break;
+        case PowerUp::Type::SnowballPower:
+            tex = &m_puIconSnowball; loaded = m_puIconSnowballLoaded;
+            fillRatio = 1.0f;
+            barColor = sf::Color(255, 120, 200);
+            break;
+        case PowerUp::Type::DistanceIncrease:
+            tex = &m_puIconDistance; loaded = m_puIconDistanceLoaded;
+            fillRatio = 1.0f;
+            barColor = sf::Color(80, 140, 255);
+            break;
+        case PowerUp::Type::BalloonMode:
+            tex = &m_puIconBalloon; loaded = m_puIconBalloonLoaded;
+            fillRatio = (m_balloonTimer <= 0.f) ? 0.f : (m_balloonTimer / 10.0f);
+            barColor = sf::Color(180, 220, 255);
+            break;
+        default: return;
+    }
+
+    if (loaded && tex) {
+        sf::Sprite icon(*tex);
+        auto ts = tex->getSize();
+        if (ts.x > 0 && ts.y > 0) icon.setScale({ ICON_SIZE / static_cast<float>(ts.x), ICON_SIZE / static_cast<float>(ts.y) });
+        icon.setPosition({ iconX, iconY });
+        window.draw(icon);
+    }
+
+    sf::RectangleShape bg({ BAR_WIDTH, BAR_HEIGHT });
+    bg.setPosition({ barX, barY });
+    bg.setFillColor(sf::Color(20, 20, 30, 200));
+    bg.setOutlineColor(sf::Color::Black);
+    bg.setOutlineThickness(1.f);
+    window.draw(bg);
+
+    if (fillRatio > 0.f) {
+        sf::RectangleShape fill({ BAR_WIDTH * fillRatio, BAR_HEIGHT });
+        fill.setPosition({ barX, barY });
+        fill.setFillColor(barColor);
+        window.draw(fill);
+    }
 }

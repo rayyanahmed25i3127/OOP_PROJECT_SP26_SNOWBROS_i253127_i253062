@@ -27,21 +27,22 @@ static const char* ITEM_NAMES[NUM_ITEMS] = {
 };
 static const int ITEM_PRICES[NUM_ITEMS] = { 35, 25, 30, 20, 50 };
 
-// ── Helper: is item[i] already purchased this session? ───────────────────────
+// â”€â”€ Helper: is item[i] already purchased this session? â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Called every frame so it always reflects the current StateManager flags.
 static bool isAlreadyBought(int index, StateManager* mgr) {
     if (!mgr) return false;
+    PlayerProgress& prog = mgr->getProgress();
     switch (index) {
-        case 0: return mgr->isBalloonBought();
-        case 1: return mgr->isDistanceBought();
-        case 2: return mgr->isSnowballBought();
-        case 3: return mgr->isSpeedBought();
-        case 4: return mgr->isExtraLifeBought();
+        case 0: return prog.pendingBalloon;
+        case 1: return prog.pendingDistance;
+        case 2: return prog.pendingSnowball;
+        case 3: return prog.pendingSpeed;
+        case 4: return false;  // Extra Life: always buyable
         default: return false;
     }
 }
 
-// ── Constructor / Destructor ──────────────────────────────────────────────────
+// â”€â”€ Constructor / Destructor â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 ShopState::ShopState()
     : m_bgSprite(nullptr),     m_bgLoaded(false)
     , m_diamondSprite(nullptr), m_diamondLoaded(false)
@@ -68,7 +69,7 @@ ShopState::~ShopState() {
     }
 }
 
-// ── drawCapsule (kept for potential external use) ─────────────────────────────
+// â”€â”€ drawCapsule (kept for potential external use) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 void ShopState::drawCapsule(sf::RenderWindow& window,
                              float x, float y, float width, float height,
                              sf::Color fillColor, sf::Color outlineColor,
@@ -96,12 +97,24 @@ void ShopState::drawCapsule(sf::RenderWindow& window,
     window.draw(verts,static_cast<std::size_t>(cnt),sf::PrimitiveType::TriangleFan);
 }
 
-// ── tryBuy ────────────────────────────────────────────────────────────────────
+// â”€â”€ tryBuy â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 void ShopState::tryBuy(int index) {
     if (index < 0 || index >= MAX_ITEMS || !m_infoText) return;
 
-    // ── Guard 1: already purchased this session ───────────────────────────
-    if (isAlreadyBought(index, m_manager)) {
+    PlayerProgress& prog = m_manager->getProgress();
+    
+    // Extra Life (index 4) is never "already bought" — it can be purchased
+    // as many times as the player has gems.
+    bool alreadyBought = false;
+    switch (index) {
+        case 0: alreadyBought = prog.pendingBalloon; break;
+        case 1: alreadyBought = prog.pendingDistance; break;
+        case 2: alreadyBought = prog.pendingSnowball; break;
+        case 3: alreadyBought = prog.pendingSpeed; break;
+        case 4: alreadyBought = false; break; // always purchasable
+    }
+    
+    if (alreadyBought) {
         m_infoText->setString("Already purchased!");
         m_infoText->setFillColor(sf::Color(255, 200, 80));
         sf::FloatRect ib = m_infoText->getLocalBounds();
@@ -110,30 +123,22 @@ void ShopState::tryBuy(int index) {
         return;
     }
 
-    // ── Guard 2: Extra Life only meaningful if player can gain one ────────
-    // We cap at Player::MAX_LIVES (3). Player starts with 2, so buying when
-    // they already have 3 lives (from a previous extra life this run) is a
-    // waste. We track pendingExtraLives via the bought flag so a second
-    // purchase in the same shop visit is also blocked by Guard 1.
-    // (The actual cap enforcement is in Player::addLife().)
-
     int price = ITEM_PRICES[index];
     if (m_gemCount < price) {
         m_infoText->setString("Not enough gems!");
         m_infoText->setFillColor(sf::Color(255, 120, 100));
     } else {
         m_gemCount -= price;
+        prog.gems = m_gemCount;
 
-        // ── Register purchase in StateManager ────────────────────────────
         switch (index) {
-            case 0: m_manager->buyBalloon();   break;
-            case 1: m_manager->buyDistance();  break;
-            case 2: m_manager->buySnowball();  break;
-            case 3: m_manager->buySpeed();     break;
-            case 4: m_manager->buyExtraLife(); break;
+            case 0: prog.pendingBalloon = true; break;
+            case 1: prog.pendingDistance = true; break;
+            case 2: prog.pendingSnowball = true; break;
+            case 3: prog.pendingSpeed = true; break;
+            case 4: prog.pendingExtraLifeCount++; break;  // stackable
         }
 
-        // Update gem display
         if (m_gemCountText) {
             m_gemCountText->setString(std::to_string(m_gemCount));
             const float panelX=638.f, panelY=8.f, panelW=152.f, panelH=80.f;
@@ -151,11 +156,11 @@ void ShopState::tryBuy(int index) {
     m_infoText->setPosition({400.f, 560.f});
 }
 
-// ── onEnter ───────────────────────────────────────────────────────────────────
+// â”€â”€ onEnter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 void ShopState::onEnter() {
     static bool seeded=false;
     if(!seeded){std::srand(static_cast<unsigned>(std::time(nullptr)));seeded=true;}
-    m_gemCount=200+std::rand()%800;
+    m_gemCount = m_manager->getProgress().gems;
 
     if (!m_font.openFromFile("assets/fonts/BubbleBobble-rg3rx.ttf"))
         std::cerr<<"[ShopState] Font failed\n";
@@ -243,7 +248,7 @@ void ShopState::onEnter() {
     }
 }
 
-// ── drawCard ─────────────────────────────────────────────────────────────────
+// â”€â”€ drawCard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Sold-out cards are visually dimmed and show a "SOLD" overlay.
 void ShopState::drawCard(sf::RenderWindow& window, int index) {
     float x=m_cardPositions[index].x, y=m_cardPositions[index].y;
@@ -256,7 +261,7 @@ void ShopState::drawCard(sf::RenderWindow& window, int index) {
         : sf::Color(120,200,255,m_itemHovered[index]?40:20));
     window.draw(glow);
 
-    // Card body — dimmed when sold
+    // Card body â€” dimmed when sold
     sf::RectangleShape card({CARD_W,CARD_H}); card.setPosition({x,y});
     card.setFillColor(sold
         ? sf::Color(60,60,70,120)
@@ -267,7 +272,7 @@ void ShopState::drawCard(sf::RenderWindow& window, int index) {
         : sf::Color(220,240,255,200));
     window.draw(card);
 
-    // Item image — tinted dark when sold
+    // Item image â€” tinted dark when sold
     if (m_itemSprites[index]) {
         m_itemSprites[index]->setColor(sold ? sf::Color(80,80,80,180) : sf::Color::White);
         window.draw(*m_itemSprites[index]);
@@ -282,7 +287,7 @@ void ShopState::drawCard(sf::RenderWindow& window, int index) {
     if (m_itemNameTexts[index]) window.draw(*m_itemNameTexts[index]);
     if (m_itemPriceTexts[index]) window.draw(*m_itemPriceTexts[index]);
 
-    // ── "SOLD" overlay when purchased ────────────────────────────────────
+    // â”€â”€ "SOLD" overlay when purchased â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (sold) {
         // Dark overlay panel
         sf::RectangleShape overlay({CARD_W,30.f});
@@ -290,8 +295,8 @@ void ShopState::drawCard(sf::RenderWindow& window, int index) {
         overlay.setFillColor(sf::Color(0,0,0,160));
         window.draw(overlay);
 
-        sf::Text soldText(m_font, "SOLD", 16);
-        soldText.setFillColor(sf::Color(255,80,80));
+        sf::Text soldText(m_font, "Alrd Bought", 13);
+        soldText.setFillColor(sf::Color(255,200,80));
         soldText.setOutlineColor(sf::Color::Black);
         soldText.setOutlineThickness(2.f);
         auto tb=soldText.getLocalBounds();
@@ -301,7 +306,7 @@ void ShopState::drawCard(sf::RenderWindow& window, int index) {
     }
 }
 
-// ── handleEvent ───────────────────────────────────────────────────────────────
+// â”€â”€ handleEvent â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 void ShopState::handleEvent(const sf::Event& event) {
     if (const auto* key=event.getIf<sf::Event::KeyPressed>())
         if(key->code==sf::Keyboard::Key::Escape) m_manager->popState();
@@ -317,19 +322,19 @@ void ShopState::handleEvent(const sf::Event& event) {
     }
 }
 
-// ── update ────────────────────────────────────────────────────────────────────
+// â”€â”€ update â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 void ShopState::update(float /*dt*/) {
     if (!m_window) return;
     sf::Vector2f mp=m_window->mapPixelToCoords(sf::Mouse::getPosition(*m_window));
     m_backHovered=m_backBounds.contains(mp);
     for (int i=0;i<MAX_ITEMS;++i) {
-        // Don't show hover on sold items — clearer UX
+        // Don't show hover on sold items â€” clearer UX
         bool sold=isAlreadyBought(i,m_manager);
         m_itemHovered[i]=!sold && m_cardBounds[i].contains(mp);
     }
 }
 
-// ── draw ──────────────────────────────────────────────────────────────────────
+// â”€â”€ draw â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 void ShopState::draw(sf::RenderWindow& window) {
     window.clear(sf::Color(5,10,30));
     if(m_bgLoaded&&m_bgSprite) window.draw(*m_bgSprite);

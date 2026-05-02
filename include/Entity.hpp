@@ -24,7 +24,7 @@ public:
     explicit Entity(sf::Vector2f pos);
     virtual ~Entity() = default;
 
-    // Pure virtual — every concrete Entity implements its own update/draw.
+    // Pure virtual â€” every concrete Entity implements its own update/draw.
     // dt (delta-time) keeps motion framerate-independent across machines.
     virtual void update(float dt) = 0;
     virtual void draw(sf::RenderWindow& window) = 0;
@@ -35,14 +35,14 @@ public:
     sf::FloatRect getHitBox()   const { return hitBox;   }
     bool          isAlive()     const { return alive;    }
 
-    // Setters — setPosition is virtual because subclasses must also
+    // Setters â€” setPosition is virtual because subclasses must also
     // sync their sprite and hit-box offsets when externally repositioned.
     virtual void setPosition(sf::Vector2f pos) { position = pos; }
     void setVelocity(sf::Vector2f vel)         { velocity = vel; }
     void setAlive(bool a)                      { alive = a;      }
 
     // Ground-contact hook. CollisionDetector calls this after resolving
-    // vertical collisions. Default no-op — only Player/Enemy override.
+    // vertical collisions. Default no-op â€” only Player/Enemy override.
     virtual void setOnGround(bool /*onGround*/) {}
 
     // Debug: draws hit-box as a colored outline. Called from the state's

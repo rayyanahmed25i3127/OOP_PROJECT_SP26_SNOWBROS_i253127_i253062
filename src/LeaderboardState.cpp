@@ -16,10 +16,10 @@ LeaderboardState::~LeaderboardState()
 }
 
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  drawCapsule
 //
-//  Entire capsule = ONE TriangleFan polygon → no overlapping sub-shapes,
+//  Entire capsule = ONE TriangleFan polygon â†’ no overlapping sub-shapes,
 //  uniform alpha, zero seam.
 //
 //  Vertex count per capsule:
@@ -28,8 +28,8 @@ LeaderboardState::~LeaderboardState()
 //    + (SEGS + 1)   left  semicircle
 //    + 1            closing repeat of first perimeter vertex
 //    = 2 * SEGS + 4
-//  SEGS = 28  →  60 vertices  →  array size 64 (safe margin).
-// ─────────────────────────────────────────────────────────────────────────────
+//  SEGS = 28  â†’  60 vertices  â†’  array size 64 (safe margin).
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 void LeaderboardState::drawCapsule(sf::RenderWindow& window,
                                    float x, float y,
                                    float width, float height,
@@ -38,9 +38,9 @@ void LeaderboardState::drawCapsule(sf::RenderWindow& window,
                                    float     outlineThickness)
 {
     static const int SEGS      = 28;
-    static const int MAX_VERTS = 2 * SEGS + 4;   // 60 — fits in 64-slot array
+    static const int MAX_VERTS = 2 * SEGS + 4;   // 60 â€” fits in 64-slot array
 
-    // ── Fills a plain sf::Vertex array for one capsule.
+    // â”€â”€ Fills a plain sf::Vertex array for one capsule.
     //    Returns the number of vertices written.
     auto buildCapsule = [&](float bx, float by,
                              float bw, float bh,
@@ -54,10 +54,10 @@ void LeaderboardState::drawCapsule(sf::RenderWindow& window,
 
         int idx = 0;
 
-        // Centroid — first vertex of TriangleFan
+        // Centroid â€” first vertex of TriangleFan
         out[idx++] = {{ bx + bw / 2.f, midY }, col};
 
-        // Right semicircle: -π/2 → +π/2
+        // Right semicircle: -Ï€/2 â†’ +Ï€/2
         for (int i = 0; i <= SEGS; ++i)
         {
             float angle = -3.14159265f / 2.f
@@ -66,7 +66,7 @@ void LeaderboardState::drawCapsule(sf::RenderWindow& window,
                             midY + r * std::sin(angle) }, col};
         }
 
-        // Left semicircle: +π/2 → +3π/2
+        // Left semicircle: +Ï€/2 â†’ +3Ï€/2
         for (int i = 0; i <= SEGS; ++i)
         {
             float angle = 3.14159265f / 2.f
@@ -75,7 +75,7 @@ void LeaderboardState::drawCapsule(sf::RenderWindow& window,
                             midY + r * std::sin(angle) }, col};
         }
 
-        // Close the fan — repeat the first perimeter vertex
+        // Close the fan â€” repeat the first perimeter vertex
         out[idx++] = out[1];
 
         return idx;
@@ -84,7 +84,7 @@ void LeaderboardState::drawCapsule(sf::RenderWindow& window,
     sf::Vertex verts[MAX_VERTS];
     int        count = 0;
 
-    // 1. Outline — draw a slightly expanded capsule in outlineColor first
+    // 1. Outline â€” draw a slightly expanded capsule in outlineColor first
     if (outlineThickness > 0.f && outlineColor.a > 0)
     {
         float ot = outlineThickness;
@@ -99,7 +99,7 @@ void LeaderboardState::drawCapsule(sf::RenderWindow& window,
                     sf::PrimitiveType::TriangleFan);
     }
 
-    // 2. Fill — draw the actual capsule on top
+    // 2. Fill â€” draw the actual capsule on top
     count = buildCapsule(x, y, width, height, fillColor, verts);
     window.draw(verts,
                 static_cast<std::size_t>(count),
@@ -107,12 +107,12 @@ void LeaderboardState::drawCapsule(sf::RenderWindow& window,
 }
 
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  onEnter
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 void LeaderboardState::onEnter()
 {
-    // ── Background texture + sprite ──────────────────────────────────────────
+    // â”€â”€ Background texture + sprite â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (!bgTexture.loadFromFile("assets/sprites/leaderboard_bg.png"))
         std::cerr << "BG failed\n";
 
@@ -125,11 +125,11 @@ void LeaderboardState::onEnter()
         bgSprite->setScale({ 800.f / static_cast<float>(size.x),
                              600.f / static_cast<float>(size.y) });
 
-    // ── Font ─────────────────────────────────────────────────────────────────
+    // â”€â”€ Font â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (!font.openFromFile("assets/fonts/BubbleBobble-rg3rx.ttf"))
         std::cerr << "Font failed\n";
 
-    // ── Back button label ────────────────────────────────────────────────────
+    // â”€â”€ Back button label â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     delete backText;
     backText = new sf::Text(font);
     backText->setString("BACK");
@@ -142,14 +142,14 @@ void LeaderboardState::onEnter()
                           bounds.position.y + bounds.size.y / 2.f });
     backText->setPosition({ 400.f, 545.f });
 
-    // ── Leaderboard data ─────────────────────────────────────────────────────
+    // â”€â”€ Leaderboard data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     leaderboard.loadFromFile("leaderboard.txt");
 }
 
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  handleEvent
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 void LeaderboardState::handleEvent(const sf::Event& event)
 {
     sf::FloatRect backBounds({ 310.f, 520.f }, { 180.f, 50.f });
@@ -170,31 +170,30 @@ void LeaderboardState::handleEvent(const sf::Event& event)
 }
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  update — track hover over back button
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+//  update â€” track hover over back button
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 void LeaderboardState::update(float /*dt*/)
 {
-    if (!m_window) return;
-
-    sf::Vector2f mousePos = m_window->mapPixelToCoords(
-                                sf::Mouse::getPosition(*m_window));
+    sf::Vector2i pixelPos = sf::Mouse::getPosition();
+sf::Vector2f mousePos(static_cast<float>(pixelPos.x),
+                      static_cast<float>(pixelPos.y));
 
     sf::FloatRect backBounds({ 310.f, 520.f }, { 180.f, 50.f });
     isBackHovered = backBounds.contains(mousePos);
 }
 
 
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 //  draw
-// ─────────────────────────────────────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 void LeaderboardState::draw(sf::RenderWindow& window)
 {
-    // ── Background ─────────────────────────────────────────────────────────────
+    // â”€â”€ Background â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (bgSprite)
         window.draw(*bgSprite);
 
-    // ── Column X positions ──────────────────────────────────────────────────────
+    // â”€â”€ Column X positions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const float startX      = 50.f;
     const float colRank     = startX;
     const float colName     = startX + 70.f;
@@ -205,7 +204,7 @@ void LeaderboardState::draw(sf::RenderWindow& window)
     const float bubbleWidth = 720.f;
     const float bubbleH     = 40.f;
 
-    // ── Leaderboard rows ────────────────────────────────────────────────────────
+    // â”€â”€ Leaderboard rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const LeaderboardEntry* e     = leaderboard.getEntries();
     int                     total = leaderboard.getCount();
 
@@ -213,7 +212,7 @@ void LeaderboardState::draw(sf::RenderWindow& window)
     //  HEADER Y POSITION (above first row)
 float headerY = 40.f;
 
-// 🔹 Rank Header
+// ðŸ”¹ Rank Header
 sf::Text rankHeader(font);
 rankHeader.setString("Rank");
 rankHeader.setCharacterSize(28);
@@ -221,7 +220,7 @@ rankHeader.setFillColor(sf::Color::White);
 rankHeader.setStyle(sf::Text::Bold);
 rankHeader.setPosition({colRank, headerY});
 
-// 🔹 Name Header
+// ðŸ”¹ Name Header
 sf::Text nameHeader(font);
 nameHeader.setString("Name");
 nameHeader.setCharacterSize(28);
@@ -229,7 +228,7 @@ nameHeader.setFillColor(sf::Color::White);
 nameHeader.setStyle(sf::Text::Bold);
 nameHeader.setPosition({colName, headerY});
 
-// 🔹 Score Header
+// ðŸ”¹ Score Header
 sf::Text scoreHeader(font);
 scoreHeader.setString("Score");
 scoreHeader.setCharacterSize(28);
@@ -237,7 +236,7 @@ scoreHeader.setFillColor(sf::Color::White);
 scoreHeader.setStyle(sf::Text::Bold);
 scoreHeader.setPosition({colScore, headerY});
 
-// 🔹 Date Header
+// ðŸ”¹ Date Header
 sf::Text dateHeader(font);
 dateHeader.setString("Date");
 dateHeader.setCharacterSize(28);
@@ -245,7 +244,7 @@ dateHeader.setFillColor(sf::Color::White);
 dateHeader.setStyle(sf::Text::Bold);
 dateHeader.setPosition({colDate, headerY});
 
-// 🔹 DRAW HEADERS
+// ðŸ”¹ DRAW HEADERS
 window.draw(rankHeader);
 window.draw(nameHeader);
 window.draw(scoreHeader);
@@ -257,7 +256,7 @@ window.draw(dateHeader);
     {
         float y = 80.f + i * 45.f;
 
-        // ── Gold / Silver / Bronze capsule with black outline ─────────────────
+        // â”€â”€ Gold / Silver / Bronze capsule with black outline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if (i < 3)
         {
             sf::Color fillColor;
@@ -272,10 +271,10 @@ window.draw(dateHeader);
                         3.f);
         }
 
-        // ── Text colour logic ─────────────────────────────────────────────────
-        //    Top-3 with real data  → black  (readable on coloured capsule)
-        //    Rows 4-10 with data   → white
-        //    Any empty placeholder → dim grey
+        // â”€â”€ Text colour logic â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        //    Top-3 with real data  â†’ black  (readable on coloured capsule)
+        //    Rows 4-10 with data   â†’ white
+        //    Any empty placeholder â†’ dim grey
         bool exists = (i < total);
 
         sf::Color textColor;
@@ -283,7 +282,7 @@ window.draw(dateHeader);
         else if (i < 3)           textColor = sf::Color::Black;
         else                      textColor = sf::Color::White;
 
-        // ── Build and draw the four text fields ───────────────────────────────
+        // â”€â”€ Build and draw the four text fields â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         std::string rankStr  = std::to_string(i + 1) + ".";
         std::string nameStr  = exists ? e[i].playerName            : "---";
         std::string scoreStr = exists ? std::to_string(e[i].score) : "---";
@@ -319,7 +318,7 @@ window.draw(dateHeader);
         window.draw(dateText);
     }
 
-    // ── Back button capsule ─────────────────────────────────────────────────────
+    // â”€â”€ Back button capsule â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     sf::Color backFill = isBackHovered
                        ? sf::Color( 60,  60,  60, 220)  // dark-grey on hover
                        : sf::Color(  0,   0,   0, 200); // near-black normally
@@ -330,7 +329,7 @@ window.draw(dateHeader);
                 sf::Color(255, 255, 255, 220),  // white outline
                 3.f);
 
-    // Back label — white normally, warm cream on hover
+    // Back label â€” white normally, warm cream on hover
     if (backText)
     {
         backText->setFillColor(isBackHovered

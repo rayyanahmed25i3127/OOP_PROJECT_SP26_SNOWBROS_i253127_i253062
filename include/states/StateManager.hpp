@@ -2,6 +2,7 @@
 
 #include "states/GameState.hpp"
 #include "../UserManager.hpp"
+#include "../PlayerProgress.hpp"
 #include <string>
 
 class StateManager {
@@ -10,6 +11,7 @@ private:
 
     std::string m_currentUser;
     UserManager m_userManager;
+    PlayerProgress m_progress;
 
 public:
     void setWindow(sf::RenderWindow* window) { m_window = window; }
@@ -30,31 +32,29 @@ private:
 
     PendingAction m_pendingActions[MAX_PENDING];
     int           m_pendingCount;
-
-    // ── Shop purchase flags ────────────────────────────────────────────────
-    // Each flag is set to true when bought in the shop.
-    // PlayState reads them on onEnter(), applies the effect, then calls
-    // resetBoughtPowerUps() so the same item can be bought again next visit.
-    bool m_speedBought;
-    bool m_snowballBought;
-    bool m_distanceBought;
-    bool m_balloonBought;
-    bool m_extraLifeBought;
+    bool m_balloonBought = false;
+bool m_distanceBought = false;
+bool m_snowballBought = false;
+bool m_speedBought = false;
+bool m_extraLifeBought = false;
 
 public:
     StateManager();
     ~StateManager();
-
+bool isBalloonBought() const { return m_balloonBought; }
+bool isDistanceBought() const { return m_distanceBought; }
+bool isSnowballBought() const { return m_snowballBought; }
+bool isSpeedBought() const { return m_speedBought; }
+bool isExtraLifeBought() const { return m_extraLifeBought; }
     StateManager(const StateManager&)            = delete;
     StateManager& operator=(const StateManager&) = delete;
 
-    // ── Current user ──────────────────────────────────────────────────────
     void        setCurrentUser(const std::string& name);
     std::string getCurrentUserName() const;
 
     UserManager& getUserManager();
+    PlayerProgress& getProgress() { return m_progress; }
 
-    // ── State controls ────────────────────────────────────────────────────
     void pushState(GameState* state);
     void popState();
     void replaceState(GameState* state);
@@ -67,28 +67,9 @@ public:
     void drawAll(sf::RenderWindow& window);
 
     bool isEmpty() const { return m_stateCount == 0; }
-
-    // ── Shop: buy (called from ShopState) ────────────────────────────────
-    void buySpeed()     { m_speedBought     = true; }
-    void buySnowball()  { m_snowballBought  = true; }
-    void buyDistance()  { m_distanceBought  = true; }
-    void buyBalloon()   { m_balloonBought   = true; }
-    void buyExtraLife() { m_extraLifeBought = true; }
-
-    // ── Shop: query (called from ShopState to grey out already-bought) ───
-    bool isSpeedBought()     const { return m_speedBought;     }
-    bool isSnowballBought()  const { return m_snowballBought;  }
-    bool isDistanceBought()  const { return m_distanceBought;  }
-    bool isBalloonBought()   const { return m_balloonBought;   }
-    bool isExtraLifeBought() const { return m_extraLifeBought; }
-
-    // ── Called by PlayState after it has applied all purchased power-ups ──
-    // Clears all flags so items become buyable again next shop visit.
-    void resetBoughtPowerUps() {
-        m_speedBought     = false;
-        m_snowballBought  = false;
-        m_distanceBought  = false;
-        m_balloonBought   = false;
-        m_extraLifeBought = false;
-    }
+    void setBalloonBought(bool val) { m_balloonBought = val; }
+void setDistanceBought(bool val) { m_distanceBought = val; }
+void setSnowballBought(bool val) { m_snowballBought = val; }
+void setSpeedBought(bool val) { m_speedBought = val; }
+void setExtraLifeBought(bool val) { m_extraLifeBought = val; }
 };

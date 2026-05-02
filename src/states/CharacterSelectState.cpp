@@ -163,14 +163,12 @@ void CharacterSelectState::handleEvent(const sf::Event& event) {
                               static_cast<float>(mb->position.y) };
             for (int i = 0; i < NUM_CHARS; ++i) {
                 if (m_bounds[i].contains(pos)) {
-                    std::cout << "[CharSelect] Selected: " << CHAR_NAMES[i] << "\n";
+                    std::cout << "[CharSelect] Selected: " << CHAR_NAMES[i] << " → using NICK\n";
 
-                    // FIX 2: StateManager has no changeState().
-                    // Pop this state first, then push PlayState — net effect
-                    // is the same (CharSelect is gone, PlayState is live)
-                    // and ESC in-game returns to the main menu.
+                    // All three characters use Nick's sprites/animations (index 0).
+                    // Change this later when TOM and MODI JI assets are ready.
                     m_manager->popState();                  // remove CharSelect
-                    m_manager->pushState(new PlayState(i)); // enter gameplay
+                    m_manager->pushState(new PlayState(0)); // always Nick
                     return;
                 }
             }

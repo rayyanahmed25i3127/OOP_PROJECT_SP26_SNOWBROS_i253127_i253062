@@ -94,7 +94,7 @@ void GameOverState::onEnter() {
         std::cerr << "[GameOverState] Failed to load font\n";
     }
 
-    // Darker overlay than pause — death is more dramatic (75% black).
+    // Darker overlay than pause â€” death is more dramatic (75% black).
     m_overlay.setFillColor(sf::Color(0, 0, 0, 190));
     m_overlay.setPosition({0.f, 0.f});
 
@@ -148,12 +148,12 @@ int GameOverState::buttonAtPoint(sf::Vector2f point) const {
 void GameOverState::activateButton(int index) {
     switch (m_buttons[index]->action) {
         case Action::MainMenu:
-            // Pop self and PlayState — returns to MenuState underneath
+            // Pop self and PlayState â€” returns to MenuState underneath
             m_manager->popState();   // GameOverState
             m_manager->popState();   // PlayState (its onExit triggers menu music)
             break;
         case Action::Exit:
-            // Pop everything — empty stack signals Game::run to close window
+            // Pop everything â€” empty stack signals Game::run to close window
             m_manager->popState();   // GameOverState
             m_manager->popState();   // PlayState
             m_manager->popState();   // MenuState (if present)

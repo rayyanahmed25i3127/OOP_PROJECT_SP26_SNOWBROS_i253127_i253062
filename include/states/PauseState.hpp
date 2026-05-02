@@ -6,7 +6,7 @@
 #include <string>
 
 /**
- * @brief Pause menu — pushed on top of PlayState when player presses Escape.
+ * @brief Pause menu â€” pushed on top of PlayState when player presses Escape.
  *
  * New design with background image and iOS-style glassy buttons.
  * - Background: pause_bg.png showing Snow Bros logo
