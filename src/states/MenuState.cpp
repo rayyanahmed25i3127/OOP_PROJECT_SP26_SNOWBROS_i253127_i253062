@@ -1,10 +1,12 @@
 #include "states/MenuState.hpp"
 #include "states/StateManager.hpp"
 #include "audio/AudioManager.hpp"
-#include "states/CharacterSelectState.hpp"   // ← replaces PlayState include
+#include "states/CharacterSelectState.hpp"
+#include "states/PlayState.hpp"
 #include "states/LeaderboardState.hpp"
 #include "states/LoginState.hpp"
 #include <iostream>
+#include <string>
 
 namespace {
     const float WINDOW_WIDTH  = 800.f;
@@ -151,6 +153,7 @@ MenuState::MenuState()
     , m_clickSoundLoaded(false)
     , m_buttonCount(0)
     , m_selectedIndex(0)
+    , m_cannotContinueTimer(0.f)
 {
     for (int i = 0; i < MAX_BUTTONS; ++i) m_buttons[i] = nullptr;
 }
@@ -243,16 +246,27 @@ void MenuState::activateButton(int index) {
 
         case ButtonAction::NewGame:
             std::cout << "[MenuState] New Game → CharacterSelectState\n";
+            // Clear any previous save so Continue points to the new run
+            m_manager->getProgress().clearSave();
             if (m_clickSoundLoaded) sf::sleep(sf::milliseconds(100));
-            // FIX: push CharacterSelectState, NOT PlayState directly.
-            // The character select screen will push PlayState once a
-            // character is chosen.
             m_manager->pushState(new CharacterSelectState());
             break;
 
-        case ButtonAction::Continue:
-            std::cout << "[MenuState] Continue — not yet implemented\n";
+        case ButtonAction::Continue: {
+            PlayerProgress& prog = m_manager->getProgress();
+            if (prog.gameOverOccurred || prog.savedLevel == 0) {
+                // No valid save or game already ended — show timed message
+                m_cannotContinueTimer = 2.8f;
+                std::cout << "[MenuState] Continue blocked: "
+                          << (prog.gameOverOccurred ? "game over" : "no save") << "\n";
+            } else {
+                std::cout << "[MenuState] Continue → level "
+                          << prog.savedLevel << "\n";
+                if (m_clickSoundLoaded) sf::sleep(sf::milliseconds(100));
+                m_manager->pushState(new PlayState(prog.savedCharacterIndex));
+            }
             break;
+        }
 
         case ButtonAction::Leaderboard:
             std::cout << "[MenuState] Leaderboard\n";
@@ -306,10 +320,26 @@ void MenuState::handleEvent(const sf::Event& event) {
 void MenuState::update(float dt) {
     m_snow.update(dt);
     for (int i = 0; i < m_buttonCount; ++i) m_buttons[i]->update(dt);
+    if (m_cannotContinueTimer > 0.f)
+        m_cannotContinueTimer -= dt;
 }
 
 void MenuState::draw(sf::RenderWindow& window) {
     window.draw(m_backgroundSprite);
     m_snow.draw(window);
     for (int i = 0; i < m_buttonCount; ++i) m_buttons[i]->draw(window);
+    // "Cannot Continue" flash message
+    if (m_cannotContinueTimer > 0.f) {
+        sf::Text msg(m_bubbleFont, "Cannot Continue!", 18);
+        msg.setFillColor(sf::Color(255, 80, 80));
+        msg.setOutlineColor(sf::Color::Black);
+        msg.setOutlineThickness(2.f);
+        auto tb = msg.getLocalBounds();
+        // Position it directly below the Continue button (approx y=455)
+        msg.setPosition({
+            (800.f - tb.size.x) / 2.f - tb.position.x,
+            460.f
+        });
+        window.draw(msg);
+    }
 }

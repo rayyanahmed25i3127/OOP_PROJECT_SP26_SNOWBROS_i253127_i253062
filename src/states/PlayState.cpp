@@ -163,6 +163,22 @@ void PlayState::onEnter() {
         m_platformTopTextureLoaded = true;
     }
 
+    // -- Restore from Main Menu continue save (if present) ---------------
+    {
+        PlayerProgress& save = m_manager->getProgress();
+        if (save.savedLevel > 0) {
+            m_currentLevel   = save.savedLevel;
+            m_gems           = save.savedGems;
+            save.gems        = save.savedGems;
+            // Character index was baked into this PlayState already;
+            // clear the save so a fresh New Game won't pick it up.
+            save.savedLevel  = 0;
+            save.savedGems   = 0;
+            std::cout << "[PlayState] Continuing from level=" << m_currentLevel
+                      << " gems=" << m_gems << "\n";
+        }
+    }
+
     m_player = new Player(m_playerSpawn, m_characterIndex);
 
     // === APPLY SHOP PURCHASES ===
@@ -222,6 +238,25 @@ void PlayState::onEnter() {
 void PlayState::onExit() {
     std::cout << "[PlayState] Exiting gameplay\n";
     AudioManager::get().playMenuMusic();
+
+    // -- Persist or clear save depending on how the game ended ----------
+    PlayerProgress& prog = m_manager->getProgress();
+    if (!m_gameOver) {
+        // Voluntary exit (Pause -> Main Menu): save level + gems so the
+        // player can continue from the start of this level later.
+        prog.savedLevel          = m_currentLevel;
+        prog.savedGems           = m_gems;
+        prog.savedCharacterIndex = m_characterIndex;
+        prog.gameOverOccurred    = false;
+        prog.gems                = m_gems;  // keep gems in sync
+        std::cout << "[PlayState] Saved level=" << m_currentLevel
+                  << " gems=" << m_gems << " for continue\n";
+    } else {
+        // Game over: invalidate any previous save, mark as over.
+        prog.savedLevel       = 0;
+        prog.savedGems        = 0;
+        prog.gameOverOccurred = true;
+    }
 }
 void PlayState::update(float dt) {
     // === HANDLE CONTINUE (GameOver -> Continue button) ==================

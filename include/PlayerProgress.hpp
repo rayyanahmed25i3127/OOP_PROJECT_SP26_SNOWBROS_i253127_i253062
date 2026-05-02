@@ -5,21 +5,26 @@ struct PlayerProgress {
     int score = 0;
 
     // -- Shop purchases (applied when PlayState resumes from pause) -----------
-    // Items 0-3: bought once per shop visit (reset by clearPending).
-    // Extra Life: stackable -- each purchase increments the count.
     bool pendingSpeed          = false;
     bool pendingSnowball       = false;
     bool pendingDistance       = false;
     bool pendingBalloon        = false;
     int  pendingExtraLifeCount = 0;
 
-    // -- Continue (GameOver screen) -------------------------------------------
-    // continueCount tracks how many times Continue has been used this session.
-    //   cost = 5 + continueCount * 10  =>  5, 15, 25, 35 ...
-    // pendingRevive is set by GameOverState so PlayState::onResume() knows to
-    // reset m_gameOver, give 1 life, and respawn the player.
+    // -- GameOver Continue button (GameOver screen) ---------------------------
+    // cost = 5 + continueCount * 10  =>  5, 15, 25 ...
     int  continueCount = 0;
     bool pendingRevive = false;
+
+    // -- Main Menu Continue button --------------------------------------------
+    // Set by PlayState::onExit() when the player voluntarily quits mid-game.
+    // Cleared when the continued game starts (PlayState::onEnter reads these).
+    // savedLevel == 0  =>  no active save / nothing to continue.
+    // gameOverOccurred =>  game ended naturally; Continue must show error.
+    int  savedLevel          = 0;
+    int  savedGems           = 0;
+    int  savedCharacterIndex = 0;
+    bool gameOverOccurred    = false;
 
     void clearPending() {
         pendingSpeed          = false;
@@ -27,6 +32,13 @@ struct PlayerProgress {
         pendingDistance       = false;
         pendingBalloon        = false;
         pendingExtraLifeCount = 0;
-        // Note: pendingRevive is cleared by PlayState::onResume, not here.
+        // pendingRevive cleared by PlayState::update, not here.
+    }
+
+    void clearSave() {
+        savedLevel          = 0;
+        savedGems           = 0;
+        savedCharacterIndex = 0;
+        gameOverOccurred    = false;
     }
 };
