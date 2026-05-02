@@ -224,6 +224,20 @@ void PlayState::onExit() {
     AudioManager::get().playMenuMusic();
 }
 void PlayState::update(float dt) {
+    // === HANDLE CONTINUE (GameOver -> Continue button) ==================
+    {
+        PlayerProgress& prog = m_manager->getProgress();
+        if (prog.pendingRevive && m_player) {
+            prog.pendingRevive = false;
+            m_gameOver = false;
+            m_player->addLife();              // restore 1 life
+            m_player->respawn(m_playerSpawn); // put player back at spawn
+            m_gems = prog.gems;               // reflect deducted gems
+            std::cout << "[PlayState] Revived via Continue. Lives="
+                      << m_player->getLives() << " Gems=" << m_gems << "\n";
+        }
+    }
+
     // === APPLY PENDING SHOP POWERUPS (bought mid-game from pause menu shop) ===
     {
         PlayerProgress& prog = m_manager->getProgress();
