@@ -103,9 +103,9 @@ protected:
     void syncSpritePositions();
     void jump();
     void updateStateTimers(float dt);
-    void applyStateSprite();
+    virtual void applyStateSprite();
     void integrateRolling(float dt);   
-    void updateAnimation(float dt);
+    virtual void updateAnimation(float dt);
 
     static bool tryLoadTexture(sf::Texture& out, const std::string& path,
                                const char* tag);
