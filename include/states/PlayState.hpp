@@ -4,6 +4,8 @@
 #include "Player.hpp"
 #include "Platform.hpp"
 #include "enemies/Enemy.hpp"
+#include "enemies/Mogera.hpp"
+#include "enemies/MogeraChild.hpp"
 #include "physics/CollisionDetector.hpp"
 #include "projectiles/AttackBall.hpp"
 #include "effects/HitFlash.hpp"
@@ -14,12 +16,18 @@
 
 class PlayState : public GameState {
 public:
-    static const int MAX_PLATFORMS = 16;
-    static const int MAX_ENEMIES   = 16;
+    static const int MAX_PLATFORMS   = 16;
+    static const int MAX_ENEMIES     = 16;
     static const int MAX_PROJECTILES = 8;
-    static const int MAX_HIT_FLASHES = 16;
-    static const int MAX_POWERUPS = 16;
-    static const int MAX_DIAMONDS = 16;
+static const int MAX_PLATFORMS   = 16;
+static const int MAX_ENEMIES     = 16;
+static const int MAX_PROJECTILES = 8;
+
+static const int MAX_HIT_FLASHES = 16;
+static const int MAX_POWERUPS    = 16;
+static const int MAX_DIAMONDS    = 16;
+
+static const int MAX_MOGERA_CHILDREN = 32;
 
 private:
     std::string m_playerName;
@@ -45,6 +53,7 @@ private:
     float m_speedTimer;
     bool  m_balloonActive;
     float m_balloonTimer;
+
     bool  m_snowballPowerActive;
     bool  m_distanceActive;
 
@@ -53,10 +62,13 @@ private:
 
     sf::Texture m_puIconSpeed;
     bool m_puIconSpeedLoaded;
+
     sf::Texture m_puIconSnowball;
     bool m_puIconSnowballLoaded;
+
     sf::Texture m_puIconDistance;
     bool m_puIconDistanceLoaded;
+
     sf::Texture m_puIconBalloon;
     bool m_puIconBalloonLoaded;
 
@@ -110,6 +122,19 @@ private:
     float m_levelTransitionTimer;
     float m_levelSlideOffset;
     bool  m_showLevelCompleteText;
+    bool  m_bonusDiamondsSpawned;
+
+    // ===== BOSS: Mogera (Level 5) =====
+    Mogera*      m_mogera;
+    MogeraChild* m_mogeraChildren[MAX_MOGERA_CHILDREN];
+    int          m_mogeraChildCount;
+    float        m_mogeraChildPrevX[MAX_MOGERA_CHILDREN];
+    float        m_mogeraChildPrevY[MAX_MOGERA_CHILDREN];
+
+    void drawBossHealthBar(sf::RenderWindow& window);
+    void spawnMogeraChildren(sf::Vector2f mouthPos);
+    void updateMogera(float dt);
+    // =========================================
 
     void buildLevel();
     void spawnEnemies();
