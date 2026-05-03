@@ -26,17 +26,17 @@ void Animation::update(float dt) {
 
     m_currentTime += dt;
 
-    // Advance to next frame(s) if enough time has passed
+    // MOve to next frame if enough time has passed
     while (m_currentTime >= m_frameDuration) {
         m_currentTime -= m_frameDuration;
         m_currentFrameIndex++;
 
-        // Handle end of animation
+        // Handling end of animation
         if (m_currentFrameIndex >= m_frameCount) {
             if (m_isLooping) {
-                m_currentFrameIndex = 0;  // Loop back to start
+                m_currentFrameIndex = 0;  
             } else {
-                m_currentFrameIndex = m_frameCount - 1;  // Stay on last frame
+                m_currentFrameIndex = m_frameCount - 1;  
                 m_hasFinished = true;
                 m_isPlaying = false;
                 break;

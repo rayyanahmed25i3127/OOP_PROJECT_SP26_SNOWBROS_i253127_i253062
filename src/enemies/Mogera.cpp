@@ -3,20 +3,18 @@
 #include <cstdio>
 
 namespace {
-    // Lower-right platform: sprite pos y=437, hitbox insetTop=20 → surface at y=457.
-    // Mogera's feet must sit at y=457, so position.y = 457 - spriteH.
-    const float PLATFORM_TOP_Y = 475.f;   // actual landing surface of lower platforms
+    const float PLATFORM_TOP_Y = 475.f;   
 }
 
 Mogera::Mogera(sf::Vector2f pos)
     : Entity(pos)
-    , m_sprite(m_idleTexture)          // SFML3: must pass texture to constructor
+    , m_sprite(m_idleTexture)          
     , m_idleLoaded(false)
     , m_open1Loaded(false)
     , m_open2Loaded(false)
     , m_deathLoaded(false)
     , m_bossState(BossState::Idle)
-    , m_stateTimer(IDLE_INTRO)         // start with a brief idle before first attack
+    , m_stateTimer(IDLE_INTRO)         
     , m_maxHits(50)
     , m_hitsRemaining(50)
     , m_canAttack(true)
@@ -27,7 +25,6 @@ Mogera::Mogera(sf::Vector2f pos)
 {
     m_spawnRequest.pending = false;
 
-    // --- Load textures with fopen guard (SFML3 Windows compat) ---
     auto tryLoad = [&](sf::Texture& tex, const char* path, bool& flag, const char* tag) {
         if (std::FILE* f = std::fopen(path, "rb")) {
             std::fclose(f);
@@ -50,14 +47,12 @@ Mogera::Mogera(sf::Vector2f pos)
         m_sprite.setTexture(m_idleTexture, true);
     }
 
-    // --- Hitbox: slightly smaller than sprite ---
     hitBox.size     = { m_spriteW - 20.f, m_spriteH - 10.f };
     hitBox.position = { pos.x + 10.f,     pos.y + 5.f };
 
     syncSprite();
 }
 
-// ---------------------------------------------------------------
 void Mogera::syncHitBox() {
     hitBox.position = { position.x + 10.f, position.y + 5.f };
 }
@@ -87,7 +82,6 @@ void Mogera::syncSprite() {
     if (tex) {
         auto ts = tex->getSize();
         if (ts.x > 0 && ts.y > 0) {
-            // Mogera faces LEFT — sprites drawn facing left by default, positive scale
             float sx = m_spriteW / static_cast<float>(ts.x);
             float sy = m_spriteH / static_cast<float>(ts.y);
             m_sprite.setTexture(*tex, true);
@@ -97,15 +91,14 @@ void Mogera::syncSprite() {
     }
 }
 
-// ---------------------------------------------------------------
+
 void Mogera::update(float dt) {
     if (m_bossState == BossState::Dead) return;
 
     m_stateTimer -= dt;
 
     if (m_bossState == BossState::Dying) {
-        // Fall until feet touch the ground (PLATFORM_TOP_Y = actual platform surface)
-        float groundY = PLATFORM_TOP_Y - m_spriteH + 50.f;   // top of sprite when feet on surface
+        float groundY = PLATFORM_TOP_Y - m_spriteH + 50.f;  
         if (position.y < groundY) {
             velocity.y += DEATH_GRAVITY * dt;
             position   += velocity * dt;
@@ -126,12 +119,10 @@ void Mogera::update(float dt) {
         return;
     }
 
-    // ---- Normal attack cycle ----
     switch (m_bossState) {
 
         case BossState::Idle:
             if (m_stateTimer <= 0.f) {
-                // Transition: Idle → OpenMouth1
                 m_bossState = BossState::OpenMouth1;
                 m_stateTimer = OPEN1_DURATION;
                 syncSprite();
@@ -141,7 +132,6 @@ void Mogera::update(float dt) {
 
         case BossState::OpenMouth1:
             if (m_stateTimer <= 0.f) {
-                // Transition: OpenMouth1 → OpenMouth2
                 m_bossState = BossState::OpenMouth2;
                 m_stateTimer = OPEN2_DURATION;
                 m_babiesSpawnedThisCycle = false;
@@ -155,17 +145,15 @@ void Mogera::update(float dt) {
             if (!m_babiesSpawnedThisCycle && m_canAttack) {
                 m_babiesSpawnedThisCycle = true;
                 // Signal PlayState to spawn 3 babies
-                // Mouth position: left edge of Mogera's sprite + a bit up from center
                 m_spawnRequest.pending  = true;
                 m_spawnRequest.spawnPos = {
                     position.x,                      // left side of Mogera (mouth opens left)
-                    position.y + m_spriteH * 0.35f   // ~35% down from top = mouth height
+                    position.y + m_spriteH * 0.35f   // 35% down from top = mouth height
                 };
                 std::cout << "[Mogera] Spawn request sent (3 babies)\n";
             }
 
             if (m_stateTimer <= 0.f) {
-                // Transition: OpenMouth2 → Idle (long wait)
                 m_bossState  = BossState::Idle;
                 m_stateTimer = IDLE_BEFORE_ATTACK;
                 syncSprite();
@@ -177,7 +165,6 @@ void Mogera::update(float dt) {
     }
 }
 
-// ---------------------------------------------------------------
 void Mogera::draw(sf::RenderWindow& window) {
     if (!alive && m_bossState != BossState::Dying) return;
     if (m_bossState == BossState::Dead) return;
@@ -210,19 +197,15 @@ void Mogera::draw(sf::RenderWindow& window) {
         fb.setPosition(position);
         window.draw(fb);
 
-        // Label
-        // (font not available here; fallback shape is sufficient)
     }
 }
 
-// ---------------------------------------------------------------
 void Mogera::setPosition(sf::Vector2f pos) {
     position = pos;
     syncHitBox();
     syncSprite();
 }
 
-// ---------------------------------------------------------------
 void Mogera::takeSnowballHit() {
     if (m_bossState == BossState::Dying || m_bossState == BossState::Dead) return;
 

@@ -3,11 +3,9 @@
 #include <iostream>
 
 namespace {
-    // Attack ball design parameters (spec Â§7.1 â€” "travels 2-2.5 inches").
-    // At typical 96 DPI, 2 inches â‰ˆ 192 pixels. Use 200 as round number.
-    const float ATTACKBALL_SPEED    = 700.f;   // snappier arcade feel
+    const float ATTACKBALL_SPEED    = 700.f;   
     const float ATTACKBALL_MAX_DIST = 220.f;
-    const float SCREEN_WIDTH        = 800.f;   // for Distance Increase power-up
+    const float SCREEN_WIDTH        = 800.f;   
 
     // Visual / physics size of the projectile sprite
     const float ATTACKBALL_W = 20.f;
@@ -28,14 +26,13 @@ AttackBall::AttackBall(sf::Vector2f pos, bool facingRight,
     , m_maxDistance(ATTACKBALL_MAX_DIST)
     , m_speed(ATTACKBALL_SPEED)
     , m_facingRight(facingRight)
-    , m_maxRangeMode(false)  // ===== ADD THIS LINE =====
+    , m_maxRangeMode(false) 
     , m_spriteWidth(ATTACKBALL_W)
     , m_spriteHeight(ATTACKBALL_H)
 {
     velocity.x = facingRight ? m_speed : -m_speed;
     velocity.y = 0.f;
 
-    // Load sprite with fopen guard (SFML 3 Windows quirk)
     if (std::FILE* f = std::fopen(texturePath.c_str(), "rb")) {
         std::fclose(f);
         if (m_texture.loadFromFile(texturePath)) {
@@ -49,7 +46,6 @@ AttackBall::AttackBall(sf::Vector2f pos, bool facingRight,
                   << " â€” falling back to circle\n";
     }
 
-    // Configure fallback circle (used only if sprite didn't load)
     m_fallbackShape.setFillColor(sf::Color(245, 250, 255));
     m_fallbackShape.setOutlineColor(sf::Color(120, 140, 180));
     m_fallbackShape.setOutlineThickness(1.f);
@@ -67,9 +63,6 @@ void AttackBall::update(float dt) {
 
     setPosition(position);
 
-    // ===== POWER-UP: Distance Increase =====
-    // When max-range mode is active, snowball travels full screen width (800px)
-    // Otherwise, uses default range (220px)
     float effectiveRange = m_maxRangeMode ? SCREEN_WIDTH : m_maxDistance;
     
     if (m_distanceTravelled >= effectiveRange) {

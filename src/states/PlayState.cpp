@@ -52,7 +52,7 @@ namespace {
     int g_globalDoubleKillEvents = 0;
 }
 
-// Single-player constructor
+// Single player constructor
 PlayState::PlayState(int characterIndex)
     : m_playerName("")
     , m_characterIndex(characterIndex)
@@ -136,7 +136,7 @@ PlayState::PlayState(int characterIndex)
     for (int i = 0; i < MAX_PROJECTILES; ++i) m_projectiles2[i] = nullptr;
 }
 
-// Two-player constructor
+// Two player constructor
 PlayState::PlayState(int charIdx1, int charIdx2)
     : PlayState(charIdx1)
 {
@@ -212,8 +212,7 @@ void PlayState::onEnter() {
         m_score2 = 0;
         m_gems2 = 0;
         // Multiplayer: 2 lives each, no continue
-        m_player->loseLife(); // starts with 2, remove extra so getLives()==1 (actually starts at 2)
-        // Actually Player starts with m_lives=2 which means 2 lives. That's correct.
+        m_player->loseLife();
         std::cout << "[PlayState] Multiplayer: P2 spawned (char=" << m_characterIndex2 << ")\n";
     }
 
@@ -271,7 +270,7 @@ void PlayState::onEnter() {
 
 void PlayState::onExit() {
     std::cout << "[PlayState] Exiting gameplay\n";
-    AudioManager::get().setAttackPlaying(false);  // stop looping attack sfx
+    AudioManager::get().setAttackPlaying(false); 
     AudioManager::get().playMenuMusic();
 
     PlayerProgress& prog = m_manager->getProgress();
@@ -433,7 +432,6 @@ void PlayState::spawnEnemies() {
         m_bonusDiamondsSpawned = true;
     }
     else {
-        // Level 10 — Gamakichi boss + mixed enemies (origin/main)
         m_enemies[m_enemyCount++] = new BotomOrange(UL[0]);
         m_enemies[m_enemyCount++] = new BotomOrange(UL[2]);
         m_enemies[m_enemyCount++] = new BotomOrange(MID[1]);
@@ -773,7 +771,6 @@ void PlayState::update(float dt) {
         if (m_knives[r]&&m_knives[r]->isAlive()) m_knives[w++]=m_knives[r];
         else { delete m_knives[r]; m_knives[r]=nullptr; } } m_knifeCount=w; }
 
-    // ── Attack sound: loop while any fire key is held ─────────────────
     {
         bool p1Firing = m_player && (
             sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space) ||
@@ -785,8 +782,6 @@ void PlayState::update(float dt) {
             (m_player2->isAutoAttack()));
         AudioManager::get().setAttackPlaying(p1Firing || p2Firing);
     }
-
-    // Spawn attack ball (P1)
     if (m_player && m_player->wantsToThrow() && m_projectileCount < MAX_PROJECTILES) {
         sf::FloatRect pHit = m_player->getHitBox();
         float spawnY = pHit.position.y + pHit.size.y * 0.3f;
@@ -803,7 +798,6 @@ void PlayState::update(float dt) {
     for (int i = 0; i < m_projectileCount; ++i)
         if (m_projectiles[i]) m_projectiles[i]->update(dt);
 
-    // Spawn + update P2 projectiles
     if (m_multiplayer && m_player2 && !m_player2Dead && m_player2->wantsToThrow() && m_projectileCount2 < MAX_PROJECTILES) {
         sf::FloatRect pHit = m_player2->getHitBox();
         float spawnY = pHit.position.y + pHit.size.y * 0.3f;
@@ -816,7 +810,6 @@ void PlayState::update(float dt) {
     }
     for (int i=0;i<m_projectileCount2;++i) if (m_projectiles2[i]) m_projectiles2[i]->update(dt);
 
-    // Attack ball vs regular enemy
     for (int i = 0; i < m_projectileCount; ++i) {
         if (!m_projectiles[i] || !m_projectiles[i]->isAlive()) continue;
         sf::FloatRect pHit = m_projectiles[i]->getHitBox();
@@ -839,7 +832,6 @@ void PlayState::update(float dt) {
         }
     }
 
-    // GC dead projectiles (P1)
     { int w=0; for (int r=0;r<m_projectileCount;++r) {
         if (m_projectiles[r]&&m_projectiles[r]->isAlive()) m_projectiles[w++]=m_projectiles[r];
         else { delete m_projectiles[r]; m_projectiles[r]=nullptr; } } m_projectileCount=w; }
@@ -887,13 +879,12 @@ void PlayState::update(float dt) {
             else{delete m_projectiles2[r];m_projectiles2[r]=nullptr;}}m_projectileCount2=w;}
     }
 
-    // Update & GC hit flashes
     for (int i=0;i<m_hitFlashCount;++i) if (m_hitFlashes[i]) m_hitFlashes[i]->update(dt);
     { int w=0; for (int r=0;r<m_hitFlashCount;++r) {
         if (m_hitFlashes[r]&&m_hitFlashes[r]->isAlive()) m_hitFlashes[w++]=m_hitFlashes[r];
         else { delete m_hitFlashes[r]; m_hitFlashes[r]=nullptr; } } m_hitFlashCount=w; }
 
-    // Player kicks snowballed enemy → Rolling
+    // Player kicks snowballed enemy Rolling
     if (m_player) {
         sf::FloatRect pHit = m_player->getHitBox();
         float pL=pHit.position.x, pR=pL+pHit.size.x, pT=pHit.position.y, pB=pT+pHit.size.y;
@@ -951,7 +942,6 @@ void PlayState::update(float dt) {
         }
     }
 
-    // Power-up physics + pickup
     for (int i=0;i<m_powerUpCount;++i) { if (!m_powerUps[i]) continue;
         float px=m_powerUps[i]->getPosition().x, py=m_powerUps[i]->getPosition().y;
         m_powerUps[i]->update(dt);
@@ -1011,7 +1001,6 @@ void PlayState::update(float dt) {
     updatePowerUpTimers(dt);
     if (m_multiplayer) updatePowerUpTimersP2(dt);
 
-    // GC dead regular enemies
     { int w=0;
       for (int r=0;r<m_enemyCount;++r) {
         Enemy* e=m_enemies[r];
@@ -1140,7 +1129,6 @@ void PlayState::drawHUD(sf::RenderWindow& window) {
     const unsigned int TS=14;
 
     if (!m_multiplayer) {
-        // ── Single-player HUD (unchanged) ──
         { sf::Text t(m_hudFont,"SCORE "+std::to_string(m_score),TS);
           t.setFillColor(sf::Color::White); t.setOutlineColor(sf::Color::Black); t.setOutlineThickness(2.f);
           t.setPosition({LEFT_X,HUD_Y}); window.draw(t); }
@@ -1159,7 +1147,6 @@ void PlayState::drawHUD(sf::RenderWindow& window) {
             if (ts.x>0&&ts.y>0) d.setScale({ICON_SIZE/(float)ts.x,ICON_SIZE/(float)ts.y});
             d.setPosition({tx-ICON_SIZE-GAP,HUD_Y}); window.draw(d); } }
     } else {
-        // ── Multiplayer HUD — P1 left, P2 right ──
         const unsigned int S=10;
         // P1 label
         { sf::Text t(m_hudFont,"P1",S); t.setFillColor(sf::Color(100,200,255));
@@ -1327,9 +1314,6 @@ void PlayState::drawPowerUpHUD(sf::RenderWindow& window) {
         fill.setFillColor(barColor); window.draw(fill); }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// nextLevel  — HEAD extended bg paths (lvl6-9, lvl10) + origin/main globals
-// ═══════════════════════════════════════════════════════════════════════════
 void PlayState::nextLevel() {
     cleanupLevel();
     m_currentLevel++;
@@ -1387,10 +1371,6 @@ void PlayState::nextLevel() {
         else        AudioManager::get().playNormalLevelMusic();
     }
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
-// updateGamakichi  — origin/main: Level 10 boss logic
-// ═══════════════════════════════════════════════════════════════════════════
 void PlayState::updateGamakichi(float dt) {
     if (!m_gamakichi) return;
 
@@ -1479,10 +1459,6 @@ void PlayState::updateGamakichi(float dt) {
         std::cout << "[PlayState] Gamakichi removed\n";
     }
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
-// drawGamaHealthBar  — origin/main: Level 10 boss HUD bar
-// ═══════════════════════════════════════════════════════════════════════════
 void PlayState::drawGamaHealthBar(sf::RenderWindow& window) {
     if (!m_gamakichi || !m_hudFontLoaded) return;
 
@@ -1525,10 +1501,6 @@ void PlayState::drawGamaHealthBar(sf::RenderWindow& window) {
     hp.setPosition({BAR_X + BAR_W + 6.f, BAR_Y + 1.f});
     window.draw(hp);
 }
-
-// ═══════════════════════════════════════════════════════════════════════════
-// cleanupLevel  — HEAD: includes m_knives + m_gamakichi cleanup
-// ═══════════════════════════════════════════════════════════════════════════
 void PlayState::cleanupLevel() {
     for (int i = 0; i < m_platformCount;    ++i) { delete m_platforms[i];    m_platforms[i]    = nullptr; } m_platformCount    = 0;
     for (int i = 0; i < m_enemyCount;       ++i) { delete m_enemies[i];      m_enemies[i]      = nullptr; m_chainCount[i] = 0; } m_enemyCount = 0;
@@ -1545,9 +1517,6 @@ void PlayState::cleanupLevel() {
     for (int i=0;i<m_projectileCount2;++i){delete m_projectiles2[i];m_projectiles2[i]=nullptr;} m_projectileCount2=0;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Multiplayer helper: player loses a life with MP-aware game over
-// ═══════════════════════════════════════════════════════════════════════════
 void PlayState::playerLoseLife(Player* p, sf::Vector2f spawn, bool isP2) {
     p->loseLife();
     std::cout << "[PlayState] " << (isP2?"P2":"P1") << " lost a life. Lives: " << p->getLives() << "\n";

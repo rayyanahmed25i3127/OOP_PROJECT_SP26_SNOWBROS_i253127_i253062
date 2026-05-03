@@ -22,7 +22,6 @@ void Leaderboard::loadFromFile(const std::string& filename) {
         int score, level;
         char date[20];
 
-        // Fixed: use commas to match save format: name,score,level,date
         sscanf(line, "%[^,],%d,%d,%s", name, &score, &level, date);
 
         m_entries[m_count].playerName = name;

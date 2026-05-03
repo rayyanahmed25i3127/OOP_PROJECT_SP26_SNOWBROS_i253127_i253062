@@ -30,10 +30,6 @@ namespace {
     const sf::Color COLOR_OUTLINE = sf::Color( 10,  10,  15, 220);
     const sf::Color COLOR_YELLOW  = sf::Color(220, 190,  30);
 }
-
-// ============================================================================
-// Button
-// ============================================================================
 MenuState::Button::Button(const sf::Font& font)
     : centerRect({BTN_WIDTH, BTN_HEIGHT})
     , leftCap(BTN_HEIGHT / 2.f)
@@ -148,9 +144,6 @@ void MenuState::Button::draw(sf::RenderWindow& window) const {
     window.draw(text);
 }
 
-// ============================================================================
-// MenuState
-// ============================================================================
 MenuState::MenuState()
     : m_backgroundSprite(m_backgroundTexture)
     , m_snow(WINDOW_WIDTH, WINDOW_HEIGHT)

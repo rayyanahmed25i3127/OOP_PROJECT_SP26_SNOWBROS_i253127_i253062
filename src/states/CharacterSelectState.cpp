@@ -3,10 +3,6 @@
 #include "audio/AudioManager.hpp"
 #include "states/PlayState.hpp"
 #include <iostream>
-
-// ── Character metadata ──────────────────────────────────────────────────────
-// NUM_CHARS is now public in the header, so CharacterSelectState::NUM_CHARS
-// is accessible here. No C++(265) error.
 namespace {
     const char* CHAR_FILES[CharacterSelectState::NUM_CHARS] = {
         "assets/sprites/char_blue.png",
@@ -24,8 +20,6 @@ namespace {
     const sf::Color CARD_BORDER(80,  160, 255, 200);
     const sf::Color CARD_BORDER_HOVER(255, 220, 60, 255);
 }
-
-// ── ctor / dtor ─────────────────────────────────────────────────────────────
 CharacterSelectState::CharacterSelectState()
     : m_bg(nullptr)
     , m_fontLoaded(false)
@@ -47,7 +41,6 @@ CharacterSelectState::~CharacterSelectState() {
     }
 }
 
-// ── onEnter ─────────────────────────────────────────────────────────────────
 void CharacterSelectState::onEnter() {
     AudioManager::get().playMenuMusic();
     std::cout << "[CharSelect] Entering character selection\n";
@@ -94,13 +87,10 @@ void CharacterSelectState::onEnter() {
 
     buildLayout();
 }
-
-// ── onExit ──────────────────────────────────────────────────────────────────
 void CharacterSelectState::onExit() {
     std::cout << "[CharSelect] Exiting character selection\n";
 }
 
-// ── buildLayout ─────────────────────────────────────────────────────────────
 void CharacterSelectState::buildLayout() {
     float totalW = NUM_CHARS * CARD_W + (NUM_CHARS - 1) * CARD_GAP;
     float startX = (WINDOW_W - totalW) / 2.f;
@@ -137,8 +127,6 @@ void CharacterSelectState::buildLayout() {
         }
     }
 }
-
-// ── updateHover ─────────────────────────────────────────────────────────────
 void CharacterSelectState::updateHover(sf::Vector2f mousePos) {
     m_hoveredIndex = -1;
     for (int i = 0; i < NUM_CHARS; ++i) {
@@ -150,7 +138,6 @@ void CharacterSelectState::updateHover(sf::Vector2f mousePos) {
     }
 }
 
-// ── handleEvent ─────────────────────────────────────────────────────────────
 void CharacterSelectState::handleEvent(const sf::Event& event) {
     // Hover highlight
     if (const auto* mv = event.getIf<sf::Event::MouseMoved>()) {
@@ -158,7 +145,6 @@ void CharacterSelectState::handleEvent(const sf::Event& event) {
                       static_cast<float>(mv->position.y) });
     }
 
-    // Click — start game
     if (const auto* mb = event.getIf<sf::Event::MouseButtonPressed>()) {
         if (mb->button == sf::Mouse::Button::Left) {
             sf::Vector2f pos{ static_cast<float>(mb->position.x),
@@ -167,17 +153,15 @@ void CharacterSelectState::handleEvent(const sf::Event& event) {
                 if (m_bounds[i].contains(pos)) {
                     std::cout << "[CharSelect] Selected: " << CHAR_NAMES[i] << " → using NICK\n";
 
-                    // All three characters use Nick's sprites/animations (index 0).
-                    // Change this later when TOM and MODI JI assets are ready.
-                    m_manager->popState();                  // remove CharSelect
-                    m_manager->pushState(new PlayState(0)); // always Nick
+                    m_manager->popState();                 
+                    m_manager->pushState(new PlayState(0)); 
                     return;
                 }
             }
         }
     }
 
-    // ESC → back to main menu
+
     if (const auto* kp = event.getIf<sf::Event::KeyPressed>()) {
         if (kp->code == sf::Keyboard::Key::Escape) {
             m_manager->popState();
@@ -185,16 +169,13 @@ void CharacterSelectState::handleEvent(const sf::Event& event) {
     }
 }
 
-// ── update ──────────────────────────────────────────────────────────────────
 void CharacterSelectState::update(float /*dt*/) {}
 
-// ── draw ────────────────────────────────────────────────────────────────────
 void CharacterSelectState::draw(sf::RenderWindow& window) {
     window.clear(sf::Color(5, 10, 25));
 
     if (m_bg) window.draw(*m_bg);
 
-    // Dark title banner
     {
         sf::RectangleShape banner({ WINDOW_W, 70.f });
         banner.setPosition({ 0.f, 15.f });

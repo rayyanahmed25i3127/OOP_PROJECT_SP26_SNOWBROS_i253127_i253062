@@ -19,7 +19,6 @@ AudioManager::AudioManager() {
     if (m_normalLoaded) { m_normalMusic->setLooping(true); m_normalMusic->setVolume(m_musicVolume); }
     if (m_bossLoaded)   { m_bossMusic->setLooping(true);   m_bossMusic->setVolume(m_musicVolume); }
 
-    // SFX — short files, load fully into buffer
     if (m_attackBuf.loadFromFile("assets/sounds/attack.ogg")) {
         m_attackLoaded = true;
         m_attackSound  = new sf::Sound(m_attackBuf);
@@ -27,7 +26,7 @@ AudioManager::AudioManager() {
         m_attackSound->setVolume(m_sfxVolume);
     } else {
         std::cerr << "[AudioManager] Could not load attack.ogg\n";
-        m_attackSound = new sf::Sound(m_attackBuf); // safe empty sound
+        m_attackSound = new sf::Sound(m_attackBuf); 
     }
 
     if (m_deathBuf.loadFromFile("assets/sounds/death.ogg")) {
@@ -97,7 +96,6 @@ void AudioManager::setMusicVolume(float v) {
     if (m_bossLoaded)   m_bossMusic->setVolume(v);
 }
 
-// ── SFX ───────────────────────────────────────────────────────────────────
 
 void AudioManager::setAttackPlaying(bool playing) {
     if (!m_attackLoaded || !m_attackSound) return;
@@ -112,7 +110,7 @@ void AudioManager::setAttackPlaying(bool playing) {
 
 void AudioManager::playDeathSound() {
     if (!m_deathLoaded || !m_deathSound) return;
-    m_deathSound->stop();   // restart if already playing
+    m_deathSound->stop();   // restart if alrd playing
     m_deathSound->play();
 }
 

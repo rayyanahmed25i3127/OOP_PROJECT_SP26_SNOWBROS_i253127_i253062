@@ -13,7 +13,7 @@ namespace {
 
     const sf::Color FROSTY_TINT(180, 220, 255);
 
-    // Walk animation timing (same as player: 0.33s per frame, 1s full cycle)
+    // Walk animation timing (same as player)
     const float WALK_FRAME_TIME = 0.33f;
 }
 
@@ -122,7 +122,6 @@ void Enemy::syncSpritePositions() {
         float sy = m_spriteHeight / static_cast<float>(bodySize.y);
         m_bodySprite.setOrigin({ static_cast<float>(bodySize.x) / 2.f, 0.f });
 
-        // Default sprites face LEFT. Flip when facing RIGHT and alive/rolling.
         bool flip = m_facingRight
                  && (m_state == State::Alive || m_state == State::Rolling);
         if (flip) m_bodySprite.setScale({ -sx, sy });
@@ -212,7 +211,7 @@ void Enemy::applyStateSprite() {
 
     switch (m_state) {
         case State::Alive:
-            // Animation handles texture for Alive state — don't override here
+            // Animation handles texture for Alive state
             break;
         case State::PartialEncase:
             setBody(m_trappedTexture, m_trappedLoaded);
@@ -293,10 +292,6 @@ void Enemy::update(float dt) {
 
     position += velocity * dt;
     syncHitBox();
-
-    // Always call applyStateSprite — it resets m_overlayVisible to false
-    // at the top, so when enemy returns to Alive the snow overlay disappears.
-    // For Alive state it won't override the body texture (animation handles that).
     applyStateSprite();
 
     // For Alive state, animation swaps the body texture directly
@@ -368,15 +363,9 @@ void Enemy::kickIntoRoll(bool facingRight) {
     velocity = { 0.f, 0.f };
 }
 
-// ---------------------------------------------------------------
-// loadAnimations — loads walk/jump/fall textures into PERSISTENT
-// class member arrays. These textures live as long as the enemy.
-// ---------------------------------------------------------------
-void Enemy::loadAnimations(const std::string& walkBasePath, const std::string& jumpBasePath) {
-    // walkBasePath = "assets/sprites/botom_red_walking_frame"  (no number, no .png)
-    // jumpBasePath = "assets/sprites/botom_red_jumping"        (no .png)
+// loadAnimations! loads walk/jump/fall textures
 
-    // === WALK (3 frames — stored in m_walkTextures[]) ===
+void Enemy::loadAnimations(const std::string& walkBasePath, const std::string& jumpBasePath) {
     m_walkLoaded = true;
     for (int i = 0; i < 3; ++i) {
         std::string path = walkBasePath + std::to_string(i + 1) + ".png";
@@ -387,13 +376,11 @@ void Enemy::loadAnimations(const std::string& walkBasePath, const std::string& j
         }
     }
 
-    // === JUMP (1 frame) ===
     std::string jumpPath = jumpBasePath + ".png";
     m_jumpLoaded = m_jumpTexture.loadFromFile(jumpPath);
     if (!m_jumpLoaded)
         std::cerr << "[Enemy] Failed to load " << jumpPath << "\n";
 
-    // === FALL (1 frame — derive path by replacing "jumping" with "falling") ===
     std::string fallPath = jumpBasePath;
     size_t pos = fallPath.find("jumping");
     if (pos != std::string::npos) {
@@ -405,23 +392,19 @@ void Enemy::loadAnimations(const std::string& walkBasePath, const std::string& j
         std::cerr << "[Enemy] Failed to load " << fallPath << "\n";
 }
 
-// ---------------------------------------------------------------
-// updateAnimation — direct texture swap based on enemy state.
-// Only runs for Alive enemies. Frozen states use applyStateSprite().
-// ---------------------------------------------------------------
+// updateAnimation! direct texture swap
 void Enemy::updateAnimation(float dt) {
     if (m_state != State::Alive) return;
 
-    // --- AIRBORNE ---
     if (!m_onGround) {
         if (velocity.y < 0.f && m_jumpLoaded) {
-            // Going UP → jump frame
+            // Going UP
             m_bodySprite.setTexture(m_jumpTexture, true);
         } else if (m_fallLoaded) {
-            // Going DOWN → fall frame
+            // Going DOWN
             m_bodySprite.setTexture(m_fallTexture, true);
         } else if (m_jumpLoaded) {
-            // Fallback: use jump frame for fall too
+            // Fallback
             m_bodySprite.setTexture(m_jumpTexture, true);
         }
         // Reset walk so it starts clean on landing
@@ -430,7 +413,6 @@ void Enemy::updateAnimation(float dt) {
         return;
     }
 
-    // --- WALKING (on ground, moving) ---
     if (velocity.x != 0.f && m_walkLoaded) {
         m_walkTimer += dt;
         if (m_walkTimer >= WALK_FRAME_TIME) {
@@ -441,7 +423,7 @@ void Enemy::updateAnimation(float dt) {
         return;
     }
 
-    // --- IDLE (on ground, not moving) ---
+    
     if (m_idleLoaded) {
         m_bodySprite.setTexture(m_idleTexture, true);
     }

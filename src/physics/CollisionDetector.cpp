@@ -22,9 +22,7 @@ void CollisionDetector::resolve(Entity& entity,
     float hitPrevX = prevX + hitOffsetX;
     float hitPrevY = prevY + hitOffsetY;
 
-    // =============================================================
-    // 1. HORIZONTAL WALL COLLISION (screen borders)
-    // =============================================================
+
     if (hit.position.x < m_leftWall) {
         pos.x = m_leftWall - hitOffsetX;
         if (vel.x < 0) vel.x = 0.f;
@@ -35,10 +33,6 @@ void CollisionDetector::resolve(Entity& entity,
         if (vel.x > 0) vel.x = 0.f;
     }
     hit.position.x = pos.x + hitOffsetX;
-
-    // =============================================================
-    // 2. SOLID HIT-BOX HORIZONTAL COLLISION
-    // =============================================================
     for (int i = 0; i < platformCount; ++i) {
         if (!platforms[i]) continue;
         int boxCount = platforms[i]->getHitboxCount();
@@ -85,10 +79,6 @@ void CollisionDetector::resolve(Entity& entity,
             hit.position.x = pos.x + hitOffsetX;
         }
     }
-
-    // =============================================================
-    // 3. ONE-WAY PLATFORM LANDING (from above, when falling)
-    // =============================================================
     bool landed = false;
     for (int i = 0; i < platformCount; ++i) {
         if (!platforms[i]) continue;
@@ -119,10 +109,6 @@ void CollisionDetector::resolve(Entity& entity,
             }
         }
     }
-
-    // =============================================================
-    // 4. FALLBACK GROUND
-    // =============================================================
     const float GROUND_Y_HITBOX_BOTTOM = 570.f;
     float hitBottom = hit.position.y + hit.size.y;
     if (hitBottom >= GROUND_Y_HITBOX_BOTTOM) {
@@ -140,12 +126,9 @@ bool CollisionDetector::checkEnemyContact(const Entity& player,
                                           Enemy* const enemies[],
                                           int enemyCount) const
 {
-    // ===== BALLOON MODE: Player is invulnerable to ground enemies =====
-    // We need to cast to Player* to check balloon mode
-    // This is safe because this function is only called with Player objects
     const Player* playerPtr = dynamic_cast<const Player*>(&player);
     if (playerPtr && playerPtr->isBalloonMode()) {
-        return false;  // invulnerable in balloon mode
+        return false; 
     }
 
     sf::FloatRect playerHit = player.getHitBox();
@@ -156,21 +139,6 @@ bool CollisionDetector::checkEnemyContact(const Entity& player,
 
     for (int i = 0; i < enemyCount; ++i) {
         if (!enemies[i]) continue;
-
-        // Lethality rules (spec Â§7.1):
-        //   Alive       â€” lethal (standard walker)
-        //   ShakingFree â€” lethal (enemy is waking back up, warning to player)
-        //   Snowballed  â€” NOT lethal (frozen, kickable)
-        //   Rolling     â€” NOT lethal to player (Phase 3 will add kick-through)
-        //   Dead        â€” not drawn, not lethal
-        // Lethality (spec Â§7.1):
-        //   Alive + Escaping75/50/25 â€” lethal (walking OR waking up)
-        //   Snowballed                â€” NOT lethal (frozen, kickable)
-        //   Rolling                   â€” NOT lethal to player (Phase 3 reserved)
-        //   Dead                      â€” not drawn, not lethal
-        // Lethality rules (Phase 3 locked):
-        //   Alive only â€” every other state has snow on the enemy = safe.
-        //   Rolling enemies don't hurt the player (pass-through).
         if (enemies[i]->getState() != Enemy::State::Alive) continue;
 
         sf::FloatRect eHit = enemies[i]->getHitBox();

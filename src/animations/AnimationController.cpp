@@ -23,7 +23,7 @@ bool AnimationController::setAnimation(const std::string& name, bool restart) {
         if (m_animations[i].isValid && m_animations[i].name == name) {
             // Already playing this animation?
             if (m_currentIndex == i && !restart) {
-                return true;  // Keep playing, no change
+                return true; 
             }
 
             // Switch to new animation

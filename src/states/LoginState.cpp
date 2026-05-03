@@ -6,21 +6,12 @@
 #include <iostream>
 #include <cmath>
 #include <string>
-
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  Layout constants
-//  Window: 800 Ã— 600.  Both buttons centred: x = (800 - 280) / 2 = 260
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const float LoginState::BTN_X    = 260.f;
 const float LoginState::BTN_W    = 280.f;
 const float LoginState::BTN_H    =  55.f;
 const float LoginState::LOGIN_Y  = 350.f;
 const float LoginState::SIGNUP_Y = 425.f;
 
-
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  Constructor / Destructor
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 LoginState::LoginState()
     : m_bgSprite(nullptr),
       m_bgLoaded(false),
@@ -49,12 +40,6 @@ LoginState::~LoginState()
     delete m_tabHintText;
 }
 
-
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  drawCapsule â€” single TriangleFan, no seam, no vector
-//
-//  Vertex count per capsule = 2 * SEGS + 4 = 60  â†’  array size 64.
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 void LoginState::drawCapsule(sf::RenderWindow& window,
                               float x, float y,
                               float width, float height,
@@ -111,10 +96,6 @@ void LoginState::drawCapsule(sf::RenderWindow& window,
                 sf::PrimitiveType::TriangleFan);
 }
 
-
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  drawInputField â€” capsule-shaped input box
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 void LoginState::drawInputField(sf::RenderWindow& window,
                                  float x, float y,
                                  float width, float height,
@@ -128,14 +109,9 @@ void LoginState::drawInputField(sf::RenderWindow& window,
     drawCapsule(window, x, y, width, height, fill, border, 2.f);
 }
 
-
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  onEnter
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 void LoginState::onEnter()
 {
     AudioManager::get().playMenuMusic();
-    // â”€â”€ Background â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (!m_bgTexture.loadFromFile("assets/sprites/login_bg.png")) {
         std::cerr << "Failed to load login_bg.png\n";
         m_bgLoaded = false;
@@ -152,11 +128,8 @@ void LoginState::onEnter()
         });
     }
 
-    // â”€â”€ Font â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (!m_font.openFromFile("assets/fonts/BubbleBobble-rg3rx.ttf"))
         std::cerr << "Font failed\n";
-
-    // â”€â”€ Title â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     m_titleText = new sf::Text(m_font);
     m_titleText->setString("SNOW BROS");
     m_titleText->setCharacterSize(48);
@@ -167,26 +140,22 @@ void LoginState::onEnter()
                              tb.position.y + tb.size.y / 2.f });
     m_titleText->setPosition({ 400.f, 70.f });
 
-    // â”€â”€ Username field text â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     m_usernameText = new sf::Text(m_font);
     m_usernameText->setCharacterSize(22);
     m_usernameText->setFillColor(sf::Color::White);
     m_usernameText->setPosition({ 275.f, 207.f });
 
-    // â”€â”€ Password field text â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     m_passwordText = new sf::Text(m_font);
     m_passwordText->setCharacterSize(22);
     m_passwordText->setFillColor(sf::Color::White);
     m_passwordText->setPosition({ 275.f, 282.f });
 
-    // â”€â”€ Info / error message â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     m_infoText = new sf::Text(m_font);
     m_infoText->setCharacterSize(20);
     m_infoText->setFillColor(sf::Color(255, 200, 100));
     m_infoText->setString("");
     m_infoText->setPosition({ 400.f, 315.f });
 
-    // â”€â”€ Tab hint â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     m_tabHintText = new sf::Text(m_font);
     m_tabHintText->setString("Tab to switch field    Enter to confirm");
     m_tabHintText->setCharacterSize(14);
@@ -196,7 +165,6 @@ void LoginState::onEnter()
     m_tabHintText->setOrigin({ hb.position.x + hb.size.x / 2.f, 0.f });
     m_tabHintText->setPosition({ 400.f, 500.f });
 
-    // â”€â”€ LOG IN button label â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     m_loginText = new sf::Text(m_font);
     m_loginText->setString("LOG IN");
     m_loginText->setCharacterSize(26);
@@ -207,7 +175,6 @@ void LoginState::onEnter()
                              lb.position.y + lb.size.y / 2.f });
     m_loginText->setPosition({ BTN_X + BTN_W / 2.f, LOGIN_Y + BTN_H / 2.f });
 
-    // â”€â”€ SIGN UP button label â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     m_signupText = new sf::Text(m_font);
     m_signupText->setString("SIGN UP");
     m_signupText->setCharacterSize(26);
@@ -220,12 +187,8 @@ void LoginState::onEnter()
 }
 
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  handleEvent
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 void LoginState::handleEvent(const sf::Event& event)
 {
-    // â”€â”€ Text input â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (const auto* te = event.getIf<sf::Event::TextEntered>())
     {
         if (te->unicode == 8)  // backspace
@@ -243,7 +206,6 @@ void LoginState::handleEvent(const sf::Event& event)
         }
     }
 
-    // â”€â”€ Keyboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (const auto* key = event.getIf<sf::Event::KeyPressed>())
     {
         if (key->code == sf::Keyboard::Key::Tab)
@@ -266,7 +228,6 @@ void LoginState::handleEvent(const sf::Event& event)
         }
     }
 
-    // â”€â”€ Mouse click â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (const auto* mouse = event.getIf<sf::Event::MouseButtonPressed>())
     {
         if (mouse->button == sf::Mouse::Button::Left)
@@ -274,7 +235,6 @@ void LoginState::handleEvent(const sf::Event& event)
             sf::Vector2f mp(static_cast<float>(mouse->position.x),
                             static_cast<float>(mouse->position.y));
 
-            // â”€â”€ Switch focus by clicking a field â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             sf::FloatRect unameField({ 260.f, 195.f }, { 280.f, 45.f });
             sf::FloatRect passField ({ 260.f, 270.f }, { 280.f, 45.f });
 
@@ -289,14 +249,13 @@ void LoginState::handleEvent(const sf::Event& event)
                 m_typingPassword = true;
             }
 
-            // â”€â”€ LOG IN button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
            if (m_loginHovered)
 {
     int id = m_manager->getUserManager().loginUser(m_username, m_password);
 
     if (id != -1)
     {
-        m_manager->setCurrentUser(m_username);   // ðŸ”¥ important
+        m_manager->setCurrentUser(m_username);  
         m_manager->replaceState(new MenuState());
     }
     else
@@ -305,7 +264,6 @@ void LoginState::handleEvent(const sf::Event& event)
     }
 }
 
-            // â”€â”€ SIGN UP button â€” go to SignupState â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             if (m_signupHovered)
             {
                 m_manager->replaceState(new SignupState());
@@ -315,12 +273,8 @@ void LoginState::handleEvent(const sf::Event& event)
 }
 
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  update
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 void LoginState::update(float /*dt*/)
 {
-    // â”€â”€ Refresh input field strings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (m_usernameText)
         m_usernameText->setString("Username: " + m_username);
 
@@ -330,7 +284,6 @@ void LoginState::update(float /*dt*/)
         m_passwordText->setString("Password: " + stars);
     }
 
-    // â”€â”€ Hover detection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (!m_window) return;
 
     sf::Vector2f mp = m_window->mapPixelToCoords(
@@ -339,7 +292,7 @@ void LoginState::update(float /*dt*/)
     m_loginHovered  = sf::FloatRect({ BTN_X, LOGIN_Y  }, { BTN_W, BTN_H }).contains(mp);
     m_signupHovered = sf::FloatRect({ BTN_X, SIGNUP_Y }, { BTN_W, BTN_H }).contains(mp);
 
-    // â”€â”€ Re-centre info text after string changes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  
     if (m_infoText)
     {
         sf::FloatRect ib = m_infoText->getLocalBounds();
@@ -349,45 +302,35 @@ void LoginState::update(float /*dt*/)
 }
 
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-//  draw
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 void LoginState::draw(sf::RenderWindow& window)
 {
     window.clear(sf::Color(8, 14, 35));
 
-    // â”€â”€ 1. Background â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    
     if (m_bgLoaded && m_bgSprite)
         window.draw(*m_bgSprite);
 
-    // â”€â”€ 2. Semi-transparent card behind the form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     drawCapsule(window,
                 200.f, 40.f, 400.f, 530.f,
                 sf::Color(15, 30, 70, 170),
                 sf::Color(80, 140, 200, 100),
                 1.f);
 
-    // â”€â”€ 3. Title â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (m_titleText) window.draw(*m_titleText);
 
-    // â”€â”€ 4. Username input field then its text (drawn once â€” fixed) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     drawInputField(window, 260.f, 195.f, 280.f, 45.f, m_typingUsername);
     if (m_usernameText) window.draw(*m_usernameText);
 
-    // â”€â”€ 5. Password input field then its text â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    
     drawInputField(window, 260.f, 270.f, 280.f, 45.f, m_typingPassword);
     if (m_passwordText) window.draw(*m_passwordText);
 
-    // â”€â”€ 6. Info / error message â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (m_infoText) window.draw(*m_infoText);
 
-    // â”€â”€ 7. LOG IN button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    // Shadow layer (offset dark capsule)
     drawCapsule(window,
                 BTN_X + 3.f, LOGIN_Y + 4.f, BTN_W, BTN_H,
                 sf::Color(10, 30, 90, 200));
 
-    // Main fill (brighter on hover)
     sf::Color loginFill = m_loginHovered
                         ? sf::Color( 80, 190, 255, 255)
                         : sf::Color( 50, 140, 220, 255);
@@ -398,7 +341,6 @@ void LoginState::draw(sf::RenderWindow& window)
                 sf::Color::White,   // white border (same colour as font)
                 3.f);
 
-    // Gloss sheen â€” small bright strip at top of capsule
     drawCapsule(window,
                 BTN_X + 20.f, LOGIN_Y + 5.f,
                 BTN_W - 40.f, BTN_H * 0.35f,
@@ -410,7 +352,6 @@ void LoginState::draw(sf::RenderWindow& window)
         window.draw(*m_loginText);
     }
 
-    // â”€â”€ 8. SIGN UP button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     drawCapsule(window,
                 BTN_X + 3.f, SIGNUP_Y + 4.f, BTN_W, BTN_H,
                 sf::Color(10, 30, 90, 200));
@@ -436,6 +377,5 @@ void LoginState::draw(sf::RenderWindow& window)
         window.draw(*m_signupText);
     }
 
-    // â”€â”€ 9. Tab hint â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (m_tabHintText) window.draw(*m_tabHintText);
 }

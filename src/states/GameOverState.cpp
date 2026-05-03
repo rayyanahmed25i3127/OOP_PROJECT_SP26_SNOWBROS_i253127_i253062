@@ -23,7 +23,6 @@ namespace {
     const float COST_GAP       = 18.f;
 }
 
-// ===== Button =====
 GameOverState::Button::Button(const sf::Font& font)
     : text(font, "", BTN_TEXT_SIZE)
     , background({BTN_WIDTH, BTN_HEIGHT})
@@ -80,7 +79,6 @@ void GameOverState::Button::draw(sf::RenderWindow& window) const {
     window.draw(text);
 }
 
-// ===== GameOverState =====
 GameOverState::GameOverState()
     : m_title(m_font, "", 64)
     , m_overlay({WINDOW_WIDTH, WINDOW_HEIGHT})
@@ -100,28 +98,20 @@ GameOverState::~GameOverState() {
     }
 }
 
-// Recompute cost from progress and reposition the label + gem icon
 void GameOverState::refreshCostLabel() {
     if (!m_manager) return;
     PlayerProgress& prog = m_manager->getProgress();
-
-    // cost = 5 on first continue, +10 each time after
     m_continueCost = 5 + prog.continueCount * 10;
 
-    // Build "-N" string
     std::string costStr = "-" + std::to_string(m_continueCost);
     m_costText.setString(costStr);
     m_costText.setFillColor(sf::Color(255, 230, 50));   // gold
     m_costText.setOutlineColor(sf::Color::Black);
     m_costText.setOutlineThickness(2.f);
     m_costText.setCharacterSize(20);
-
-    // Position: to the left of Continue button (index 1)
-    // Continue button center is set during onEnter — recalculate here
     float btnLeft   = m_buttons[1]->center.x - BTN_WIDTH / 2.f;
     float btnCenterY= m_buttons[1]->center.y;
 
-    // gem icon
     if (m_gemLoaded) {
         auto ts = m_gemTexture.getSize();
         float scaleF = GEM_ICON_SIZE / static_cast<float>(ts.x > ts.y ? ts.x : ts.y);
@@ -129,7 +119,6 @@ void GameOverState::refreshCostLabel() {
     }
     float gemW = m_gemLoaded ? GEM_ICON_SIZE : 0.f;
 
-    // total width of [costText][space][gemIcon]
     auto tb     = m_costText.getLocalBounds();
     float textW = tb.size.x;
     float totalW= textW + (gemW > 0.f ? 4.f + gemW : 0.f);
@@ -186,25 +175,25 @@ void GameOverState::onEnter() {
     float startY  = 300.f;
     float spacing = 72.f;
 
-    // Button 0 — Main Menu (green)
+    // Button 0
     m_buttons[0] = new Button(m_font);
     m_buttons[0]->configure({centerX, startY + 0 * spacing},
                             BTN_WIDTH, BTN_HEIGHT,
                             sf::Color(20, 90, 50), "Main Menu", Action::MainMenu);
 
-    // Button 1 — Continue (blue)
+    // Button 1
     m_buttons[1] = new Button(m_font);
     m_buttons[1]->configure({centerX, startY + 1 * spacing},
                             BTN_WIDTH, BTN_HEIGHT,
                             sf::Color(30, 90, 200), "Continue", Action::Continue);
 
-    // Button 2 — Exit Game (red)
+    // Button 2  Exit Game (red)
     m_buttons[2] = new Button(m_font);
     m_buttons[2]->configure({centerX, startY + 2 * spacing},
                             BTN_WIDTH, BTN_HEIGHT,
                             sf::Color(170, 30, 40), "Exit Game", Action::Exit);
 
-    // Cost label (requires buttons to be placed first)
+    // Cost label 
     m_costText.setFont(m_font);
     refreshCostLabel();
 

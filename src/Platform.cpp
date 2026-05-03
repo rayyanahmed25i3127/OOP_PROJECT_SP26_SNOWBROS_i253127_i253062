@@ -18,7 +18,7 @@ Platform::Platform(const sf::Texture& texture, sf::Vector2f size, sf::Vector2f p
     m_localBounds[0].position = { insetX, insetTop };
     m_localBounds[0].size     = { size.x - 2.f * insetX,
                                   size.y - insetTop - insetBottom };
-    m_solid[0] = false;   // default single-hitbox platforms are one-way
+    m_solid[0] = false;  
 }
 
 Platform::Platform(const sf::Texture& texture, sf::Vector2f size, sf::Vector2f position,

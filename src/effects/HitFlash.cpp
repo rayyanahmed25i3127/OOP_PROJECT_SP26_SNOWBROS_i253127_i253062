@@ -4,9 +4,7 @@
 #include <iostream>
 
 namespace {
-    const float FLASH_DURATION = 0.18f;   // 100ms
-    // Narrow-spark sprite (hit_flash_blue.png) is 16x20 source —
-    // render slightly larger than before so the thin shape still reads.
+    const float FLASH_DURATION = 0.18f;  
     const float FLASH_WIDTH    = 14.f;
     const float FLASH_HEIGHT   = 18.f;
 }
@@ -41,17 +39,14 @@ void HitFlash::update(float dt) {
         m_alive = false;
         return;
     }
-    // Fade out via sprite color alpha
     if (m_textureLoaded) {
-        float a = m_lifetime / m_maxLifetime;  // 1.0 → 0.0
+        float a = m_lifetime / m_maxLifetime;  
         std::uint8_t alpha = static_cast<std::uint8_t>(a * 255.f);
-        // Brighten to near-white for "pop" look
         m_sprite.setColor(sf::Color(255, 255, 255, alpha));
     }
 }
 
 void HitFlash::draw(sf::RenderWindow& window) {
     if (m_textureLoaded) window.draw(m_sprite);
-    // No fallback visual — if asset missing, flash is silently invisible
-    // (game still plays fine, hit registers normally via attack-ball death).
+    // if asset missing!! flash is silently invisible
 }
