@@ -101,11 +101,25 @@ namespace {
 // ---------------------------------------------------------------
 Player::Player(sf::Vector2f pos, int characterIndex)
     : Entity(pos)
+<<<<<<< HEAD
     , m_currentAnim(AnimState::Idle)
     , m_currentFrame(0)
     , m_animTimer(0.f)
     , m_sprite(m_animations[0].texture)   // safe: m_animations constructed first
     , m_lives(2)
+=======
+    , m_idleLoaded(false)
+    , m_walkLoaded(false)
+    , m_jumpLoaded(false)
+    , m_throwLoaded(false)
+    , m_sprite(m_idleTexture)
+    , m_walkFrame(0)
+    , m_walkTimer(0.f)
+    , m_throwFrame(0)
+    , m_throwTimer(0.f)
+    , m_isThrowing(false)
+    , m_lives(10)
+>>>>>>> origin/main
     , m_invincibleTimer(0.f)
     , m_blinkVisible(true)
     , m_throwCooldown(0.f)

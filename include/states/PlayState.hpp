@@ -25,124 +25,124 @@ public:
     static const int MAX_MOGERA_CHILDREN = 32;
 
 private:
-    std::string m_playerName;
-    int m_characterIndex;
+    std::string  m_playerName;
+    int          m_characterIndex;
 
-    sf::Texture m_backgroundTexture;
-    sf::Sprite  m_backgroundSprite;
-    bool m_backgroundLoaded;
+    sf::Texture  m_backgroundTexture;
+    sf::Sprite   m_backgroundSprite;
+    bool         m_backgroundLoaded;
 
-    AttackBall* m_projectiles[MAX_PROJECTILES];
-    int         m_projectileCount;
+    AttackBall*  m_projectiles[MAX_PROJECTILES];
+    int          m_projectileCount;
 
-    Knife*    m_knives[MAX_KNIVES];
-    int       m_knifeCount;
+    Knife*       m_knives[MAX_KNIVES];
+    int          m_knifeCount;
 
-    HitFlash* m_hitFlashes[MAX_HIT_FLASHES];
-    int       m_hitFlashCount;
+    HitFlash*    m_hitFlashes[MAX_HIT_FLASHES];
+    int          m_hitFlashCount;
 
-    PowerUp* m_powerUps[MAX_POWERUPS];
-    int      m_powerUpCount;
+    PowerUp*     m_powerUps[MAX_POWERUPS];
+    int          m_powerUpCount;
 
-    Diamond* m_diamonds[MAX_DIAMONDS];
-    int      m_diamondCount;
+    Diamond*     m_diamonds[MAX_DIAMONDS];
+    int          m_diamondCount;
 
-    bool  m_speedActive;
-    float m_speedTimer;
-    bool  m_balloonActive;
-    float m_balloonTimer;
-    bool  m_snowballPowerActive;
-    bool  m_distanceActive;
+    bool         m_speedActive;
+    float        m_speedTimer;
+    bool         m_balloonActive;
+    float        m_balloonTimer;
+    bool         m_snowballPowerActive;
+    bool         m_distanceActive;
 
     PowerUp::Type m_displayedType;
     bool          m_hasDisplayed;
 
-    sf::Texture m_puIconSpeed;     bool m_puIconSpeedLoaded;
-    sf::Texture m_puIconSnowball;  bool m_puIconSnowballLoaded;
-    sf::Texture m_puIconDistance;  bool m_puIconDistanceLoaded;
-    sf::Texture m_puIconBalloon;   bool m_puIconBalloonLoaded;
+    sf::Texture   m_puIconSpeed;     bool m_puIconSpeedLoaded;
+    sf::Texture   m_puIconSnowball;  bool m_puIconSnowballLoaded;
+    sf::Texture   m_puIconDistance;  bool m_puIconDistanceLoaded;
+    sf::Texture   m_puIconBalloon;   bool m_puIconBalloonLoaded;
 
     void activatePowerUp(PowerUp::Type type);
     void updatePowerUpTimers(float dt);
     void drawPowerUpHUD(sf::RenderWindow& window);
     void loadPowerUpIcons();
 
-    int m_chainCount[MAX_ENEMIES];
+    int  m_chainCount[MAX_ENEMIES];
+    int  randomScore(int lo, int hi) const;
 
-    int randomScore(int lo, int hi) const;
+    sf::Font     m_hudFont;        bool m_hudFontLoaded;
+    sf::Texture  m_heartTexture;   bool m_heartLoaded;
+    sf::Texture  m_diamondTexture; bool m_diamondLoaded;
 
-    sf::Font    m_hudFont;
-    bool        m_hudFontLoaded;
-    sf::Texture m_heartTexture;
-    sf::Texture m_diamondTexture;
-    bool        m_heartLoaded;
-    bool        m_diamondLoaded;
-
-    int         m_score;
-    int         m_gems;
-    int         m_currentLevel;
-    int         m_totalLevels;
-
+    int          m_score;
+    int          m_gems;
+    int          m_currentLevel;
+    int          m_totalLevels;
     sf::Vector2f m_playerSpawn;
 
     void drawHUD(sf::RenderWindow& window);
 
-    sf::Texture m_platformTexture;
-    sf::Texture m_platformTopTexture;
-    bool m_platformTextureLoaded;
-    bool m_platformTopTextureLoaded;
+    sf::Texture  m_platformTexture;     bool m_platformTextureLoaded;
+    sf::Texture  m_platformTopTexture;  bool m_platformTopTextureLoaded;
 
-    Player*   m_player;
-    Platform* m_platforms[MAX_PLATFORMS];
-    int       m_platformCount;
+    Player*      m_player;
+    Platform*    m_platforms[MAX_PLATFORMS];
+    int          m_platformCount;
 
-    Enemy*    m_enemies[MAX_ENEMIES];
-    int       m_enemyCount;
+    Enemy*       m_enemies[MAX_ENEMIES];
+    int          m_enemyCount;
 
-    float m_playerPrevX;
-    float m_playerPrevY;
-    float m_enemyPrevX[MAX_ENEMIES];
-    float m_enemyPrevY[MAX_ENEMIES];
+    float        m_playerPrevX;
+    float        m_playerPrevY;
+    float        m_enemyPrevX[MAX_ENEMIES];
+    float        m_enemyPrevY[MAX_ENEMIES];
 
     CollisionDetector m_collider;
 
-    bool m_showHitboxes;
-    bool m_gameOver;
-    
-    bool  m_levelComplete;
-    float m_levelTransitionTimer;
-    float m_levelSlideOffset;
-    bool  m_showLevelCompleteText;
-    bool  m_bonusDiamondsSpawned;
+    bool         m_showHitboxes;
+    bool         m_gameOver;
 
+    bool         m_levelComplete;
+    float        m_levelTransitionTimer;
+    float        m_levelSlideOffset;
+    bool         m_showLevelCompleteText;
+    bool         m_bonusDiamondsSpawned;
+
+    // ── Boss: Mogera (Level 5) ─────────────────────────────────────────
     class Mogera*      m_mogera;
     class MogeraChild* m_mogeraChildren[MAX_MOGERA_CHILDREN];
     int                m_mogeraChildCount;
     float              m_mogeraChildPrevX[MAX_MOGERA_CHILDREN];
     float              m_mogeraChildPrevY[MAX_MOGERA_CHILDREN];
 
-    void drawBossHealthBar(sf::RenderWindow& window);
     void spawnMogeraChildren(sf::Vector2f mouthPos);
     void updateMogera(float dt);
+    void drawBossHealthBar(sf::RenderWindow& window);
 
+    // ── Boss: Gamakichi (Level 10) ─────────────────────────────────────
+    class Gamakichi*   m_gamakichi;
+    void updateGamakichi(float dt);
+    void drawGamaHealthBar(sf::RenderWindow& window);
+
+    // ── Level helpers ──────────────────────────────────────────────────
     void buildLevel();
     void spawnEnemies();
     void nextLevel();
     void cleanupLevel();
 
 public:
-    PlayState(int characterIndex = 0);
+    explicit PlayState(int characterIndex = 0);
     ~PlayState();
 
-    PlayState(const PlayState&) = delete;
+    PlayState(const PlayState&)            = delete;
     PlayState& operator=(const PlayState&) = delete;
 
     void handleEvent(const sf::Event& event) override;
-    void update(float dt) override;
-    void draw(sf::RenderWindow& window) override;
-    void onEnter() override;
-    void onExit() override;
+    void update(float dt)                    override;
+    void draw(sf::RenderWindow& window)      override;
+    void onEnter()                           override;
+    void onExit()                            override;
 
-    bool isSpeedActive() const { return m_speedActive; }
+    bool isSpeedActive()    const { return m_speedActive;    }
     bool isDistanceActive() const { return m_distanceActive; }
 };

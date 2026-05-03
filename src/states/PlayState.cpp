@@ -10,6 +10,7 @@
 #include "enemies/Tornado.hpp"
 #include "enemies/Mogera.hpp"
 #include "enemies/MogeraChild.hpp"
+#include "enemies/Gamakichi.hpp"
 #include "projectiles/Knife.hpp"
 #include "audio/AudioManager.hpp"
 #include "effects/HitFlash.hpp"
@@ -100,6 +101,7 @@ PlayState::PlayState(int characterIndex)
     , m_bonusDiamondsSpawned(false)
     , m_mogera(nullptr)
     , m_mogeraChildCount(0)
+    , m_gamakichi(nullptr)
 {
     for (int i = 0; i < MAX_HIT_FLASHES; ++i)    m_hitFlashes[i]  = nullptr;
     for (int i = 0; i < MAX_ENEMIES; ++i)         m_chainCount[i]  = 0;
@@ -131,6 +133,7 @@ PlayState::~PlayState() {
     for (int i = 0; i < m_diamondCount; ++i)    { delete m_diamonds[i];    m_diamonds[i]    = nullptr; }
     delete m_mogera; m_mogera = nullptr;
     for (int i = 0; i < m_mogeraChildCount; ++i) { delete m_mogeraChildren[i]; m_mogeraChildren[i] = nullptr; }
+    delete m_gamakichi; m_gamakichi = nullptr;
 }
 
 void PlayState::onEnter() {
@@ -321,7 +324,8 @@ void PlayState::spawnEnemies() {
         float mX = WINDOW_WIDTH - 8.5f - 170.f - 8.f;
         float mY = 475.f - 200.f;
         m_mogera = new Mogera(sf::Vector2f(mX, mY));
-        std::cout << "[PlayState] Level 5 — Mogera spawned at (" << mX << ", " << mY << ")\n";
+        std::cout << "[PlayState] Level 5 — Mogera spawned at ("
+                  << mX << ", " << mY << ")\n";
     }
     else if (m_currentLevel == 6) {
         m_enemies[m_enemyCount++] = new BotomBlue(UL[1]);
@@ -369,14 +373,25 @@ void PlayState::spawnEnemies() {
         m_bonusDiamondsSpawned = true;
     }
     else {
-        m_enemies[m_enemyCount++] = new Botom(UL[0]);
-        m_enemies[m_enemyCount++] = new Botom(UL[2]);
-        m_enemies[m_enemyCount++] = new Botom(UR[0]);
-        m_enemies[m_enemyCount++] = new Botom(UR[2]);
-        m_enemies[m_enemyCount++] = new Botom(MID[1]);
-        m_enemies[m_enemyCount++] = new Botom(MID[3]);
-        m_enemies[m_enemyCount++] = new Botom(TOP[1]);
-        m_enemies[m_enemyCount++] = new Botom(TOP[4]);
+        // Level 10 — Gamakichi boss + mixed enemies (origin/main)
+        m_enemies[m_enemyCount++] = new BotomOrange(UL[0]);
+        m_enemies[m_enemyCount++] = new BotomOrange(UL[2]);
+        m_enemies[m_enemyCount++] = new BotomOrange(MID[1]);
+        m_enemies[m_enemyCount++] = new BotomOrange(MID[4]);
+        m_enemies[m_enemyCount++] = new BotomBlue(UR[0]);
+        m_enemies[m_enemyCount++] = new BotomBlue(UR[2]);
+        m_enemies[m_enemyCount++] = new BotomBlue(TOP[1]);
+        m_enemies[m_enemyCount++] = new BotomBlue(TOP[4]);
+        m_enemies[m_enemyCount++] = new FlyngFoogaFoog(sf::Vector2f(200.f, 140.f));
+        m_enemies[m_enemyCount++] = new FlyngFoogaFoogRed(sf::Vector2f(350.f, 140.f));
+        m_enemies[m_enemyCount++] = new FlyngFoogaFoogRed(sf::Vector2f(500.f, 140.f));
+        m_enemies[m_enemyCount++] = new Tornado(TOP[2]);
+        m_enemies[m_enemyCount++] = new Tornado(TOP[5]);
+        float gX = 800.f - 8.5f - 200.f - 4.f;
+        float gY = 457.f - 220.f;
+        m_gamakichi = new Gamakichi(sf::Vector2f(gX, gY));
+        std::cout << "[PlayState] Level 10 — Gamakichi spawned at ("
+                  << gX << ", " << gY << ")\n";
     }
 
     if (m_snowballPowerActive) {
@@ -614,6 +629,7 @@ void PlayState::update(float dt) {
     }
 
     if (m_currentLevel == 5) updateMogera(dt);
+    if (m_currentLevel == 10) updateGamakichi(dt);
 
     // Poll Tornado knife spawn requests
     for (int i = 0; i < m_enemyCount; ++i) {
@@ -807,6 +823,7 @@ void PlayState::update(float dt) {
     if (m_currentLevel == 4 || m_currentLevel == 9)
         levelDone = m_bonusDiamondsSpawned && m_diamondCount==0;
     else if (m_currentLevel == 5)  levelDone = m_enemyCount==0 && m_mogera==nullptr;
+    else if (m_currentLevel == 10) levelDone = m_enemyCount==0 && m_gamakichi==nullptr;
     else                           levelDone = m_enemyCount==0;
 
     if (!m_levelComplete && levelDone) {
@@ -845,6 +862,7 @@ void PlayState::draw(sf::RenderWindow& window) {
     for (int i=0;i<m_platformCount;++i) m_platforms[i]->draw(window);
     for (int i=0;i<m_enemyCount;++i) if (m_enemies[i]) m_enemies[i]->draw(window);
     if (m_mogera) m_mogera->draw(window);
+    if (m_gamakichi) m_gamakichi->draw(window);
     for (int i=0;i<m_mogeraChildCount;++i) if (m_mogeraChildren[i]) m_mogeraChildren[i]->draw(window);
     for (int i=0;i<m_projectileCount;++i) if (m_projectiles[i]) m_projectiles[i]->draw(window);
     for (int i=0;i<m_knifeCount;++i)     if (m_knives[i])      m_knives[i]->draw(window);
@@ -857,6 +875,7 @@ void PlayState::draw(sf::RenderWindow& window) {
         if (m_player) m_player->drawHitBoxDebug(window,sf::Color::Green);
         for (int i=0;i<m_enemyCount;++i) if (m_enemies[i]) m_enemies[i]->drawHitBoxDebug(window,sf::Color::Red);
         if (m_mogera) m_mogera->drawHitBoxDebug(window,sf::Color(255,128,0));
+        if (m_gamakichi) m_gamakichi->drawHitBoxDebug(window,sf::Color(255,80,0));
         for (int i=0;i<m_mogeraChildCount;++i) if (m_mogeraChildren[i]) m_mogeraChildren[i]->drawHitBoxDebug(window,sf::Color(255,200,0));
         for (int i=0;i<m_projectileCount;++i) if (m_projectiles[i]) m_projectiles[i]->drawHitBoxDebug(window,sf::Color::Yellow);
         for (int i=0;i<m_powerUpCount;++i) if (m_powerUps[i]) m_powerUps[i]->drawHitBoxDebug(window,sf::Color::Magenta);
@@ -875,7 +894,7 @@ void PlayState::draw(sf::RenderWindow& window) {
         sf::Text t(m_hudFont);
         std::string msg = "Level " + std::to_string(m_currentLevel) + " Complete!";
         if (m_currentLevel==4) msg += "\nGet ready to face the Boss Mogera!";
-        else if (m_currentLevel==9) msg += "\nGet ready to face the Boss Gamakichi!";
+        else if (m_currentLevel==9) msg += "\nGet ready to face the Final Boss Gamakichi!";
         t.setString(msg); t.setCharacterSize(40);
         t.setFillColor(sf::Color::Yellow); t.setOutlineColor(sf::Color::Black); t.setOutlineThickness(2.f);
         sf::FloatRect b=t.getLocalBounds();
@@ -945,6 +964,7 @@ void PlayState::drawHUD(sf::RenderWindow& window) {
       window.draw(t); }
 
     if (m_currentLevel==5 && m_mogera) drawBossHealthBar(window);
+    if (m_currentLevel==10 && m_gamakichi) drawGamaHealthBar(window);
 
     if (m_player && m_player->isAutoAttack() && m_hudFontLoaded) {
         sf::Text t(m_hudFont, "AUTO", 10);
@@ -1047,6 +1067,9 @@ void PlayState::drawPowerUpHUD(sf::RenderWindow& window) {
         fill.setFillColor(barColor); window.draw(fill); }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// nextLevel  — HEAD extended bg paths (lvl6-9, lvl10) + origin/main globals
+// ═══════════════════════════════════════════════════════════════════════════
 void PlayState::nextLevel() {
     cleanupLevel();
     m_currentLevel++;
@@ -1056,44 +1079,199 @@ void PlayState::nextLevel() {
         return;
     }
 
-    m_levelComplete=false; m_levelTransitionTimer=0.f; m_levelSlideOffset=0.f;
-    m_showLevelCompleteText=false; m_bonusDiamondsSpawned=false;
+    m_levelComplete         = false;
+    m_levelTransitionTimer  = 0.f;
+    m_levelSlideOffset      = 0.f;
+    m_showLevelCompleteText = false;
+    m_bonusDiamondsSpawned  = false;
 
+    // Level-aware background (HEAD: full range; origin/main: lvl5 + lvl10)
     std::string bgPath = "assets/sprites/bg_lvl1.png";
-    if (m_currentLevel == 5) bgPath = "assets/sprites/bg_lvl5.png";
-    else if (m_currentLevel >= 6 && m_currentLevel <= 9) bgPath = "assets/sprites/bg_lvl6.png";
+    if      (m_currentLevel == 5)                                  bgPath = "assets/sprites/bg_lvl5.png";
+    else if (m_currentLevel >= 6 && m_currentLevel <= 9)           bgPath = "assets/sprites/bg_lvl6.png";
+    else if (m_currentLevel == 10)                                 bgPath = "assets/sprites/bg_lvl10.png";
 
     bool bgLoaded = false;
-    if (std::FILE* f=std::fopen(bgPath.c_str(),"rb")) {
+    if (std::FILE* f = std::fopen(bgPath.c_str(), "rb")) {
         std::fclose(f);
         bgLoaded = m_backgroundTexture.loadFromFile(bgPath);
-        if (!bgLoaded) std::cerr << "[PlayState] loadFromFile FAILED: " << bgPath << "\n";
+        if (!bgLoaded)
+            std::cerr << "[PlayState] loadFromFile FAILED: " << bgPath << "\n";
     } else {
-        std::cerr << "[PlayState] FILE NOT FOUND: " << bgPath << "\n";
+        std::cerr << "[PlayState] FILE NOT FOUND: " << bgPath
+                  << " — using fallback\n";
         bgLoaded = m_backgroundTexture.loadFromFile("assets/sprites/bg_lvl1.png");
     }
     m_backgroundLoaded = bgLoaded;
     if (m_backgroundLoaded) {
         m_backgroundSprite.setTexture(m_backgroundTexture, true);
-        auto sz=m_backgroundTexture.getSize();
-        m_backgroundSprite.setScale({WINDOW_WIDTH/(float)sz.x, WINDOW_HEIGHT/(float)sz.y});
+        auto sz = m_backgroundTexture.getSize();
+        m_backgroundSprite.setScale({
+            WINDOW_WIDTH  / static_cast<float>(sz.x),
+            WINDOW_HEIGHT / static_cast<float>(sz.y)
+        });
     }
 
     buildLevel();
-    g_platforms=m_platforms; g_platformCount=m_platformCount;
+    g_platforms     = m_platforms;
+    g_platformCount = m_platformCount;
     spawnEnemies();
     if (m_player) m_player->respawn(m_playerSpawn);
     std::cout << "[PlayState] Started Level " << m_currentLevel << "\n";
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// updateGamakichi  — origin/main: Level 10 boss logic
+// ═══════════════════════════════════════════════════════════════════════════
+void PlayState::updateGamakichi(float dt) {
+    if (!m_gamakichi) return;
+
+    m_gamakichi->update(dt);
+
+    // Reward on defeat
+    if (m_gamakichi->getAndClearRewardPending().pending) {
+        m_gems += 250;
+        m_manager->getProgress().gems = m_gems;
+        std::cout << "[PlayState] Gamakichi defeated! +250 gems\n";
+    }
+
+    // Attack ball vs Gamakichi
+    if (!m_gamakichi->isDead() && !m_gamakichi->isDying()) {
+        for (int i = 0; i < m_projectileCount; ++i) {
+            if (!m_projectiles[i] || !m_projectiles[i]->isAlive()) continue;
+            sf::FloatRect pH = m_projectiles[i]->getHitBox();
+            sf::FloatRect gH = m_gamakichi->getHitBox();
+            bool hit = (pH.position.x + pH.size.x > gH.position.x) &&
+                       (pH.position.x < gH.position.x + gH.size.x) &&
+                       (pH.position.y + pH.size.y > gH.position.y) &&
+                       (pH.position.y < gH.position.y + gH.size.y);
+            if (hit) {
+                m_gamakichi->takeSnowballHit();
+                m_projectiles[i]->setAlive(false);
+                if (m_hitFlashCount < MAX_HIT_FLASHES) {
+                    sf::FloatRect r = m_projectiles[i]->getHitBox();
+                    m_hitFlashes[m_hitFlashCount++] = new HitFlash(
+                        {r.position.x + r.size.x * 0.5f - 6.f,
+                         r.position.y + r.size.y * 0.5f - 8.f});
+                }
+            }
+        }
+    }
+
+    // Player contact with Gamakichi body
+    if (m_player && !m_player->isInvincible() && !m_gameOver
+        && m_gamakichi->canDamagePlayer()) {
+        sf::FloatRect pH = m_player->getHitBox();
+        sf::FloatRect gH = m_gamakichi->getHitBox();
+        bool hit = (pH.position.x + pH.size.x > gH.position.x) &&
+                   (pH.position.x < gH.position.x + gH.size.x) &&
+                   (pH.position.y + pH.size.y > gH.position.y) &&
+                   (pH.position.y < gH.position.y + gH.size.y);
+        if (hit) {
+            m_player->loseLife();
+            if (m_player->getLives() <= 0) {
+                m_gameOver = true;
+                saveScore(m_playerName, m_score, m_currentLevel);
+                m_manager->pushState(new GameOverState());
+            } else {
+                m_player->respawn(m_playerSpawn);
+            }
+        }
+    }
+
+    // Player hit by bomb blast zones
+    if (m_player && !m_player->isInvincible() && !m_gameOver
+        && !m_gamakichi->m_dangerVisible) {
+        sf::FloatRect pH = m_player->getHitBox();
+        for (int i = 0; i < Gamakichi::MAX_DANGER; ++i) {
+            sf::Vector2f dp = m_gamakichi->m_dangerPos[i];
+            sf::FloatRect blast{{dp.x - 60.f, dp.y - 60.f}, {120.f, 120.f}};
+            bool hit = (pH.position.x + pH.size.x > blast.position.x) &&
+                       (pH.position.x < blast.position.x + blast.size.x) &&
+                       (pH.position.y + pH.size.y > blast.position.y) &&
+                       (pH.position.y < blast.position.y + blast.size.y);
+            if (hit) {
+                m_player->loseLife();
+                if (m_player->getLives() <= 0) {
+                    m_gameOver = true;
+                    saveScore(m_playerName, m_score, m_currentLevel);
+                    m_manager->pushState(new GameOverState());
+                } else {
+                    m_player->respawn(m_playerSpawn);
+                }
+                break;
+            }
+        }
+    }
+
+    // GC dead Gamakichi
+    if (m_gamakichi->isDead()) {
+        delete m_gamakichi;
+        m_gamakichi = nullptr;
+        std::cout << "[PlayState] Gamakichi removed\n";
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// drawGamaHealthBar  — origin/main: Level 10 boss HUD bar
+// ═══════════════════════════════════════════════════════════════════════════
+void PlayState::drawGamaHealthBar(sf::RenderWindow& window) {
+    if (!m_gamakichi || !m_hudFontLoaded) return;
+
+    const float BAR_W = 300.f, BAR_H = 14.f;
+    const float BAR_X = (800.f - BAR_W) / 2.f, BAR_Y = 32.f;
+    int   hits    = m_gamakichi->getHitsRemaining();
+    int   maxHits = m_gamakichi->getMaxHits();
+    float ratio   = (maxHits > 0)
+                    ? static_cast<float>(hits) / static_cast<float>(maxHits)
+                    : 0.f;
+
+    sf::RectangleShape bg({BAR_W, BAR_H}); bg.setPosition({BAR_X, BAR_Y});
+    bg.setFillColor(sf::Color(10, 30, 10, 220));
+    bg.setOutlineColor(sf::Color(80, 200, 80));
+    bg.setOutlineThickness(2.f);
+    window.draw(bg);
+
+    if (ratio > 0.f) {
+        sf::Color fc = (ratio > 0.5f) ? sf::Color(50, 200, 50)
+                     : (ratio > 0.25f)? sf::Color(220, 180, 30)
+                                      : sf::Color(220, 50, 50);
+        sf::RectangleShape fill({BAR_W * ratio, BAR_H});
+        fill.setPosition({BAR_X, BAR_Y});
+        fill.setFillColor(fc);
+        window.draw(fill);
+    }
+
+    sf::Text label(m_hudFont, "GAMAKICHI", 9);
+    label.setFillColor(sf::Color(80, 255, 80));
+    label.setOutlineColor(sf::Color::Black);
+    label.setOutlineThickness(1.5f);
+    sf::FloatRect lb = label.getLocalBounds();
+    label.setPosition({BAR_X - lb.size.x - 6.f, BAR_Y + 1.f});
+    window.draw(label);
+
+    sf::Text hp(m_hudFont, std::to_string(hits) + "/" + std::to_string(maxHits), 9);
+    hp.setFillColor(sf::Color::White);
+    hp.setOutlineColor(sf::Color::Black);
+    hp.setOutlineThickness(1.5f);
+    hp.setPosition({BAR_X + BAR_W + 6.f, BAR_Y + 1.f});
+    window.draw(hp);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// cleanupLevel  — HEAD: includes m_knives + m_gamakichi cleanup
+// ═══════════════════════════════════════════════════════════════════════════
 void PlayState::cleanupLevel() {
-    for (int i=0;i<m_platformCount;++i)  { delete m_platforms[i];   m_platforms[i]=nullptr;   } m_platformCount=0;
-    for (int i=0;i<m_enemyCount;++i)     { delete m_enemies[i];     m_enemies[i]=nullptr; m_chainCount[i]=0; } m_enemyCount=0;
-    for (int i=0;i<m_projectileCount;++i){ delete m_projectiles[i]; m_projectiles[i]=nullptr; } m_projectileCount=0;
-    for (int i=0;i<m_knifeCount;++i)    { delete m_knives[i];      m_knives[i]=nullptr;      } m_knifeCount=0;
-    for (int i=0;i<m_powerUpCount;++i)   { delete m_powerUps[i];    m_powerUps[i]=nullptr;    } m_powerUpCount=0;
-    for (int i=0;i<m_diamondCount;++i)   { delete m_diamonds[i];    m_diamonds[i]=nullptr;    } m_diamondCount=0;
-    for (int i=0;i<m_hitFlashCount;++i)  { delete m_hitFlashes[i];  m_hitFlashes[i]=nullptr;  } m_hitFlashCount=0;
-    delete m_mogera; m_mogera=nullptr;
-    for (int i=0;i<m_mogeraChildCount;++i){ delete m_mogeraChildren[i]; m_mogeraChildren[i]=nullptr; } m_mogeraChildCount=0;
+    for (int i = 0; i < m_platformCount;    ++i) { delete m_platforms[i];    m_platforms[i]    = nullptr; } m_platformCount    = 0;
+    for (int i = 0; i < m_enemyCount;       ++i) { delete m_enemies[i];      m_enemies[i]      = nullptr; m_chainCount[i] = 0; } m_enemyCount = 0;
+    for (int i = 0; i < m_projectileCount;  ++i) { delete m_projectiles[i];  m_projectiles[i]  = nullptr; } m_projectileCount  = 0;
+    for (int i = 0; i < m_knifeCount;       ++i) { delete m_knives[i];       m_knives[i]       = nullptr; } m_knifeCount       = 0;
+    for (int i = 0; i < m_powerUpCount;     ++i) { delete m_powerUps[i];     m_powerUps[i]     = nullptr; } m_powerUpCount     = 0;
+    for (int i = 0; i < m_diamondCount;     ++i) { delete m_diamonds[i];     m_diamonds[i]     = nullptr; } m_diamondCount     = 0;
+    for (int i = 0; i < m_hitFlashCount;    ++i) { delete m_hitFlashes[i];   m_hitFlashes[i]   = nullptr; } m_hitFlashCount    = 0;
+
+    delete m_mogera; m_mogera = nullptr;
+    for (int i = 0; i < m_mogeraChildCount; ++i) { delete m_mogeraChildren[i]; m_mogeraChildren[i] = nullptr; } m_mogeraChildCount = 0;
+
+    delete m_gamakichi; m_gamakichi = nullptr;
 }
