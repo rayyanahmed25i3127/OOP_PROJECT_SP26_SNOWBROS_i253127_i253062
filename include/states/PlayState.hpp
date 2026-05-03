@@ -4,10 +4,9 @@
 #include "Player.hpp"
 #include "Platform.hpp"
 #include "enemies/Enemy.hpp"
-#include "enemies/Mogera.hpp"
-#include "enemies/MogeraChild.hpp"
 #include "physics/CollisionDetector.hpp"
 #include "projectiles/AttackBall.hpp"
+#include "projectiles/Knife.hpp"
 #include "effects/HitFlash.hpp"
 #include "powerups/PowerUp.hpp"
 #include "powerups/Diamond.hpp"
@@ -19,6 +18,7 @@ public:
     static const int MAX_PLATFORMS       = 16;
     static const int MAX_ENEMIES         = 16;
     static const int MAX_PROJECTILES     = 8;
+    static const int MAX_KNIVES          = 16;
     static const int MAX_HIT_FLASHES     = 16;
     static const int MAX_POWERUPS        = 16;
     static const int MAX_DIAMONDS        = 16;
@@ -34,6 +34,9 @@ private:
 
     AttackBall* m_projectiles[MAX_PROJECTILES];
     int         m_projectileCount;
+
+    Knife*    m_knives[MAX_KNIVES];
+    int       m_knifeCount;
 
     HitFlash* m_hitFlashes[MAX_HIT_FLASHES];
     int       m_hitFlashCount;
@@ -54,14 +57,10 @@ private:
     PowerUp::Type m_displayedType;
     bool          m_hasDisplayed;
 
-    sf::Texture m_puIconSpeed;
-    bool        m_puIconSpeedLoaded;
-    sf::Texture m_puIconSnowball;
-    bool        m_puIconSnowballLoaded;
-    sf::Texture m_puIconDistance;
-    bool        m_puIconDistanceLoaded;
-    sf::Texture m_puIconBalloon;
-    bool        m_puIconBalloonLoaded;
+    sf::Texture m_puIconSpeed;     bool m_puIconSpeedLoaded;
+    sf::Texture m_puIconSnowball;  bool m_puIconSnowballLoaded;
+    sf::Texture m_puIconDistance;  bool m_puIconDistanceLoaded;
+    sf::Texture m_puIconBalloon;   bool m_puIconBalloonLoaded;
 
     void activatePowerUp(PowerUp::Type type);
     void updatePowerUpTimers(float dt);
@@ -69,6 +68,7 @@ private:
     void loadPowerUpIcons();
 
     int m_chainCount[MAX_ENEMIES];
+
     int randomScore(int lo, int hi) const;
 
     sf::Font    m_hudFont;
@@ -108,24 +108,22 @@ private:
 
     bool m_showHitboxes;
     bool m_gameOver;
-
+    
     bool  m_levelComplete;
     float m_levelTransitionTimer;
     float m_levelSlideOffset;
     bool  m_showLevelCompleteText;
     bool  m_bonusDiamondsSpawned;
 
-    // ===== BOSS: Mogera (Level 5) =====
-    Mogera*      m_mogera;
-    MogeraChild* m_mogeraChildren[MAX_MOGERA_CHILDREN];
-    int          m_mogeraChildCount;
-    float        m_mogeraChildPrevX[MAX_MOGERA_CHILDREN];
-    float        m_mogeraChildPrevY[MAX_MOGERA_CHILDREN];
+    class Mogera*      m_mogera;
+    class MogeraChild* m_mogeraChildren[MAX_MOGERA_CHILDREN];
+    int                m_mogeraChildCount;
+    float              m_mogeraChildPrevX[MAX_MOGERA_CHILDREN];
+    float              m_mogeraChildPrevY[MAX_MOGERA_CHILDREN];
 
     void drawBossHealthBar(sf::RenderWindow& window);
     void spawnMogeraChildren(sf::Vector2f mouthPos);
     void updateMogera(float dt);
-    // ======================================
 
     void buildLevel();
     void spawnEnemies();
@@ -145,6 +143,6 @@ public:
     void onEnter() override;
     void onExit() override;
 
-    bool isSpeedActive()    const { return m_speedActive;    }
+    bool isSpeedActive() const { return m_speedActive; }
     bool isDistanceActive() const { return m_distanceActive; }
 };
