@@ -5,21 +5,11 @@
 #include <SFML/Audio.hpp>
 #include <string>
 
-/**
- * @brief Pause menu â€” pushed on top of PlayState when player presses Escape.
- *
- * New design with background image and iOS-style glassy buttons.
- * - Background: pause_bg.png showing Snow Bros logo
- * - Title "PAUSED" below the logo
- * - 5 capsule-shaped glassy buttons with hover zoom effect
- *
- * Buttons:
- *   - Resume       -> pop self (returns to PlayState)
- *   - Main Menu    -> pop self AND pop PlayState (back to MenuState)
- *   - Shop         -> [TODO: implement shop state]
- *   - Logout       -> [TODO: implement logout]
- *   - Exit Game    -> pop everything (Game::run closes window)
- */
+// Yeh pause menu jo ek naye design ke sath hai jis mein "pause_bg.png" background aur 
+// iOS-style ke glassy buttons hain (ios 26 inspired). Is mein paanch rect ki shakal 
+// ke buttons hain jin par mouse le jaane se woh "zoom" hote hain yani k hover effect hai, aur in ke zariye 
+// aap game dobara shuru kar sakte hain, main menu par ja sakte hain, ya game band kar 
+// sakte hain. Jab yeh menu khulta hai toh purani game wahi ruk jati hai jab tak aap "Resume" na press kardein ok bye.
 class PauseState : public GameState {
 public:
     static const int NUM_BUTTONS = 5;
@@ -47,12 +37,12 @@ private:
     sf::Font m_font;
     sf::Text m_title;
 
-    // Background image
+   //bg
     sf::Texture m_bgTexture;
     sf::Sprite m_bgSprite;
     bool m_bgLoaded;
 
-    // Button click sound
+    //clicksound
     sf::SoundBuffer m_clickSoundBuffer;
     sf::Sound m_clickSound;
     bool m_clickSoundLoaded;
@@ -60,7 +50,7 @@ private:
     Button* m_buttons[NUM_BUTTONS];
     int m_selectedIndex;
 
-    // Helpers
+    //helpers
     void setHovered(int index);
     int buttonAtPoint(sf::Vector2f point) const;
     void activateButton(int index);

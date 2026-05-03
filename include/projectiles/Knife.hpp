@@ -1,11 +1,7 @@
 #pragma once
 #include "projectiles/Projectile.hpp"
 
-/**
- * Knife — fired by Tornado toward player's last known position.
- * Travels in a straight line at constant speed. Damages player on contact.
- * Dies when it leaves the screen or hits the player.
- */
+// fired by tornado, travels straight to the last known position of the player, hits and kills player, moves with constant speed
 class Knife : public Projectile {
 private:
     sf::Texture m_texture;

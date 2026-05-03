@@ -2,24 +2,20 @@
 #include <SFML/Graphics.hpp>
 #include <string>
 
-/**
- * @brief Brief visual impact effect when an attack ball hits an enemy.
- *
- * Spec (from our design chat): attack ball dies on hit AND spawns a small
- * crescent flash at the impact point that fades out over ~100ms. This is
- * a transient visual — no physics, no collision.
- *
- * Uses the same attack-ball sprite rendered at 60% size so we don't need
- * a separate asset. Rotates slightly over its lifetime for a "pop" feel.
- */
+// Yeh code ek visual effect banata hai jo attack ball ke enemy se takrane 
+// par nazar aata hai. Jab ball hit karti hai, toh woh foran khatam ho jati 
+// hai aur wahan ek chota sa chamakdar "flash" peda hota hai jo sirf 100ms ke 
+// liye rehta hai. Is effect ke liye wahi purana sprite chote size mein use kiya 
+// gaya hai jo halka sa rotate hota hai taake impact ka asar zyada behtar mehsoos 
+// ho. Yeh sirf dikhawe ke liye hai aur iska physics se koi talluq nahi hai.
 class HitFlash {
 private:
     sf::Texture m_texture;
     sf::Sprite  m_sprite;
     bool        m_textureLoaded;
 
-    float m_lifetime;     // remaining ms
-    float m_maxLifetime;  // reset value for alpha interpolation
+    float m_lifetime;     // in mili secnds
+    float m_maxLifetime;  // reset value
     bool  m_alive;
 
     sf::Vector2f m_position;

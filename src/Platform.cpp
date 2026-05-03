@@ -10,6 +10,7 @@ Platform::Platform(const sf::Texture& texture, sf::Vector2f size, sf::Vector2f p
             size.y / static_cast<float>(texSize.y)
         });
     }
+    
     m_sprite.setPosition(position);
 
     const float insetX      = 15.f;

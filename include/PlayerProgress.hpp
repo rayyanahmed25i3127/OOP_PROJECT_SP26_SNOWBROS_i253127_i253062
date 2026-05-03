@@ -2,34 +2,34 @@
 #include <string>
 
 struct PlayerProgress {
-    // -- Multiplayer mode flag --
+   //multiplayer mode
     bool        isMultiplayer  = false;
-    std::string player2Name;          // entered by user before MP game starts
+    std::string player2Name;          //user enters 
 
     int gems  = 0;
     int score = 0;
 
-    // -- Shop purchases (applied when PlayState resumes from pause) -----------
+    //shop purchases, applies when esc pressed again
     bool pendingSpeed          = false;
     bool pendingSnowball       = false;
     bool pendingDistance       = false;
     bool pendingBalloon        = false;
     int  pendingExtraLifeCount = 0;
 
-    // -- Per-player shop purchases (multiplayer) --
+    //perplayer shop purchased indiv, multiplayer mode
     bool pendingSpeedP2          = false;
     bool pendingSnowballP2       = false;
     bool pendingDistanceP2       = false;
     bool pendingBalloonP2        = false;
     int  pendingExtraLifeCountP2 = 0;
-    int  gemsP1 = 0;   // per-player diamond tracking in multiplayer
+    int  gemsP1 = 0;   // perplayer diamond tracking in multiplayer
     int  gemsP2 = 0;
 
-    // -- GameOver Continue button (GameOver screen) ---------------------------
+    //cont button at game over
     int  continueCount = 0;
     bool pendingRevive = false;
 
-    // -- Main Menu Continue button --------------------------------------------
+    //main menu cintinue button
     int  savedLevel          = 0;
     int  savedGems           = 0;
     int  savedCharacterIndex = 0;

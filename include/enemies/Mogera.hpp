@@ -3,41 +3,30 @@
 #include "enemies/MogeraChild.hpp"
 #include <SFML/Graphics.hpp>
 
-/**
- * @brief Boss enemy for Level 5 (spec §6.3).
- *
- * Mogera is a large stationary boss that:
- *   - Sits on the lower-right platform at all times (except death).
- *   - Cycles through an animation loop every ~6 seconds:
- *       idle (0.5s) → open_mouth_frame1 (0.5s) → open_mouth_frame2 (1.0s, throws babies) → idle (4.5s) → repeat
- *   - Throws 3 MogeraChild enemies when open_mouth_frame2 begins.
- *   - Takes 30 snowball hits to die.
- *   - On death: falls to the ground, displays death frame for 3s then disappears.
- *   - Drops 120 gems (8 × diamond icons) + 5000 score on death.
- *   - After health runs out, can no longer spawn children or damage player.
- *
- * Boss health bar rendered externally by PlayState (top-center, below level indicator).
- *
- * INHERITANCE: Entity → Mogera   (depth 2 from Entity)
- */
+// Yeh Level 5 ka boss Mogera hai jo ek hi jagah khara rehta hai aur hilta nahi. 
+// Yeh har 6 seconds baad apna moun kholta hai aur teen MogeraChild 
+// bahar phenkta hai. Isse khatam karne ke liye 50 snowball hits chahiye hote hain, 
+// aur marne par yeh 120 gems (8 diamonds) aur 5000 score deta hai. Iska health bar 
+// screen ke top-center par nazar aata hai aur yeh seedha Entity class se jurra hua hai.
 class Mogera : public Entity {
 public:
     enum class BossState {
-        Idle,           // waiting between attacks
-        OpenMouth1,     // mouth opening, frame 1
-        OpenMouth2,     // mouth open, spawning babies
+        // states jisme yeh mogera ho skta hai
+        Idle,           // wait tim between attacks
+        OpenMouth1,     // mouth openframe 1
+        OpenMouth2,     // mouth open and spawning babies
         Dying,          // death animation on the ground
         Dead            // fully removed
     };
 
-    // Signal struct — PlayState polls this every frame to spawn babies
+    // thsi is linked with playstate file wo isko har dafa poll karta hai babies spawn karne k liay
     struct SpawnRequest {
         bool     pending;
         sf::Vector2f spawnPos;   // position of Mogera's mouth
     };
 
 private:
-    // --- Textures ---
+//textures
     sf::Texture m_idleTexture;
     sf::Texture m_openMouth1Texture;
     sf::Texture m_openMouth2Texture;
@@ -50,54 +39,52 @@ private:
 
     sf::Sprite m_sprite;
 
-    // --- State machine ---
+    //states
     BossState m_bossState;
     float     m_stateTimer;
 
-    // Timing constants
+    //timers
     static constexpr float IDLE_BEFORE_ATTACK = 4.5f;  // idle wait after throw
     static constexpr float IDLE_INTRO         = 0.5f;  // idle at start of cycle
     static constexpr float OPEN1_DURATION     = 0.5f;
     static constexpr float OPEN2_DURATION     = 1.0f;
     static constexpr float DEATH_DURATION     = 3.0f;
 
-    // --- Health ---
+    //hp
     int  m_maxHits;
     int  m_hitsRemaining;
     bool m_canAttack;   // false once hitsRemaining == 0
 
-    // --- Baby spawn signal ---
+    //child spawn signal 
     SpawnRequest m_spawnRequest;
     bool         m_babiesSpawnedThisCycle;   // prevents double-spawn in same open2 window
 
-    // --- Visual ---
+    
     float m_spriteW;
     float m_spriteH;
 
-    // --- Death fall ---
+    //death fall
     static constexpr float DEATH_GRAVITY = 800.f;
     static constexpr float GROUND_Y      = 520.f;   // y where Mogera lands when dying
 
-    // --- Reward flags ---
-    bool  m_rewardPending;    // set true once — PlayState reads and clears
+    //rewards
+    bool  m_rewardPending;    // set true once, PlayState reads and clears
 
     void syncSprite();
     void syncHitBox();
 
 public:
-    // Mogera spawns at the lower-right platform.
-    // The rightmost lower platform sits at x≈470, y=437. 
-    // We position Mogera flush with the right wall at y≈355 (platform top - sprite height).
+    // Mogera spawns at the lower-right platformt the rightmost lower platform sits at x=470, y=437 px
     explicit Mogera(sf::Vector2f pos);
 
     void update(float dt)               override;
     void draw(sf::RenderWindow& window) override;
     void setPosition(sf::Vector2f pos)  override;
 
-    // Called by PlayState when an attack ball hits Mogera.
+// it is called by PlayState when an attack ball hits Mogera.
     void takeSnowballHit();
 
-    // Getters for PlayState
+    //getters
     BossState    getBossState()      const { return m_bossState;      }
     int          getHitsRemaining()  const { return m_hitsRemaining;  }
     int          getMaxHits()        const { return m_maxHits;        }
@@ -105,14 +92,13 @@ public:
     bool         isDying()           const { return m_bossState == BossState::Dying; }
     bool         canDamagePlayer()   const { return m_canAttack;      }
 
-    // PlayState polls & clears this each frame
     SpawnRequest getAndClearSpawnRequest() {
         SpawnRequest r = m_spawnRequest;
         m_spawnRequest.pending = false;
         return r;
     }
 
-    // PlayState polls & clears once for reward
+    // PlayState polls karke clear kardeta hai rewardsk liay
     bool getAndClearRewardPending() {
         bool r = m_rewardPending;
         m_rewardPending = false;

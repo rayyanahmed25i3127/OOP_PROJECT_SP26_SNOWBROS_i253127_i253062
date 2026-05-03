@@ -7,13 +7,13 @@ private:
     float m_flyTimer;
     float m_walkTimer;
 
-    // Flying animation frames
+    // flying animation frames
     sf::Texture m_flyTextures[3];
     bool  m_flyLoaded;
     int   m_flyFrame;
     float m_flyFrameTimer;
 
-    // Custom snow encasement textures (fooga-specific)
+    // snow encasement textures
     sf::Texture m_fooga25Texture;
     sf::Texture m_fooga50Texture;
     sf::Texture m_fooga75Texture;
