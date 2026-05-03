@@ -24,6 +24,7 @@ public:
 private:
     enum class ButtonAction {
         NewGame,
+        Multiplayer,
         Continue,
         Leaderboard,
         Logout,

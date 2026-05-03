@@ -1,5 +1,6 @@
 #include "states/LoginState.hpp"
 #include "states/StateManager.hpp"
+#include "audio/AudioManager.hpp"
 #include "states/MenuState.hpp"
 #include "states/SignupState.hpp"
 #include <iostream>
@@ -133,6 +134,7 @@ void LoginState::drawInputField(sf::RenderWindow& window,
 // â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 void LoginState::onEnter()
 {
+    AudioManager::get().playMenuMusic();
     // â”€â”€ Background â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if (!m_bgTexture.loadFromFile("assets/sprites/login_bg.png")) {
         std::cerr << "Failed to load login_bg.png\n";

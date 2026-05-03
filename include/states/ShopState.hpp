@@ -56,6 +56,15 @@ private:
     void drawCard(sf::RenderWindow& window, int index);
     void tryBuy(int index);
 
+    // Multiplayer popup
+    bool  m_showPopup;
+    int   m_popupItemIndex;
+    sf::FloatRect m_popupBtnP1;
+    sf::FloatRect m_popupBtnP2;
+    sf::FloatRect m_popupBtnCancel;
+    void drawPopup(sf::RenderWindow& window);
+    void doBuyForPlayer(int itemIndex, int playerNum);
+
 public:
     ShopState();
     ~ShopState();

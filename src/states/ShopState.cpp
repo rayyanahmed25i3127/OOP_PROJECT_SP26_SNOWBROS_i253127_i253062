@@ -1,5 +1,6 @@
 #include "states/ShopState.hpp"
 #include "states/StateManager.hpp"
+#include "audio/AudioManager.hpp"
 #include <iostream>
 #include <cmath>
 #include <cstdlib>
@@ -158,6 +159,7 @@ void ShopState::tryBuy(int index) {
 
 // â”€â”€ onEnter â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 void ShopState::onEnter() {
+    AudioManager::get().playMenuMusic();
     static bool seeded=false;
     if(!seeded){std::srand(static_cast<unsigned>(std::time(nullptr)));seeded=true;}
     m_gemCount = m_manager->getProgress().gems;

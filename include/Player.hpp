@@ -1,6 +1,23 @@
 #pragma once
 #include "Entity.hpp"
 #include <SFML/Graphics.hpp>
+#include <SFML/Window/Keyboard.hpp>
+
+struct PlayerControls {
+    sf::Keyboard::Key left, right, jump, jump2, fire, fire2, autoToggle;
+    static PlayerControls player1() {
+        return {sf::Keyboard::Key::A, sf::Keyboard::Key::D,
+                sf::Keyboard::Key::W, sf::Keyboard::Key::Unknown,
+                sf::Keyboard::Key::Space, sf::Keyboard::Key::J,
+                sf::Keyboard::Key::K};
+    }
+    static PlayerControls player2() {
+        return {sf::Keyboard::Key::Left, sf::Keyboard::Key::Right,
+                sf::Keyboard::Key::Up, sf::Keyboard::Key::Unknown,
+                sf::Keyboard::Key::L, sf::Keyboard::Key::Numpad0,
+                sf::Keyboard::Key::M};
+    }
+};
 
 class Player : public Entity {
 private:
@@ -50,6 +67,7 @@ private:
     bool  m_facingRight;
     bool  m_balloonMode;
     float m_balloonGravity;
+    PlayerControls m_controls;
 
     void loadAnimations(int characterIndex);
     void updateAnimation(float dt);
@@ -58,7 +76,8 @@ private:
 public:
     static const int MAX_LIVES = 99;
 
-    explicit Player(sf::Vector2f pos, int characterIndex = 0);
+    explicit Player(sf::Vector2f pos, int characterIndex = 0,
+                    PlayerControls controls = PlayerControls::player1());
     void setPosition(sf::Vector2f pos) override;
     void handleInput();
     void applyGravity(float dt);
