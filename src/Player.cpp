@@ -3,9 +3,6 @@
 #include <iostream>
 
 namespace {
-    // ---------------------------------------------------------------
-    //  Player display size
-    // ---------------------------------------------------------------
     const float PLAYER_WIDTH  = 56.f;
     const float PLAYER_HEIGHT = 68.f;
 
@@ -14,53 +11,32 @@ namespace {
     const float HITBOX_OFFSET_X = (PLAYER_WIDTH  - HITBOX_WIDTH)  / 2.f;
     const float HITBOX_OFFSET_Y =  PLAYER_HEIGHT - HITBOX_HEIGHT;
 
-    // ---------------------------------------------------------------
-    //  AnimInfo: describes ONE texture file and how many horizontal
-    //  frames it contains.
-    //
-    //  Rayyan's assets are individual PNGs per frame (not sprite sheets),
-    //  so frameCount = 1 for every entry and each state needs multiple
-    //  AnimInfo entries â€” one per frame file.
-    //
-    //  The ANIM_TABLE below stores frames as separate entries inside a
-    //  small per-state array.  loadAnimations() loads them individually
-    //  and stitches them into the Animation struct.
-    // ---------------------------------------------------------------
     struct AnimInfo {
         const char* file;
-        int         frameCount;    // always 1 for individual-PNG assets
-        float       frameDuration; // seconds this frame is shown
+        int         frameCount;
+        float       frameDuration;
     };
 
-    // Per-state frame lists for each character.
-    // Index 0 = Idle, 1 = Walk, 2 = Jump, 3 = Throw
-    // Each array is null-terminated (file == nullptr marks the end).
     struct StateFrames {
-        AnimInfo frames[8]; // max 8 individual frames per state
+        AnimInfo frames[8];
     };
 
-    // [character 0..2][state 0..3]
     const StateFrames ANIM_TABLE[3][4] = {
         // ---- Blue player (character 0) ----
         {
-            // Idle: 1 frame
             { {{ "assets/sprites/player_blue_idle.png",         1, 0.18f },
                { nullptr, 0, 0.f }} },
-            // Walk: 3 frames, 0.33s each
             { {{ "assets/sprites/player_blue_walk_frame1.png",  1, 0.33f },
                { "assets/sprites/player_blue_walk_frame2.png",  1, 0.33f },
                { "assets/sprites/player_blue_walk_frame3.png",  1, 0.33f },
                { nullptr, 0, 0.f }} },
-            // Jump: 1 frame
             { {{ "assets/sprites/player_blue_jump.png",         1, 0.15f },
                { nullptr, 0, 0.f }} },
-            // Throw: 2 frames, 0.15s each
             { {{ "assets/sprites/player_blue_throw_frame1.png", 1, 0.15f },
                { "assets/sprites/player_blue_throw_frame2.png", 1, 0.15f },
                { nullptr, 0, 0.f }} },
         },
         // ---- Red player (character 1) ----
-        // (re-uses blue assets as fallback if red sprites not present)
         {
             { {{ "assets/sprites/player_red_idle.png",          1, 0.18f },
                { nullptr, 0, 0.f }} },
@@ -90,36 +66,15 @@ namespace {
         },
     };
 
-} // namespace
+}
 
-// ---------------------------------------------------------------
-//  Constructor
-//  m_sprite MUST be initialised with a texture reference because
-//  SFML 3 deleted sf::Sprite's default constructor.
-//  m_animations[4] is declared before m_sprite in the header so it
-//  is fully default-constructed before this initialiser list runs.
-// ---------------------------------------------------------------
 Player::Player(sf::Vector2f pos, int characterIndex)
     : Entity(pos)
-<<<<<<< HEAD
     , m_currentAnim(AnimState::Idle)
     , m_currentFrame(0)
     , m_animTimer(0.f)
-    , m_sprite(m_animations[0].texture)   // safe: m_animations constructed first
+    , m_sprite(m_animations[0].texture)
     , m_lives(2)
-=======
-    , m_idleLoaded(false)
-    , m_walkLoaded(false)
-    , m_jumpLoaded(false)
-    , m_throwLoaded(false)
-    , m_sprite(m_idleTexture)
-    , m_walkFrame(0)
-    , m_walkTimer(0.f)
-    , m_throwFrame(0)
-    , m_throwTimer(0.f)
-    , m_isThrowing(false)
-    , m_lives(10)
->>>>>>> origin/main
     , m_invincibleTimer(0.f)
     , m_blinkVisible(true)
     , m_throwCooldown(0.f)
@@ -136,25 +91,10 @@ Player::Player(sf::Vector2f pos, int characterIndex)
     , m_balloonGravity(-50.f)
 {
     loadAnimations(characterIndex);
-
     hitBox.size     = { HITBOX_WIDTH,  HITBOX_HEIGHT };
     hitBox.position = { pos.x + HITBOX_OFFSET_X, pos.y + HITBOX_OFFSET_Y };
 }
 
-// ---------------------------------------------------------------
-//  loadAnimations
-//
-//  Loads individual-PNG frames for each animation state.
-//  Each Animation struct ends up with:
-//    - m_frameTextures[] holding up to 8 sf::Texture objects
-//    - frameCount: how many frames actually loaded
-//    - frameDurations[]: per-frame duration
-//    - activeTexture: points to m_frameTextures[currentFrame] at draw time
-//    - frameW / frameH: full texture size (each PNG is one full frame)
-//
-//  If a state's files are all missing, it falls back to the idle state's
-//  first texture via a non-owning pointer (no sf::Texture copy needed).
-// ---------------------------------------------------------------
 void Player::loadAnimations(int characterIndex) {
     int idx = (characterIndex >= 0 && characterIndex < 3) ? characterIndex : 0;
 
@@ -165,7 +105,7 @@ void Player::loadAnimations(int characterIndex) {
         int loaded = 0;
         for (int f = 0; f < 8; ++f) {
             const AnimInfo& info = sf_.frames[f];
-            if (!info.file) break; // null-terminator reached
+            if (!info.file) break;
 
             if (anim.frameTextures[f].loadFromFile(info.file)) {
                 anim.frameDurations[f] = info.frameDuration;
@@ -174,20 +114,18 @@ void Player::loadAnimations(int characterIndex) {
                           << ": " << info.file << "\n";
             } else {
                 std::cerr << "[Player] Missing anim[" << s << "] frame " << f
-                          << ": " << info.file << " â€” stopping frame load for this state\n";
-                break; // partial load: use however many loaded successfully
+                          << ": " << info.file << " — stopping frame load for this state\n";
+                break;
             }
         }
 
         if (loaded > 0) {
             anim.frameCount    = loaded;
-            anim.frameDuration = anim.frameDurations[0]; // default; updated per-frame in update
+            anim.frameDuration = anim.frameDurations[0];
             anim.frameW        = static_cast<int>(anim.frameTextures[0].getSize().x);
             anim.frameH        = static_cast<int>(anim.frameTextures[0].getSize().y);
             anim.activeTexture = &anim.frameTextures[0];
             anim.loaded        = true;
-            // Also copy into .texture so the sprite constructor reference stays valid
-            // (we use activeTexture for actual rendering, .texture is just a placeholder)
         } else {
             anim.frameCount    = 0;
             anim.frameDuration = 0.15f;
@@ -197,12 +135,12 @@ void Player::loadAnimations(int characterIndex) {
             anim.loaded        = false;
             if (s > 0) {
                 std::cerr << "[Player] State " << s
-                          << " completely missing â€” will use idle fallback\n";
+                          << " completely missing — will use idle fallback\n";
             }
         }
     }
 
-    // --- Fallback: wire missing states to idle ---
+    // Fallback: wire missing states to idle
     if (m_animations[0].loaded) {
         for (int s = 1; s < 4; ++s) {
             if (!m_animations[s].loaded) {
@@ -216,7 +154,7 @@ void Player::loadAnimations(int characterIndex) {
         }
     }
 
-    // --- Prime the sprite with the first idle frame ---
+    // Prime the sprite with the first idle frame
     if (m_animations[0].loaded && m_animations[0].activeTexture) {
         m_sprite.setTexture(*m_animations[0].activeTexture, true);
     }
@@ -224,13 +162,8 @@ void Player::loadAnimations(int characterIndex) {
     applySpriteTransform();
 }
 
-// ---------------------------------------------------------------
-//  updateAnimation
-//  Selects which state should be active, advances the frame timer,
-//  and updates m_sprite's texture to the current frame.
-// ---------------------------------------------------------------
 void Player::updateAnimation(float dt) {
-    // ---- Decide desired state ----
+    // Decide desired state
     AnimState desired;
     if (m_wantsToThrow || m_throwCooldown > (m_throwInterval - 0.10f)) {
         desired = AnimState::Throw;
@@ -252,10 +185,10 @@ void Player::updateAnimation(float dt) {
     Animation& anim = m_animations[static_cast<int>(m_currentAnim)];
     if (!anim.loaded || anim.frameCount <= 0) return;
 
-    // Clamp frame index (safety)
+    // Clamp frame index
     if (m_currentFrame >= anim.frameCount) m_currentFrame = 0;
 
-    // Use per-frame duration if available, otherwise uniform duration
+    // Use per-frame duration
     float frameDur = (m_currentFrame < 8) ? anim.frameDurations[m_currentFrame]
                                            : anim.frameDuration;
     if (frameDur <= 0.f) frameDur = 0.15f;
@@ -267,7 +200,7 @@ void Player::updateAnimation(float dt) {
         m_currentFrame = (m_currentFrame + 1) % anim.frameCount;
     }
 
-    // Point activeTexture at the current frame and apply to sprite
+    // Point activeTexture at the current frame
     if (m_currentFrame < 8) {
         anim.activeTexture = &anim.frameTextures[m_currentFrame];
     }
@@ -276,15 +209,6 @@ void Player::updateAnimation(float dt) {
     }
 }
 
-// ---------------------------------------------------------------
-//  applySpriteTransform
-//  Scales to PLAYER_WIDTH x PLAYER_HEIGHT, sets the flip based on
-//  facing direction, and positions the sprite.
-//
-//  IMPORTANT: Rayyan's sprites face LEFT by default.
-//  â†’ facing right  = negate X scale  (flip to right)
-//  â†’ facing left   = positive X scale (natural direction)
-// ---------------------------------------------------------------
 void Player::applySpriteTransform() {
     Animation& anim = m_animations[static_cast<int>(m_currentAnim)];
     if (!anim.loaded || anim.frameW <= 0 || anim.frameH <= 0) return;
@@ -292,10 +216,9 @@ void Player::applySpriteTransform() {
     float scaleX = PLAYER_WIDTH  / static_cast<float>(anim.frameW);
     float scaleY = PLAYER_HEIGHT / static_cast<float>(anim.frameH);
 
-    // Origin at top-centre so the flip pivot is the character centreline
     m_sprite.setOrigin({ static_cast<float>(anim.frameW) / 2.f, 0.f });
 
-    // Sprites face LEFT by default â†’ negative scaleX flips to face right
+    // Sprites face LEFT by default → negative scaleX flips to face right
     if (m_facingRight)
         m_sprite.setScale({ -scaleX,  scaleY });
     else
@@ -304,9 +227,6 @@ void Player::applySpriteTransform() {
     m_sprite.setPosition({ position.x + PLAYER_WIDTH / 2.f, position.y });
 }
 
-// ---------------------------------------------------------------
-//  handleInput  (unchanged from Anas's version)
-// ---------------------------------------------------------------
 void Player::handleInput() {
     velocity.x = 0.f;
 
@@ -332,7 +252,7 @@ void Player::handleInput() {
         m_wantsToThrow = true;
     }
 
-    // K key toggles auto-attack (edge-detected via static bool)
+    // K key toggles auto-attack
     {
         static bool s_kWasPressed = false;
         bool kNow = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::K);
@@ -362,9 +282,6 @@ void Player::setSpeedMultiplier(float multiplier) {
     speed = BASE_SPEED * multiplier;
 }
 
-// ---------------------------------------------------------------
-//  update  (unchanged logic from Anas's version)
-// ---------------------------------------------------------------
 void Player::update(float dt) {
     if (m_throwCooldown > 0.f) m_throwCooldown -= dt;
 
