@@ -8,11 +8,9 @@ namespace {
     const float BLUE_SPRITE_H = 42.f;
     const float BLUE_HIT_W    = 28.f;
     const float BLUE_HIT_H    = 34.f;
-
-    // 125% of Botom red speed (80 * 1.25 = 100)
     const float BLUE_SPEED    = 100.f;
 
-    // 3 hits required for full encasement
+    // 3 hits required to fully encase
     const int   BLUE_HITS_TO_ENCASE = 3;
 
     const float SNOWBALLED_DURATION   = 3.0f;
@@ -39,22 +37,20 @@ BotomBlue::BotomBlue(sf::Vector2f pos)
     , m_lastWalkVelocityX(0.f)
 {
     std::cerr << "[BotomBlue] CREATED with hitsToEncase=" << m_hitsToEncase << "\n";
-    // Load base enemy assets (idle, trapped, unleash frames, standard snow overlays)
-    // Blue botom uses its own unleash frames; trapped frame reuses botom_idle as fallback.
+    // Blue botom uses its own unleash frames
     loadEnemyAssets(
-        "assets/sprites/botom_idle.png",           // idle (shared with red)
+        "assets/sprites/botom_idle.png",           
         "assets/sprites/botom_trapped.png",         // fully snowballed body
         "assets/sprites/botom_blue_unleashed75.png",
         "assets/sprites/botom_blue_unleashed50.png",
         "assets/sprites/botom_blue_unleashed25.png",
-        "assets/sprites/snow_encase_50.png",        // base 50% overlay (hit 1 — will be overridden)
+        "assets/sprites/snow_encase_50.png",        // base 50% overlay
         "assets/sprites/snow_encase_100.png",       // 100% overlay (fully snowballed)
         "assets/sprites/snow_escape_75.png",
         "assets/sprites/snow_escape_50.png",
         "assets/sprites/snow_escape_25.png"
     );
 
-    // Load blue-specific encasement overlay textures
     auto tryLoad = [&](sf::Texture& tex, bool& flag, const char* path) {
         if (std::FILE* f = std::fopen(path, "rb")) {
             std::fclose(f);
@@ -67,17 +63,11 @@ BotomBlue::BotomBlue(sf::Vector2f pos)
     tryLoad(m_encased25Texture, m_encased25Loaded, "assets/sprites/botom_blue_encased25.png");
     tryLoad(m_encased50Texture, m_encased50Loaded, "assets/sprites/botom_blue_encased50.png");
 
-    // Walk animation — loadAnimations expects "basepath" + "1/2/3.png"
-    // Pass a dummy jump path that contains "jumping" so the auto-derive doesn't
-    // corrupt m_fallTexture; we immediately overwrite both below.
     loadAnimations(
         "assets/sprites/botom_blue_walk_frame",
-        "assets/sprites/botom_red_jumping"   // temporary — overwritten below
+        "assets/sprites/botom_red_jumping"   
     );
 
-    // Override jump & fall with the correct blue-specific frames.
-    // loadAnimations auto-derives fall by replacing "jumping"→"falling", which
-    // would give botom_red_falling.png. We overwrite both explicitly here.
     m_jumpLoaded = false;
     m_fallLoaded = false;
     if (std::FILE* f = std::fopen("assets/sprites/botom_blue_jump.png", "rb")) {
@@ -94,7 +84,6 @@ BotomBlue::BotomBlue(sf::Vector2f pos)
     if (!m_fallLoaded)
         std::cerr << "[BotomBlue] missing: assets/sprites/botom_blue_fall.png\n";
 
-    // Enemy base constructor leaves m_oneHitEncase uninitialised — force false.
     setOneHitEncase(false);
 
     m_facingRight = (std::rand() % 2 == 0);
@@ -110,9 +99,6 @@ void BotomBlue::rollJumpTimer() {
     m_jumpTimer = randomBetween(3.0f, 6.0f);
 }
 
-// ------------------------------------------------------------------
-// updateAI — identical logic to Botom (red), just faster speed
-// ------------------------------------------------------------------
 void BotomBlue::updateAI(float dt) {
     if (m_state != State::Alive) {
         velocity.x = 0.f;
@@ -144,14 +130,6 @@ void BotomBlue::updateAI(float dt) {
     m_lastWalkVelocityX = velocity.x;
 }
 
-// ------------------------------------------------------------------
-// updateStateTimers — overrides base to handle 3-hit partial decay.
-// Instead of resetting m_hitsTaken to 0 on PartialEncase expiry,
-// we decrement by 1 so the enemy gradually loses snow layers:
-//   hits=2 → hits=1 (still PartialEncase, timer restarts)
-//   hits=1 → hits=0, state=Alive
-// All other states delegate to the base class.
-// ------------------------------------------------------------------
 void BotomBlue::updateStateTimers(float dt) {
     if (m_state == State::PartialEncase) {
         m_stateTimer -= dt;
@@ -162,21 +140,18 @@ void BotomBlue::updateStateTimers(float dt) {
                 m_state = State::Alive;
                 m_stateTimer = 0.f;
             } else {
-                // Still partially encased — restart timer for next decay stage
                 m_stateTimer = getPartialEncaseDuration();
             }
         }
         return;
     }
-    // All other states (Snowballed, Escaping75/50/25) handled by base
     Enemy::updateStateTimers(dt);
 }
 
-// ------------------------------------------------------------------
-//   m_hitsTaken == 1 → botom_blue_encased25 overlay
-//   m_hitsTaken == 2 → botom_blue_encased50 overlay
-//   Snowballed       → snow_encase_100 (ready to roll)
-// ------------------------------------------------------------------
+//   hits == 1, botom_blue_encased25 overlay
+//   hits == 2, botom_blue_encased50 overlay
+//   Snowballed, snow_encase_00 (ready to roll)
+
 void BotomBlue::applyStateSprite() {
     m_overlayVisible = false;
     m_bodySprite.setColor(sf::Color::White);
@@ -208,11 +183,11 @@ void BotomBlue::applyStateSprite() {
                 else
                     m_bodySprite.setColor(sf::Color(210, 235, 255));
             } else {
-                // Second hit: 50% snow overlay (botom_blue_encased_50)
+                // Second hit: 50% snow overlay
                 if (m_encased50Loaded)
                     setOverlay(m_encased50Texture, true);
                 else if (m_snowEncase50Loaded)
-                    setOverlay(m_snowEncase50Texture, true);  // fallback
+                    setOverlay(m_snowEncase50Texture, true);
                 else
                     m_bodySprite.setColor(FROSTY_TINT);
             }
@@ -220,7 +195,7 @@ void BotomBlue::applyStateSprite() {
 
         case State::Snowballed:
             setBody(m_trappedTexture, m_trappedLoaded);
-            // 3rd hit = fully snowballed, ready to roll — use standard snow_encase_100
+            // 3rd hit = fully snowballed, ready to roll
             if (m_snowEncase100Loaded)
                 setOverlay(m_snowEncase100Texture, true);
             else

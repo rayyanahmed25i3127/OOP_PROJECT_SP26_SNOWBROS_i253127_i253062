@@ -7,8 +7,8 @@ namespace {
     const float SPRITE_H = 22.f;
     const float HIT_W    = 20.f;
     const float HIT_H    = 20.f;
-    const float GRAVITY  = 500.f;       // gentler fall than enemies â€” feels floatier
-    const float LIFETIME = 8.0f;        // seconds before auto-despawn
+    const float GRAVITY  = 500.f;     
+    const float LIFETIME = 8.0f;      
 }
 
 const char* PowerUp::typeName(Type t) {
@@ -23,10 +23,10 @@ const char* PowerUp::typeName(Type t) {
 
 const char* PowerUp::texturePath(Type t) {
     switch (t) {
-        case Type::SpeedBoost:       return "assets/sprites/powerup_speed.png";     // Blue potion
-        case Type::SnowballPower:    return "assets/sprites/powerup_snowball.png";  // Snowman head
-        case Type::DistanceIncrease: return "assets/sprites/powerup_distance.png";  // Attack ball icon
-        case Type::BalloonMode:      return "assets/sprites/powerup_balloon.png";   // Balloon/duck
+        case Type::SpeedBoost:       return "assets/sprites/powerup_speed.png";     
+        case Type::SnowballPower:    return "assets/sprites/powerup_snowball.png";  
+        case Type::DistanceIncrease: return "assets/sprites/powerup_distance.png";  
+        case Type::BalloonMode:      return "assets/sprites/powerup_balloon.png";  
         default:                     return "";
     }
 }
@@ -44,7 +44,7 @@ PowerUp::PowerUp(sf::Vector2f pos, Type type)
     , m_hitOffsetX((SPRITE_W - HIT_W) / 2.f)
     , m_hitOffsetY((SPRITE_H - HIT_H) / 2.f)
 {
-    velocity = { 0.f, -120.f };   // small upward pop on spawn (juicy feel)
+    velocity = { 0.f, -120.f }; 
 
     const std::string path = texturePath(type);
     if (std::FILE* f = std::fopen(path.c_str(), "rb")) {
@@ -59,7 +59,7 @@ PowerUp::PowerUp(sf::Vector2f pos, Type type)
         std::cerr << "[PowerUp] missing: " << path << "\n";
     }
 
-    // Fallback color per type so debug-fallback is still informative
+    // Fallback color per type so debug fallback is still informative
     sf::Color tint;
     switch (type) {
         case Type::SpeedBoost:       tint = sf::Color(120, 200, 255); break;

@@ -22,16 +22,15 @@ FlyngFoogaFoogRed::FlyngFoogaFoogRed(sf::Vector2f pos)
     , m_fooga50Loaded(false)
     , m_fooga75Loaded(false)
 {
-    // Idle + snow100 (for Snowballed/Rolling) use existing assets
     loadEnemyAssets(
         "assets/sprites/fooga_idle_red.png",
-        "assets/sprites/fooga_idle_red.png",   // trapped = idle frame
-        "assets/sprites/fooga_idle_red.png",   // unleash1 = idle
-        "assets/sprites/fooga_idle_red.png",   // unleash2 = idle
-        "assets/sprites/fooga_idle_red.png",   // unleash3 = idle
-        "assets/sprites/fooga_red_50.png",     // encase50  (unused directly)
-        "assets/sprites/snow_encase_100.png",   // full snowball for rolling
-        "assets/sprites/snow_escape_75.png",    // escape overlays (unused)
+        "assets/sprites/fooga_idle_red.png",   
+        "assets/sprites/fooga_idle_red.png",   
+        "assets/sprites/fooga_idle_red.png",   
+        "assets/sprites/fooga_idle_red.png",   
+        "assets/sprites/fooga_red_50.png",     
+        "assets/sprites/snow_encase_100.png",   
+        "assets/sprites/snow_escape_75.png",    
         "assets/sprites/snow_escape_50.png",
         "assets/sprites/snow_escape_25.png"
     );
@@ -53,9 +52,6 @@ FlyngFoogaFoogRed::FlyngFoogaFoogRed(sf::Vector2f pos)
     }
 }
 
-// ---------------------------------------------------------------
-// update — override to skip gravity when flying
-// ---------------------------------------------------------------
 void FlyngFoogaFoogRed::update(float dt) {
     if (m_state == State::Rolling) {
         updateStateTimers(dt);
@@ -75,10 +71,8 @@ void FlyngFoogaFoogRed::update(float dt) {
         }
         updateAI(dt);
     } else {
-        // Encased/escaping: gravity always, stop horizontal
         velocity.y += GRAVITY * dt;
         velocity.x = 0.f;
-        // Force to idle frame when hit while flying
         m_isFlying = false;
     }
 
@@ -88,10 +82,6 @@ void FlyngFoogaFoogRed::update(float dt) {
     updateAnimation(dt);
     syncSpritePositions();
 }
-
-// ---------------------------------------------------------------
-// updateAI — fly 5s chasing player, walk 8s on platforms
-// ---------------------------------------------------------------
 void FlyngFoogaFoogRed::updateAI(float dt) {
     if (m_isFlying) {
         m_flyTimer += dt;
@@ -99,7 +89,7 @@ void FlyngFoogaFoogRed::updateAI(float dt) {
             m_isFlying   = false;
             m_walkTimer  = 0.f;
             m_flyTimer   = 0.f;
-            velocity.y   = 0.f;   // stop vertical on landing
+            velocity.y   = 0.f;  
         }
     } else {
         m_walkTimer += dt;
@@ -112,7 +102,6 @@ void FlyngFoogaFoogRed::updateAI(float dt) {
     }
 
     if (m_isFlying) {
-        // Chase player — ignores platforms, moves freely in 2D
         if (g_player) {
             sf::Vector2f pPos = g_player->getPosition();
             sf::Vector2f dir  = pPos - position;
@@ -129,7 +118,7 @@ void FlyngFoogaFoogRed::updateAI(float dt) {
             }
         }
     } else {
-        // Walk mode — same as Botom
+        // Walk mode same as Botom
         if (!m_onGround) return;
 
         if (velocity.x == 0.f)
@@ -163,9 +152,6 @@ void FlyngFoogaFoogRed::updateAI(float dt) {
     }
 }
 
-// ---------------------------------------------------------------
-// applyStateSprite — fooga-specific: no botom overlay, use own textures
-// ---------------------------------------------------------------
 void FlyngFoogaFoogRed::applyStateSprite() {
     m_overlayVisible = false;
     m_bodySprite.setColor(sf::Color::White);
@@ -194,7 +180,7 @@ void FlyngFoogaFoogRed::applyStateSprite() {
             }
             break;
 
-        // Escape stages — reverse: 75→50→25→free
+        
         case State::Escaping75:
             if (m_fooga75Loaded) m_bodySprite.setTexture(m_fooga75Texture, true);
             break;
@@ -219,9 +205,6 @@ void FlyngFoogaFoogRed::applyStateSprite() {
     }
 }
 
-// ---------------------------------------------------------------
-// updateAnimation — fly frames while flying, idle while walking
-// ---------------------------------------------------------------
 void FlyngFoogaFoogRed::updateAnimation(float dt) {
     if (m_state != State::Alive) return;
 

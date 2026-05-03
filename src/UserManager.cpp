@@ -8,7 +8,7 @@ UserManager::UserManager() : m_count(0) {
     
 }
 
-// 🔹 Get current date
+// current date
 std::string getCurrentDateUser() {
     time_t now = time(0);
     tm* ltm = localtime(&now);
@@ -23,7 +23,7 @@ std::string getCurrentDateUser() {
 }
 
 
-// 🔹 Load users
+// Load users
 void UserManager::loadFromFile(const std::string& filename) {
     std::ifstream file(filename);
     
@@ -64,7 +64,7 @@ std::cout << "Total loaded: " << m_count << "\n";
 }
 
 
-// 🔹 Save users
+// Save users
 void UserManager::saveToFile(const std::string& filename) {
     std::ofstream file(filename);
 
@@ -79,7 +79,7 @@ void UserManager::saveToFile(const std::string& filename) {
 }
 
 
-// 🔹 Find user
+// Find user
 int UserManager::findUser(const std::string& name) {
     for (int i = 0; i < m_count; i++) {
         if (m_usernames[i] == name) {
@@ -90,7 +90,7 @@ int UserManager::findUser(const std::string& name) {
 }
 
 
-// 🔹 Generate new ID
+// Generate new ID
 int UserManager::generateNewID() {
     int maxID = 0;
 
@@ -104,7 +104,7 @@ int UserManager::generateNewID() {
 }
 
 
-// 🔹 Main function
+// Main function
 int UserManager::findOrCreateUser(const std::string& name) {
     int id = findUser(name);
 

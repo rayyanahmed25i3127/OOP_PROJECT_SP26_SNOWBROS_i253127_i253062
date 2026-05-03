@@ -4,17 +4,16 @@
 #include <iostream>
 #include <cmath>
 
-// Candidate bomb targets — (x centre, y surface) on each platform
+
 const sf::Vector2f Gamakichi::s_targets[NUM_TARGETS] = {
-    {160.f, 240.f},   // upper-left platform
+    {160.f, 240.f},  
     {270.f, 240.f},
-    {560.f, 240.f},   // upper-right platform
+    {560.f, 240.f},  
     {670.f, 240.f},
-    {280.f, 349.f},   // mid-centre platform
+    {280.f, 349.f},   
     {490.f, 349.f},
 };
 
-// ---------------------------------------------------------------
 Gamakichi::Gamakichi(sf::Vector2f pos)
     : Entity(pos)
     , m_closedLoaded(false), m_openLoaded(false)
@@ -42,7 +41,6 @@ Gamakichi::Gamakichi(sf::Vector2f pos)
 
     if (m_closedLoaded) m_sprite.setTexture(m_closedTex, true);
 
-    // Hitbox — spans most of lower-right area
     hitBox.size     = {200.f, 220.f};
     hitBox.position = pos;
 
@@ -53,7 +51,6 @@ Gamakichi::~Gamakichi() {
     for (int i = 0; i < m_bombCount; ++i) { delete m_bombs[i]; m_bombs[i] = nullptr; }
 }
 
-// ---------------------------------------------------------------
 void Gamakichi::syncSprite() {
     sf::Vector2u sz = m_sprite.getTexture().getSize();
     if (sz.x > 0 && sz.y > 0)
@@ -61,9 +58,7 @@ void Gamakichi::syncSprite() {
     m_sprite.setPosition({position.x, position.y + m_sinkOffset});
 }
 
-// ---------------------------------------------------------------
 void Gamakichi::pickDangerZones() {
-    // Pick 2 distinct random targets from s_targets
     int a = std::rand() % NUM_TARGETS;
     int b;
     do { b = std::rand() % NUM_TARGETS; } while (b == a);
@@ -73,11 +68,9 @@ void Gamakichi::pickDangerZones() {
 }
 
 void Gamakichi::fireBombs() {
-    // Clean old bombs
+    
     for (int i = 0; i < m_bombCount; ++i) { delete m_bombs[i]; m_bombs[i] = nullptr; }
     m_bombCount = 0;
-
-    // Mouth position (left side of Gamakichi sprite)
     sf::Vector2f mouth = {position.x + 20.f, position.y + 80.f};
 
     for (int i = 0; i < MAX_DANGER && m_bombCount < MAX_BOMBS; ++i) {
@@ -91,13 +84,12 @@ void Gamakichi::updateBombs(float dt) {
         if (m_bombs[i]) m_bombs[i]->update(dt);
 }
 
-// ---------------------------------------------------------------
+
 Gamakichi::RewardRequest Gamakichi::getAndClearRewardPending() {
     RewardRequest r; r.pending = m_rewardPending;
     m_rewardPending = false; return r;
 }
 
-// ---------------------------------------------------------------
 void Gamakichi::takeSnowballHit() {
     if (m_bossState == BossState::Dying || m_bossState == BossState::Dead) return;
     --m_hitsRemaining;
@@ -113,13 +105,11 @@ void Gamakichi::takeSnowballHit() {
     }
 }
 
-// ---------------------------------------------------------------
 void Gamakichi::update(float dt) {
     if (m_bossState == BossState::Dead) return;
 
     if (m_bossState == BossState::Dying) {
         m_stateTimer += dt;
-        // Sink downward off screen
         m_sinkOffset = (m_stateTimer / SINK_DURATION) * 300.f;
         if (m_stateTimer >= SINK_DURATION) {
             m_bossState = BossState::Dead;
@@ -136,7 +126,6 @@ void Gamakichi::update(float dt) {
             if (m_stateTimer >= IDLE_DURATION) {
                 m_bossState  = BossState::OpenMouth;
                 m_stateTimer = 0.f;
-                // Switch to open-mouth sprite
                 if (m_openLoaded) m_sprite.setTexture(m_openTex, true);
                 syncSprite();
                 pickDangerZones();
@@ -162,13 +151,11 @@ void Gamakichi::update(float dt) {
 
         case BossState::Firing:
             updateBombs(dt);
-            // Wait until all bombs are dead
             {
                 bool allDone = true;
                 for (int i = 0; i < m_bombCount; ++i)
                     if (m_bombs[i] && !m_bombs[i]->isDead()) { allDone = false; break; }
                 if (allDone) {
-                    // Return to idle, switch back to closed sprite
                     m_bossState  = BossState::Idle;
                     m_stateTimer = 0.f;
                     if (m_closedLoaded) m_sprite.setTexture(m_closedTex, true);
@@ -184,7 +171,6 @@ void Gamakichi::update(float dt) {
     if (m_bossState != BossState::Firing) updateBombs(dt);
 }
 
-// ---------------------------------------------------------------
 void Gamakichi::draw(sf::RenderWindow& window) {
     if (m_bossState == BossState::Dead) return;
 
@@ -208,10 +194,8 @@ void Gamakichi::draw(sf::RenderWindow& window) {
         }
     }
 
-    // Draw bombs
     drawBombs(window);
 
-    // Draw Gamakichi sprite
     window.draw(m_sprite);
 }
 

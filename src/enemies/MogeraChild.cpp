@@ -5,7 +5,7 @@
 
 MogeraChild::MogeraChild(sf::Vector2f pos, sf::Vector2f initialVelocity)
     : Entity(pos)
-    , m_sprite(m_ballTexture)         // SFML3: sprite must be constructed with texture
+    , m_sprite(m_ballTexture)        
     , m_ballLoaded(false)
     , m_walkLoaded(false)
     , m_phase(Phase::Ball)
@@ -17,7 +17,6 @@ MogeraChild::MogeraChild(sf::Vector2f pos, sf::Vector2f initialVelocity)
 {
     velocity = initialVelocity;
 
-    // --- Load ball texture ---
     if (std::FILE* f = std::fopen("assets/sprites/mogera_baby_ball.png", "rb")) {
         std::fclose(f);
         if (m_ballTexture.loadFromFile("assets/sprites/mogera_baby_ball.png")) {
@@ -29,7 +28,6 @@ MogeraChild::MogeraChild(sf::Vector2f pos, sf::Vector2f initialVelocity)
         std::cerr << "[MogeraChild] missing: mogera_baby_ball.png\n";
     }
 
-    // --- Load walk textures ---
     m_walkLoaded = true;
     for (int i = 0; i < 2; ++i) {
         std::string path = "assets/sprites/mogera_baby_walk_frame"
@@ -46,31 +44,19 @@ MogeraChild::MogeraChild(sf::Vector2f pos, sf::Vector2f initialVelocity)
         }
     }
 
-    // --- Set initial sprite texture ---
-    // Always set a texture even if fallback; the sprite MUST have a texture in SFML3.
-    // If ball texture missing, sprite just renders nothing (no crash).
     if (m_ballLoaded) {
         m_sprite.setTexture(m_ballTexture, true);
     }
 
-    // Log load results so missing assets are visible immediately at runtime
     std::cout << "[MogeraChild] ball=" << m_ballLoaded
               << " walk=" << m_walkLoaded << "\n";
-
-    // --- Hitbox: same size as sprite, no offset, keeps sprite and hitbox perfectly aligned ---
     hitBox.size     = { m_spriteW, m_spriteH };
     hitBox.position = pos;
 
     syncSpriteToPosition();
 }
 
-// ---------------------------------------------------------------
-// syncSpriteToPosition
-// Updates sprite texture + scale + position, and hitbox position.
-// Called after every change to `position`, `m_phase`, or `m_walkFrame`.
-// ---------------------------------------------------------------
 void MogeraChild::syncSpriteToPosition() {
-    // --- Pick the correct texture for current phase/frame ---
     sf::Texture* tex = nullptr;
 
     if (m_phase == Phase::Ball) {
@@ -85,9 +71,6 @@ void MogeraChild::syncSpriteToPosition() {
     }
 
     if (tex) {
-        // Always call setTexture — this is what actually swaps the visible frame.
-        // The `true` flag resets the texture rect to the full PNG size, which is
-        // correct for individual-PNG assets (one frame per file).
         m_sprite.setTexture(*tex, true);
 
         auto ts = tex->getSize();
@@ -99,23 +82,10 @@ void MogeraChild::syncSpriteToPosition() {
         }
     }
 
-    // Always sync position and hitbox regardless of texture state
     m_sprite.setPosition(position);
     hitBox.position = position;
 }
 
-// ---------------------------------------------------------------
-// update
-// Ball phase   : gravity + self-integration. CollisionDetector in PlayState
-//                handles landing and calls setOnGround → Ball→Walk.
-// Walking phase: gravity is applied every frame. Vertical landing is resolved
-//                manually against g_platforms (avoids the CollisionDetector's
-//                left-wall clamp which would stack babies at x=30). Babies
-//                fall to lower platforms when they walk off an edge, and exit
-//                off the left side of the screen if they reach it.
-// ---------------------------------------------------------------
-
-// Extern globals defined in PlayState.cpp — same pattern as FlyngFoogaFoog.
 extern Platform** g_platforms;
 extern int        g_platformCount;
 
@@ -131,7 +101,6 @@ void MogeraChild::update(float dt) {
         if (position.y > 620.f)            { alive = false; return; }
 
     } else if (m_phase == Phase::Walking) {
-        // --- Walk animation: 2 frames, 0.25s each ---
         m_walkFrameTimer += dt;
         if (m_walkFrameTimer >= WALK_FRAME_TIME) {
             m_walkFrameTimer -= WALK_FRAME_TIME;
@@ -148,15 +117,10 @@ void MogeraChild::update(float dt) {
             }
         }
 
-        // Apply gravity every frame so babies fall when they walk off a platform edge
         velocity.x  = -WALK_SPEED;
         velocity.y += GRAVITY * dt;
         position   += velocity * dt;
 
-        // --- Manual vertical-only platform resolution ---
-        // We only resolve Y (landing from above). We deliberately skip the
-        // CollisionDetector to avoid its left-wall clamp which would pin
-        // every baby at x=30 and zero their horizontal velocity.
         float bottom     = position.y + m_spriteH;
         float prevBottom = (position.y - velocity.y * dt) + m_spriteH; // approx prev bottom
 
@@ -195,17 +159,14 @@ void MogeraChild::update(float dt) {
             m_landedY  = position.y;
         }
 
-        // Always sync sprite and hitbox after all position changes
+        
         m_sprite.setPosition(position);
         hitBox.position = position;
 
-        // Exit off left edge → die
         if (position.x + m_spriteW < 0.f) { alive = false; return; }
     }
 }
 
-
-// ---------------------------------------------------------------
 void MogeraChild::draw(sf::RenderWindow& window) {
     if (!alive) return;
 
@@ -221,21 +182,12 @@ void MogeraChild::draw(sf::RenderWindow& window) {
         window.draw(fb);
     }
 }
-
-// ---------------------------------------------------------------
-// setPosition — called by CollisionDetector after resolving collisions.
-// MUST update both hitbox and sprite to the corrected position.
-// ---------------------------------------------------------------
 void MogeraChild::setPosition(sf::Vector2f pos) {
     position = pos;
     syncSpriteToPosition();
 }
 
-// ---------------------------------------------------------------
-// setOnGround — called by CollisionDetector when baby lands on a platform.
-// Switches Ball → Walking exactly once and records the landing Y so the
-// walking phase can clamp to it every frame without the collider.
-// ---------------------------------------------------------------
+
 void MogeraChild::setOnGround(bool v) {
     if (v && m_phase == Phase::Ball) {
         m_phase          = Phase::Walking;
@@ -252,7 +204,6 @@ void MogeraChild::setOnGround(bool v) {
     }
 }
 
-// ---------------------------------------------------------------
 void MogeraChild::takeHit() {
     alive = false;
     std::cout << "[MogeraChild] Hit by snowball — dead\n";

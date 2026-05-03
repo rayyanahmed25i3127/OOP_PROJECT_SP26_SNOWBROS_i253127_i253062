@@ -49,7 +49,7 @@ Botom::Botom(sf::Vector2f pos)
 
     // Walk: botom_red_walking_frame1.png, frame2.png, frame3.png
     // Jump: botom_red_jumping.png
-    // Fall: botom_red_falling.png  (auto-derived by replacing "jumping" → "falling")
+    // Fall: botom_red_falling.png
     loadAnimations(
         "assets/sprites/botom_red_walking_frame",
         "assets/sprites/botom_red_jumping"

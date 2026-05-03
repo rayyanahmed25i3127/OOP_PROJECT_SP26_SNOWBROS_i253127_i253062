@@ -11,7 +11,6 @@ static float randRange(float lo, float hi) {
     return lo + (static_cast<float>(std::rand()) / RAND_MAX) * (hi - lo);
 }
 
-// ---------------------------------------------------------------
 Tornado::Tornado(sf::Vector2f pos)
     : FlyngFoogaFoog(pos)   // hitsToEncase will be overridden by takeAttackHit
     , m_walkTexLoaded(false), m_walkTexFrame(0), m_walkTexTimer(0.f)
@@ -25,21 +24,19 @@ Tornado::Tornado(sf::Vector2f pos)
     , m_knifeTimer(0.f), m_knifeCooldown(0.f)
     , m_flySpeed(100.f)
 {
-    // Override base fooga assets with tornado-specific ones
     loadEnemyAssets(
-        "assets/sprites/tornado_walk_frame1.png",     // idle
-        "assets/sprites/tornado_walk_frame1.png",     // trapped (snowball body)
+        "assets/sprites/tornado_walk_frame1.png",     
+        "assets/sprites/tornado_walk_frame1.png",     
         "assets/sprites/tornado_unleashed75.png",
         "assets/sprites/tornado_unleashed50.png",
         "assets/sprites/tornado_unleashed25.png",
-        "assets/sprites/tornado_encased25.png",       // encase50 slot (unused directly)
+        "assets/sprites/tornado_encased25.png",       
         "assets/sprites/snow_encase_100.png",
         "assets/sprites/snow_escape_75.png",
         "assets/sprites/snow_escape_50.png",
         "assets/sprites/snow_escape_25.png"
     );
 
-    // Encasement overlays
     auto tryTex = [&](sf::Texture& t, bool& flag, const char* p) {
         if (std::FILE* f = std::fopen(p, "rb")) { std::fclose(f); flag = t.loadFromFile(p); }
         else { std::cerr << "[Tornado] missing: " << p << "\n"; flag = false; }
@@ -102,7 +99,6 @@ Tornado::Tornado(sf::Vector2f pos)
     m_prevFacingRight = m_facingRight;
 }
 
-// ---------------------------------------------------------------
 void Tornado::randomizeFlySpeed() {
     m_flySpeed = randRange(MIN_FLY_SPEED, MAX_FLY_SPEED);
 }
@@ -112,16 +108,12 @@ void Tornado::randomizeKnifeCooldown() {
     m_knifeTimer    = 0.f;
 }
 
-// ---------------------------------------------------------------
+
 Tornado::KnifeRequest Tornado::getAndClearKnifeSpawn() {
     KnifeRequest r = m_knifeRequest;
     m_knifeRequest.pending = false;
     return r;
 }
-
-// ---------------------------------------------------------------
-// update — adds knife timer and turn detection on top of fooga logic
-// ---------------------------------------------------------------
 void Tornado::update(float dt) {
     // Detect direction change → trigger turn animation
     if (m_state == State::Alive && m_facingRight != m_prevFacingRight) {
@@ -155,9 +147,6 @@ void Tornado::update(float dt) {
         m_knifeRequest = {true, spawnPos, dir};
         m_knifeSpawnedThisCycle = true;
     }
-
-    // Override fly speed in fooga's velocity — done by modifying velocity
-    // directly after fooga update runs its AI. We call base update then fix speed.
     FlyngFoogaFoog::update(dt);
 
     // Re-normalize fly velocity to our randomized speed
@@ -176,9 +165,6 @@ void Tornado::update(float dt) {
     s_wasFlying = isFlying();
 }
 
-// ---------------------------------------------------------------
-// takeAttackHit — 3-hit encasement
-// ---------------------------------------------------------------
 void Tornado::takeAttackHit() {
     if (m_state != State::Alive &&
         m_state != State::PartialEncase &&
@@ -203,10 +189,6 @@ void Tornado::takeAttackHit() {
         m_stateTimer = 1.5f; velocity = {0.f,0.f};
     }
 }
-
-// ---------------------------------------------------------------
-// updateStateTimers — same 3-hit decay as BotomBlue
-// ---------------------------------------------------------------
 void Tornado::updateStateTimers(float dt) {
     if (m_state == State::PartialEncase) {
         m_stateTimer -= dt;
@@ -219,10 +201,6 @@ void Tornado::updateStateTimers(float dt) {
     }
     Enemy::updateStateTimers(dt);
 }
-
-// ---------------------------------------------------------------
-// applyStateSprite
-// ---------------------------------------------------------------
 void Tornado::applyStateSprite() {
     m_overlayVisible = false;
     m_bodySprite.setColor(sf::Color::White);
@@ -260,9 +238,6 @@ void Tornado::applyStateSprite() {
     }
 }
 
-// ---------------------------------------------------------------
-// updateAnimation
-// ---------------------------------------------------------------
 void Tornado::updateAnimation(float dt) {
     if (m_state != State::Alive) return;
 
@@ -305,7 +280,7 @@ void Tornado::updateAnimation(float dt) {
         return;
     }
 
-    // Walking / idle — use directional or walk frames
+    // Walking 
     if (!m_onGround) {
         if (m_jumpLoaded2) m_bodySprite.setTexture(m_jumpTex2, true);
         return;

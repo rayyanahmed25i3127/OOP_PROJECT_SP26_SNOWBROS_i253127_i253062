@@ -49,7 +49,7 @@ void GamaBomb::update(float dt) {
     m_pos.y += m_velocity.y * dt;
     m_bombSprite.setPosition(m_pos);
 
-    // Explode when reaching target Y (or overshoots)
+    // Explode when reaching target 
     if (m_pos.y >= m_target.y - 10.f) {
         m_pos = m_target;
         m_phase = Phase::Exploding;

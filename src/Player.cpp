@@ -22,7 +22,6 @@ namespace {
     };
 
     const StateFrames ANIM_TABLE[3][4] = {
-        // ---- Blue player (character 0) ----
         {
             { {{ "assets/sprites/player_blue_idle.png",         1, 0.18f },
                { nullptr, 0, 0.f }} },
@@ -36,7 +35,6 @@ namespace {
                { "assets/sprites/player_blue_throw_frame2.png", 1, 0.15f },
                { nullptr, 0, 0.f }} },
         },
-        // ---- Red player (character 1) ----
         {
             { {{ "assets/sprites/player_red_idle.png",          1, 0.18f },
                { nullptr, 0, 0.f }} },
@@ -50,7 +48,6 @@ namespace {
                { "assets/sprites/player_red_throw_frame2.png",  1, 0.15f },
                { nullptr, 0, 0.f }} },
         },
-        // ---- Modi player (character 2) — idle only, others fall back ----
         {
             { {{ "assets/sprites/player_modi_idle.png",          1, 0.18f },
                { nullptr, 0, 0.f }} },
@@ -135,7 +132,6 @@ void Player::loadAnimations(int characterIndex) {
         }
     }
 
-    // Fallback: wire missing states to idle
     if (m_animations[0].loaded) {
         for (int s = 1; s < 4; ++s) {
             if (!m_animations[s].loaded) {
@@ -149,7 +145,6 @@ void Player::loadAnimations(int characterIndex) {
         }
     }
 
-    // Prime the sprite with the first idle frame
     if (m_animations[0].loaded && m_animations[0].activeTexture) {
         m_sprite.setTexture(*m_animations[0].activeTexture, true);
     }
@@ -170,7 +165,6 @@ void Player::updateAnimation(float dt) {
         desired = AnimState::Idle;
     }
 
-    // Reset frame when state changes
     if (desired != m_currentAnim) {
         m_currentAnim  = desired;
         m_currentFrame = 0;
@@ -180,10 +174,8 @@ void Player::updateAnimation(float dt) {
     Animation& anim = m_animations[static_cast<int>(m_currentAnim)];
     if (!anim.loaded || anim.frameCount <= 0) return;
 
-    // Clamp frame index
     if (m_currentFrame >= anim.frameCount) m_currentFrame = 0;
 
-    // Use per-frame duration
     float frameDur = (m_currentFrame < 8) ? anim.frameDurations[m_currentFrame]
                                            : anim.frameDuration;
     if (frameDur <= 0.f) frameDur = 0.15f;
@@ -195,7 +187,6 @@ void Player::updateAnimation(float dt) {
         m_currentFrame = (m_currentFrame + 1) % anim.frameCount;
     }
 
-    // Point activeTexture at the current frame
     if (m_currentFrame < 8) {
         anim.activeTexture = &anim.frameTextures[m_currentFrame];
     }
@@ -214,7 +205,6 @@ void Player::applySpriteTransform() {
     float scaleY = PLAYER_HEIGHT / fh;
     m_sprite.setOrigin({ fw / 2.f, 0.f });
 
-    // Sprites face LEFT by default → negative scaleX flips to face right
     if (m_facingRight)
         m_sprite.setScale({ -scaleX,  scaleY });
     else
