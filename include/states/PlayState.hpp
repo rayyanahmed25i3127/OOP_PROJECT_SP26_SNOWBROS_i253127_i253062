@@ -148,6 +148,11 @@ private:
     void updateMogera(float dt);
     void drawBossHealthBar(sf::RenderWindow& window);
 
+    // --- Boss (Level 10) ---
+    class Gamakichi*   m_gamakichi;
+    void updateGamakichi(float dt);
+    void drawGamaHealthBar(sf::RenderWindow& window);
+
 public:
     PlayState();
     ~PlayState();
