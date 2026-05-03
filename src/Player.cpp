@@ -33,6 +33,8 @@ Player::Player(sf::Vector2f pos)
     , m_throwCooldown(0.f)
     , m_throwInterval(0.18f)
     , m_wantsToThrow(false)
+    , m_autoAttack(false)
+    , m_autoAttackTimer(0.f)
     , speed(200.f)
     , jumpForce(-450.f)
     , gravity(800.f)
@@ -188,6 +190,23 @@ void Player::handleInput() {
     if ((sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space)
        || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::J))
         && m_throwCooldown <= 0.f) {
+        m_wantsToThrow = true;
+    }
+
+    // K key toggles auto-attack (edge-detected via static bool)
+    {
+        static bool s_kWasPressed = false;
+        bool kNow = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::K);
+        if (kNow && !s_kWasPressed) {
+            m_autoAttack = !m_autoAttack;
+            m_autoAttackTimer = 0.f;
+            std::cout << "[Player] Auto-attack " << (m_autoAttack ? "ON" : "OFF") << "\n";
+        }
+        s_kWasPressed = kNow;
+    }
+
+    // Auto-attack fires at the same interval as manual throw
+    if (m_autoAttack && m_throwCooldown <= 0.f) {
         m_wantsToThrow = true;
     }
 }

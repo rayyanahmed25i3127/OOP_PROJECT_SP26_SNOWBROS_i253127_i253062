@@ -39,6 +39,8 @@ private:
     float m_throwCooldown;
     float m_throwInterval;     // 0.18s
     bool  m_wantsToThrow;
+    bool  m_autoAttack;
+    float m_autoAttackTimer;
 
     float speed;
     float jumpForce;
@@ -63,6 +65,7 @@ public:
     void applyGravity(float dt);
 
     bool wantsToThrow() const     { return m_wantsToThrow; }
+    bool isAutoAttack() const     { return m_autoAttack; }
     void consumeThrowRequest()    { m_wantsToThrow = false; m_throwCooldown = m_throwInterval; m_isThrowing = true; m_throwFrame = 0; m_throwTimer = 0.f; }
     bool isFacingRight() const    { return m_facingRight; }
 

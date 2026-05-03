@@ -102,7 +102,7 @@ protected:
     void syncHitBox();
     void syncSpritePositions();
     void jump();
-    void updateStateTimers(float dt);
+    virtual void updateStateTimers(float dt);
     virtual void applyStateSprite();
     void integrateRolling(float dt);   
     virtual void updateAnimation(float dt);
