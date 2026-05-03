@@ -60,6 +60,7 @@ private:
     bool  m_autoAttack;
     float m_autoAttackTimer;
 
+    
     float speed;
     float jumpForce;
     float gravity;

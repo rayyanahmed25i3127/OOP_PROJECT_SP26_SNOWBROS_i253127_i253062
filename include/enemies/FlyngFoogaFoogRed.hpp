@@ -1,7 +1,7 @@
 #pragma once
 #include "enemies/Enemy.hpp"
 
-// Identical to FlyngFoogaFoog (blue) — only asset filenames differ (red).
+// same as blue fooga with thori si zada hp and spped
 class FlyngFoogaFoogRed : public Enemy {
 private:
     bool  m_isFlying;

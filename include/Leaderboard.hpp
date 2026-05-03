@@ -13,6 +13,7 @@ private:
 public:
     Leaderboard();
 
+    
     void loadFromFile(const std::string& filename);
 
     const LeaderboardEntry* getEntries() const;

@@ -61,6 +61,7 @@ bool isExtraLifeBought() const { return m_extraLifeBought; }
 
     void applyPendingActions();
 
+    
     void handleEvent(const sf::Event& event);
     void update(float dt);
     void draw(sf::RenderWindow& window);

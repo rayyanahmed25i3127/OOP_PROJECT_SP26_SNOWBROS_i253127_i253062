@@ -2,16 +2,7 @@
 #include <SFML/Audio.hpp>
 #include <string>
 
-/**
- * Global audio controller — Singleton.
- * Tracks:
- *   - Kyrie.ogg      → menu/overlay music (Splash, Menu, Pause, Shop, Leaderboard, etc.)
- *   - pixel_play.ogg → normal level music  (levels 1-4, 6-9)
- *   - goated.ogg     → boss level music    (levels 5, 10)
- * SFX:
- *   - attack.ogg  → player fires a snowball (loops while fire held)
- *   - death.ogg   → player death (one-shot)
- */
+//controlls all the sound ( music + sfx like levels ounds and hit sound effects etc)
 class AudioManager {
 public:
     static AudioManager& get();
@@ -19,14 +10,14 @@ public:
     AudioManager& operator=(const AudioManager&) = delete;
     ~AudioManager();
 
-    // ── Music ──────────────────────────────────────────────────────────
+    //music
     void playMenuMusic();
     void playNormalLevelMusic();
     void playBossLevelMusic();
     void stopMusic();
     void setMusicVolume(float v);
 
-    // ── SFX ────────────────────────────────────────────────────────────
+//sfx
     void setAttackPlaying(bool playing);
     void playDeathSound();
     void setSFXVolume(float v);

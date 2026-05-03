@@ -5,8 +5,7 @@
 
 class CharacterSelectState : public GameState {
 public:
-    // PUBLIC so the anonymous namespace in the .cpp can reference
-    // CharacterSelectState::NUM_CHARS without a C++(265) access error.
+
     static const int NUM_CHARS = 3;
 
 private:

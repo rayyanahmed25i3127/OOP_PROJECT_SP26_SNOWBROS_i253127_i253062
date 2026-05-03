@@ -6,17 +6,7 @@
 #include <SFML/Audio.hpp>
 #include <string>
 
-/**
- * @brief The home/main menu screen.
- *
- * Features:
- *   - Background image with snowfall overlay
- *   - Three capsule-shaped "bubble" buttons with glossy shine
- *   - Per-button color theme (navy / green / red)
- *   - Smooth scale-up pop animation on hover
- *   - Bubble Bobble font for the button text
- *   - Mouse + keyboard navigation
- */
+// menu with snow effetc, bg image, 6 buttons capsule shapes diff colors diff wiriting hover effect buttons clickable sound, bubble bobble font style
 class MenuState : public GameState {
 public:
     static const int MAX_BUTTONS = 8;
@@ -31,88 +21,76 @@ private:
         Exit
     };
 
-    /**
-     * @brief A capsule-shaped "bubble" button.
-     *
-     * SFML has no native rounded rectangle, so we fake the capsule with
-     * a center rectangle + two end-cap circles. A semi-transparent white
-     * ellipse on the upper half provides the glossy highlight.
-     *
-     * All of this is hidden behind the Button's own draw() method —
-     * encapsulation in action.
-     */
+    //menu buttons textured, with reflections nd bubble, used fake ellipse for capsule 
     struct Button {
-        // Capsule parts (base color)
+        //capsule part 
         sf::RectangleShape centerRect;
         sf::CircleShape    leftCap;
         sf::CircleShape    rightCap;
 
-        // Glossy highlight on top (semi-transparent white ellipse)
+        // reflection wlaa scene
         sf::CircleShape    shineLeft;
         sf::CircleShape    shineRight;
         sf::RectangleShape shineCenter;
 
-        // Dark outline ring — drawn first, slightly larger than the capsule
+        //outline black on buttons 
         sf::RectangleShape outlineRect;
         sf::CircleShape    outlineLeft;
         sf::CircleShape    outlineRight;
 
-        // Label
+       //label, yani writing wagera
         sf::Text text;
 
-        // Action + layout
+        
         ButtonAction action;
-        sf::Vector2f center;   // the button's center position (for scale anchor)
-        float baseWidth;       // width at 1.0x scale
+        sf::Vector2f center;   
+        float baseWidth;       
         float baseHeight;
 
-        // Animation
-        float currentScale;    // actually being rendered this frame
-        float targetScale;     // 1.0 normal, 1.10 hovered
+        //hover effect for 1.10% 
+        float currentScale;    // 1.0 normal, 1.10 hovered
 
-        // Theming
+        //coloring
         sf::Color fillColor;
 
         Button(const sf::Font& font);
 
-        // Build geometry from center position, size, color, label.
+        // actual loc of buttoms
         void configure(sf::Vector2f centerPos,
                        float width, float height,
                        sf::Color baseFill,
                        const std::string& label);
 
-        // Called every frame — smoothly eases currentScale toward targetScale,
-        // then re-lays-out all the shapes based on the current scale.
-        void update(float dt);
-
-        // Draws all pieces in correct z-order.
+        
+        void update(float dt); // updates with delta timestamp
+//draws all buttons in correct order
         void draw(sf::RenderWindow& window) const;
     };
 
-    // Fonts
-    sf::Font m_bubbleFont;  // for buttons (BubbleBobble)
+    //fonts
+    sf::Font m_bubbleFont; 
 
-    // Background
+    //bg
     sf::Texture m_backgroundTexture;
     sf::Sprite  m_backgroundSprite;
 
-    // Snow effect
+    //snowfall effect
     SnowEffect  m_snow;
 
-    // Button click sound
+    //click sound 
     sf::SoundBuffer m_clickSoundBuffer;
     sf::Sound m_clickSound;
     bool m_clickSoundLoaded;
 
-    // Buttons
+    
     Button* m_buttons[MAX_BUTTONS];
     int m_buttonCount;
     int m_selectedIndex;
 
-    // "Cannot Continue" timed message (counts down from ~2.8s to 0)
+    //cannot cont wala message show karvane ka timer almost 2.8-3.0s fade out
     float m_cannotContinueTimer;
 
-    // Helpers
+    //helpers
     void addButton(const std::string& label, sf::Vector2f center,
                    sf::Color fillColor, ButtonAction action);
     void setHovered(int index);      // updates target scales

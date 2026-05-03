@@ -6,7 +6,6 @@ class UserManager {
 private:
     static const int MAX_USERS = 100;
    
-
     int m_userIDs[MAX_USERS];
     std::string m_usernames[MAX_USERS];
     std::string m_dates[MAX_USERS];

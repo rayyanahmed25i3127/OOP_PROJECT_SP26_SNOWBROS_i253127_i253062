@@ -1,98 +1,65 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 
-/**
- * @brief Frame-based sprite animation system.
- *
- * Handles sprite sheet animations by cycling through a sequence of frames
- * at a specified frame rate. Supports looping and one-shot animations.
- *
- * Usage:
- *   1. Load a texture with all animation frames
- *   2. Create Animation with frame rectangles and timing
- *   3. Call update(dt) every frame
- *   4. Apply current frame to sprite: sprite.setTextureRect(anim.getCurrentFrame())
+/* 
+what does this file do ?
+yeh file sprites k animations ko handle karti hai like player blue 
+k 8-10 frames they in total, unko kis tarah se kaam karvaana hai wo 
+kaam yeh file karti hai, aik specific frame rate k according animations 
+cycle hoti hain.
+
  */
 class Animation {
 private:
-    static const int MAX_FRAMES = 32;  // Maximum frames per animation
-    
+    static const int MAX_FRAMES = 32;  // max frames per animation
     sf::IntRect m_frames[MAX_FRAMES];  // Frame rectangles in the sprite sheet
-    int   m_frameCount;                // Number of frames added
-    float m_frameDuration;             // Seconds per frame
-    float m_currentTime;               // Time elapsed in current frame
-    int   m_currentFrameIndex;         // Which frame we're on (0 to frameCount-1)
-    bool  m_isLooping;                 // True = restart at end, False = stop at last frame
-    bool  m_isPlaying;                 // True = actively updating, False = paused
-    bool  m_hasFinished;               // True when non-looping animation reaches end
+    int   m_frameCount;                // Number of frames added, like jese hamne player blue k liay 8 kiay thy.
+    float m_frameDuration;        //fps wagera
+    float m_currentTime;               // aik frame pe how much time does it take
+    int   m_currentFrameIndex; // checks for the number of frame thats is currently being played
+    bool  m_isLooping;                 // for true = restart at end...  False = stop at last frame
+    bool  m_isPlaying;                 //true = actively updatingand False = paused
+    bool  m_hasFinished;               // yeh sirf tab true hoga jab static sprites honge
 
 public:
-    /**
-     * @brief Construct an animation.
-     * @param frameDuration Seconds to display each frame (e.g., 0.1f = 10 FPS)
-     * @param looping True to restart at end, false to stop at last frame
-     */
+    
     Animation(float frameDuration = 0.1f, bool looping = true);
-
-    /**
-     * @brief Add a frame rectangle to the animation sequence.
-     * @param rect The portion of the sprite sheet for this frame (x, y, width, height)
-     */
+                       // ^^ time for each animation to be displayed 
     void addFrame(const sf::IntRect& rect);
+                                       // ^^ portion of sprite ( matlab x,y coordinates k accoridng) 
+    void update(float dt); // dt is time in delta, ised for updating frames
 
-    /**
-     * @brief Update animation timing.
-     * @param dt Delta time in seconds
-     */
-    void update(float dt);
+    sf::IntRect getCurrentFrame() const; // current frame lo, or uske accoridng add anim
 
-    /**
-     * @brief Get the current frame rectangle to apply to a sprite.
-     */
-    sf::IntRect getCurrentFrame() const;
-
-    /**
-     * @brief Reset animation to first frame.
-     */
+    //reset animation to first frame.
+    
     void reset();
 
-    /**
-     * @brief Start/resume animation playback.
-     */
+    //start/resume animation 
     void play();
 
-    /**
-     * @brief Pause animation (stays on current frame).
-     */
+    
+    //pause animation (stay on current frame)
     void pause();
 
-    /**
-     * @brief Stop animation and reset to first frame.
-     */
+    //stop animation and reset to first fr
     void stop();
 
-    /**
-     * @brief Check if animation is currently playing.
-     */
+    // check k agar animation abhi play hora ya nai
     bool isPlaying() const { return m_isPlaying; }
 
-    /**
-     * @brief Check if non-looping animation has finished.
-     */
+    
+    // Check if non-looping animation has finished ornot
+    
     bool hasFinished() const { return m_hasFinished; }
 
-    /**
-     * @brief Get total number of frames.
-     */
+    //total number of frames
     int getFrameCount() const { return m_frameCount; }
 
-    /**
-     * @brief Set whether animation loops.
-     */
+    
+//if animation loops or not wala check
+     
     void setLooping(bool loop) { m_isLooping = loop; }
-
-    /**
-     * @brief Set frame duration (speed).
-     */
+// frame duration
     void setFrameDuration(float duration) { m_frameDuration = duration; }
 };
