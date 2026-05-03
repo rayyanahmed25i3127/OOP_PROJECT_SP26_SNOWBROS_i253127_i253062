@@ -1,11 +1,7 @@
 #pragma once
+#include "LeaderboardEntry.hpp"
 #include <string>
 
-struct LeaderboardEntry {
-    std::string playerName;
-    int score;
-    std::string date;
-};
 
 class Leaderboard {
 private:
