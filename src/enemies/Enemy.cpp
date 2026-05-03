@@ -99,6 +99,7 @@ Enemy::Enemy(sf::Vector2f pos,
     , m_rollDirectionRight(true)
     , m_rollDistanceTravelled(0.f)
     , m_rollSpeed(ROLL_SPEED)
+    , m_oneHitEncase(false)
 {
     hitBox.size     = { hitW, hitH };
     hitBox.position = { pos.x + m_hitOffsetX, pos.y + m_hitOffsetY };
@@ -342,6 +343,9 @@ void Enemy::takeAttackHit() {
     }
 
     ++m_hitsTaken;
+    std::cerr << "[Enemy::takeAttackHit] hitsToEncase=" << m_hitsToEncase
+              << " hitsTaken=" << m_hitsTaken
+              << " oneHitEncase=" << m_oneHitEncase << "\n";
     if (m_hitsTaken >= m_hitsToEncase) {
         m_state = State::Snowballed;
         m_stateTimer = SNOWBALLED_DURATION;
