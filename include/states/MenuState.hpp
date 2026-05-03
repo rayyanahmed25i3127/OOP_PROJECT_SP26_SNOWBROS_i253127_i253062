@@ -108,6 +108,9 @@ private:
     int m_buttonCount;
     int m_selectedIndex;
 
+    // "Cannot Continue" timed message (counts down from ~2.8s to 0)
+    float m_cannotContinueTimer;
+
     // Helpers
     void addButton(const std::string& label, sf::Vector2f center,
                    sf::Color fillColor, ButtonAction action);

@@ -7,7 +7,7 @@ namespace {
     const float SPRITE_H = 22.f;
     const float HIT_W    = 20.f;
     const float HIT_H    = 20.f;
-    const float GRAVITY  = 500.f;       // gentler fall than enemies — feels floatier
+    const float GRAVITY  = 500.f;       // gentler fall than enemies â€” feels floatier
     const float LIFETIME = 8.0f;        // seconds before auto-despawn
 }
 

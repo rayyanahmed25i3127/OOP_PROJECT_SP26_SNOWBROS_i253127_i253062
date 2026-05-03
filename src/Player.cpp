@@ -5,29 +5,76 @@
 namespace {
     const float PLAYER_WIDTH  = 56.f;
     const float PLAYER_HEIGHT = 68.f;
-    const float HITBOX_WIDTH  = 24.f;
-    const float HITBOX_HEIGHT = 57.f;
+
+    const float HITBOX_WIDTH    = 24.f;
+    const float HITBOX_HEIGHT   = 57.f;
     const float HITBOX_OFFSET_X = (PLAYER_WIDTH  - HITBOX_WIDTH)  / 2.f;
     const float HITBOX_OFFSET_Y =  PLAYER_HEIGHT - HITBOX_HEIGHT;
 
-    // Animation timing
-    const float WALK_FRAME_TIME  = 0.33f;   // each walk frame = 0.33s, full cycle = 1s
-    const float THROW_FRAME_TIME = 0.15f;   // each throw frame = 0.15s, full anim = 0.3s
+    struct AnimInfo {
+        const char* file;
+        int         frameCount;
+        float       frameDuration;
+    };
+
+    struct StateFrames {
+        AnimInfo frames[8];
+    };
+
+    const StateFrames ANIM_TABLE[3][4] = {
+        // ---- Blue player (character 0) ----
+        {
+            { {{ "assets/sprites/player_blue_idle.png",         1, 0.18f },
+               { nullptr, 0, 0.f }} },
+            { {{ "assets/sprites/player_blue_walk_frame1.png",  1, 0.33f },
+               { "assets/sprites/player_blue_walk_frame2.png",  1, 0.33f },
+               { "assets/sprites/player_blue_walk_frame3.png",  1, 0.33f },
+               { nullptr, 0, 0.f }} },
+            { {{ "assets/sprites/player_blue_jump.png",         1, 0.15f },
+               { nullptr, 0, 0.f }} },
+            { {{ "assets/sprites/player_blue_throw_frame1.png", 1, 0.15f },
+               { "assets/sprites/player_blue_throw_frame2.png", 1, 0.15f },
+               { nullptr, 0, 0.f }} },
+        },
+        // ---- Red player (character 1) ----
+        {
+            { {{ "assets/sprites/player_red_idle.png",          1, 0.18f },
+               { nullptr, 0, 0.f }} },
+            { {{ "assets/sprites/player_red_walk_frame1.png",   1, 0.33f },
+               { "assets/sprites/player_red_walk_frame2.png",   1, 0.33f },
+               { "assets/sprites/player_red_walk_frame3.png",   1, 0.33f },
+               { nullptr, 0, 0.f }} },
+            { {{ "assets/sprites/player_red_jump.png",          1, 0.15f },
+               { nullptr, 0, 0.f }} },
+            { {{ "assets/sprites/player_red_throw_frame1.png",  1, 0.15f },
+               { "assets/sprites/player_red_throw_frame2.png",  1, 0.15f },
+               { nullptr, 0, 0.f }} },
+        },
+        // ---- Modi player (character 2) ----
+        {
+            { {{ "assets/sprites/player_modi_idle.png",          1, 0.18f },
+               { nullptr, 0, 0.f }} },
+            { {{ "assets/sprites/player_modi_walk_frame1.png",   1, 0.33f },
+               { "assets/sprites/player_modi_walk_frame2.png",   1, 0.33f },
+               { "assets/sprites/player_modi_walk_frame3.png",   1, 0.33f },
+               { nullptr, 0, 0.f }} },
+            { {{ "assets/sprites/player_modi_jump.png",          1, 0.15f },
+               { nullptr, 0, 0.f }} },
+            { {{ "assets/sprites/player_modi_throw_frame1.png",  1, 0.15f },
+               { "assets/sprites/player_modi_throw_frame2.png",  1, 0.15f },
+               { nullptr, 0, 0.f }} },
+        },
+    };
+
 }
 
-Player::Player(sf::Vector2f pos)
+Player::Player(sf::Vector2f pos, int characterIndex)
     : Entity(pos)
-    , m_idleLoaded(false)
-    , m_walkLoaded(false)
-    , m_jumpLoaded(false)
-    , m_throwLoaded(false)
-    , m_sprite(m_idleTexture)
-    , m_walkFrame(0)
-    , m_walkTimer(0.f)
-    , m_throwFrame(0)
-    , m_throwTimer(0.f)
-    , m_isThrowing(false)
-    , m_lives(10)
+    , m_currentAnim(AnimState::Idle)
+    , m_currentFrame(0)
+    , m_animTimer(0.f)
+    , m_sprite(m_animations[0].texture)
+    , m_lives(2)
     , m_invincibleTimer(0.f)
     , m_blinkVisible(true)
     , m_throwCooldown(0.f)
@@ -43,125 +90,139 @@ Player::Player(sf::Vector2f pos)
     , m_balloonMode(false)
     , m_balloonGravity(-50.f)
 {
-    loadAnimations();
-
-    if (m_idleLoaded) {
-        m_sprite.setTexture(m_idleTexture, true);
-    }
-
-    m_sprite.setPosition(pos);
-    hitBox.size     = { HITBOX_WIDTH, HITBOX_HEIGHT };
+    loadAnimations(characterIndex);
+    hitBox.size     = { HITBOX_WIDTH,  HITBOX_HEIGHT };
     hitBox.position = { pos.x + HITBOX_OFFSET_X, pos.y + HITBOX_OFFSET_Y };
 }
 
-void Player::loadAnimations() {
-    // === IDLE (1 frame) ===
-    m_idleLoaded = m_idleTexture.loadFromFile("assets/sprites/player_blue_idle.png");
-    if (!m_idleLoaded)
-        std::cerr << "[Player] Failed to load player_blue_idle.png\n";
+void Player::loadAnimations(int characterIndex) {
+    int idx = (characterIndex >= 0 && characterIndex < 3) ? characterIndex : 0;
 
-    // === WALK (3 frames) ===
-    m_walkLoaded = true;
-    for (int i = 0; i < 3; ++i) {
-        std::string path = "assets/sprites/player_blue_walk_frame" + std::to_string(i + 1) + ".png";
-        if (!m_walkTextures[i].loadFromFile(path)) {
-            std::cerr << "[Player] Failed to load " << path << "\n";
-            m_walkLoaded = false;
-            break;
-        }
-    }
+    for (int s = 0; s < 4; ++s) {
+        Animation& anim      = m_animations[s];
+        const StateFrames& sf_ = ANIM_TABLE[idx][s];
 
-    // === JUMP (1 frame — used for both jump and fall) ===
-    m_jumpLoaded = m_jumpTexture.loadFromFile("assets/sprites/player_blue_jump.png");
-    if (!m_jumpLoaded)
-        std::cerr << "[Player] Failed to load player_blue_jump.png\n";
+        int loaded = 0;
+        for (int f = 0; f < 8; ++f) {
+            const AnimInfo& info = sf_.frames[f];
+            if (!info.file) break;
 
-    // === THROW (2 frames) ===
-    m_throwLoaded = true;
-    for (int i = 0; i < 2; ++i) {
-        std::string path = "assets/sprites/player_blue_throw_frame" + std::to_string(i + 1) + ".png";
-        if (!m_throwTextures[i].loadFromFile(path)) {
-            std::cerr << "[Player] Failed to load " << path << "\n";
-            m_throwLoaded = false;
-            break;
-        }
-    }
-}
-
-// ---------------------------------------------------------------
-// updateAnimation — pick the right texture, swap it onto the sprite.
-// Priority: throw > airborne > walk > idle
-// Movement is NEVER blocked by any animation.
-// ---------------------------------------------------------------
-void Player::updateAnimation(float dt) {
-
-    // --- THROW ANIMATION (overlays on top of other states) ---
-    if (m_isThrowing && m_throwLoaded) {
-        m_throwTimer += dt;
-        if (m_throwTimer >= THROW_FRAME_TIME) {
-            m_throwTimer -= THROW_FRAME_TIME;
-            m_throwFrame++;
-            if (m_throwFrame >= 2) {
-                m_isThrowing = false;   // throw anim finished
-                m_throwFrame = 0;
-                m_throwTimer = 0.f;
-                // fall through to pick walk/idle/jump below
+            if (anim.frameTextures[f].loadFromFile(info.file)) {
+                anim.frameDurations[f] = info.frameDuration;
+                ++loaded;
+                std::cout << "[Player] Loaded anim[" << s << "] frame " << f
+                          << ": " << info.file << "\n";
+            } else {
+                std::cerr << "[Player] Missing anim[" << s << "] frame " << f
+                          << ": " << info.file << " — stopping frame load for this state\n";
+                break;
             }
         }
-        if (m_isThrowing) {
-            m_sprite.setTexture(m_throwTextures[m_throwFrame], true);
-            return;
+
+        if (loaded > 0) {
+            anim.frameCount    = loaded;
+            anim.frameDuration = anim.frameDurations[0];
+            anim.frameW        = static_cast<int>(anim.frameTextures[0].getSize().x);
+            anim.frameH        = static_cast<int>(anim.frameTextures[0].getSize().y);
+            anim.activeTexture = &anim.frameTextures[0];
+            anim.loaded        = true;
+        } else {
+            anim.frameCount    = 0;
+            anim.frameDuration = 0.15f;
+            anim.frameW        = 0;
+            anim.frameH        = 0;
+            anim.activeTexture = nullptr;
+            anim.loaded        = false;
+            if (s > 0) {
+                std::cerr << "[Player] State " << s
+                          << " completely missing — will use idle fallback\n";
+            }
         }
     }
 
-    // --- AIRBORNE (jump / fall — same frame) ---
-    if (!onGround && m_jumpLoaded) {
-        m_sprite.setTexture(m_jumpTexture, true);
-        // Reset walk frame so walk starts clean on landing
-        m_walkFrame = 0;
-        m_walkTimer = 0.f;
-        return;
-    }
-
-    // --- WALKING ---
-    if (velocity.x != 0.f && m_walkLoaded && onGround) {
-        m_walkTimer += dt;
-        if (m_walkTimer >= WALK_FRAME_TIME) {
-            m_walkTimer -= WALK_FRAME_TIME;
-            m_walkFrame = (m_walkFrame + 1) % 3;
+    // Fallback: wire missing states to idle
+    if (m_animations[0].loaded) {
+        for (int s = 1; s < 4; ++s) {
+            if (!m_animations[s].loaded) {
+                m_animations[s].activeTexture = m_animations[0].activeTexture;
+                m_animations[s].frameCount    = m_animations[0].frameCount;
+                m_animations[s].frameDuration = m_animations[0].frameDuration;
+                m_animations[s].frameW        = m_animations[0].frameW;
+                m_animations[s].frameH        = m_animations[0].frameH;
+                m_animations[s].loaded        = true;
+            }
         }
-        m_sprite.setTexture(m_walkTextures[m_walkFrame], true);
-        return;
     }
 
-    // --- IDLE (standing still on ground) ---
-    if (m_idleLoaded) {
-        m_sprite.setTexture(m_idleTexture, true);
+    // Prime the sprite with the first idle frame
+    if (m_animations[0].loaded && m_animations[0].activeTexture) {
+        m_sprite.setTexture(*m_animations[0].activeTexture, true);
     }
-    // Reset walk so it starts from frame 0 next time
-    m_walkFrame = 0;
-    m_walkTimer = 0.f;
+
+    applySpriteTransform();
 }
 
-// ---------------------------------------------------------------
-// applySpriteTransform — scale, flip, and position the sprite.
-// Sprites face LEFT by default. Flip for right.
-// ---------------------------------------------------------------
+void Player::updateAnimation(float dt) {
+    // Decide desired state
+    AnimState desired;
+    if (m_wantsToThrow || m_throwCooldown > (m_throwInterval - 0.10f)) {
+        desired = AnimState::Throw;
+    } else if (!onGround) {
+        desired = AnimState::Jump;
+    } else if (velocity.x != 0.f) {
+        desired = AnimState::Walk;
+    } else {
+        desired = AnimState::Idle;
+    }
+
+    // Reset frame when state changes
+    if (desired != m_currentAnim) {
+        m_currentAnim  = desired;
+        m_currentFrame = 0;
+        m_animTimer    = 0.f;
+    }
+
+    Animation& anim = m_animations[static_cast<int>(m_currentAnim)];
+    if (!anim.loaded || anim.frameCount <= 0) return;
+
+    // Clamp frame index
+    if (m_currentFrame >= anim.frameCount) m_currentFrame = 0;
+
+    // Use per-frame duration
+    float frameDur = (m_currentFrame < 8) ? anim.frameDurations[m_currentFrame]
+                                           : anim.frameDuration;
+    if (frameDur <= 0.f) frameDur = 0.15f;
+
+    // Advance timer
+    m_animTimer += dt;
+    if (m_animTimer >= frameDur) {
+        m_animTimer -= frameDur;
+        m_currentFrame = (m_currentFrame + 1) % anim.frameCount;
+    }
+
+    // Point activeTexture at the current frame
+    if (m_currentFrame < 8) {
+        anim.activeTexture = &anim.frameTextures[m_currentFrame];
+    }
+    if (anim.activeTexture) {
+        m_sprite.setTexture(*anim.activeTexture, true);
+    }
+}
+
 void Player::applySpriteTransform() {
-    const sf::Texture& tex = m_sprite.getTexture();
-    auto texSize = tex.getSize();
-    if (texSize.x == 0 || texSize.y == 0) return;
+    Animation& anim = m_animations[static_cast<int>(m_currentAnim)];
+    if (!anim.loaded || anim.frameW <= 0 || anim.frameH <= 0) return;
 
-    float absScaleX = PLAYER_WIDTH  / static_cast<float>(texSize.x);
-    float absScaleY = PLAYER_HEIGHT / static_cast<float>(texSize.y);
+    float scaleX = PLAYER_WIDTH  / static_cast<float>(anim.frameW);
+    float scaleY = PLAYER_HEIGHT / static_cast<float>(anim.frameH);
 
-    m_sprite.setOrigin({ static_cast<float>(texSize.x) / 2.f, 0.f });
+    m_sprite.setOrigin({ static_cast<float>(anim.frameW) / 2.f, 0.f });
 
-    // Default facing LEFT → flip X when facing right
+    // Sprites face LEFT by default → negative scaleX flips to face right
     if (m_facingRight)
-        m_sprite.setScale({-absScaleX, absScaleY});
+        m_sprite.setScale({ -scaleX,  scaleY });
     else
-        m_sprite.setScale({ absScaleX, absScaleY});
+        m_sprite.setScale({  scaleX,  scaleY });
 
     m_sprite.setPosition({ position.x + PLAYER_WIDTH / 2.f, position.y });
 }
@@ -178,7 +239,6 @@ void Player::handleInput() {
         m_facingRight = true;
     }
 
-    // Jump
     if ((sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W)
        || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
         && onGround) {
@@ -186,14 +246,13 @@ void Player::handleInput() {
         onGround = false;
     }
 
-    // Throw (movement continues normally)
     if ((sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space)
        || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::J))
         && m_throwCooldown <= 0.f) {
         m_wantsToThrow = true;
     }
 
-    // K key toggles auto-attack (edge-detected via static bool)
+    // K key toggles auto-attack
     {
         static bool s_kWasPressed = false;
         bool kNow = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::K);
@@ -226,34 +285,49 @@ void Player::setSpeedMultiplier(float multiplier) {
 void Player::update(float dt) {
     if (m_throwCooldown > 0.f) m_throwCooldown -= dt;
 
-    // Invincibility blink
     if (m_invincibleTimer > 0.f) {
         m_invincibleTimer -= dt;
         int phase = static_cast<int>(m_invincibleTimer * 10.f);
         m_blinkVisible = (phase % 2 == 0);
         if (m_invincibleTimer <= 0.f) {
             m_invincibleTimer = 0.f;
-            m_blinkVisible = true;
+            m_blinkVisible    = true;
         }
     }
 
     handleInput();
     applyGravity(dt);
+    updateAnimation(dt);
 
-    position += velocity * dt;
+    position       += velocity * dt;
     hitBox.position = { position.x + HITBOX_OFFSET_X, position.y + HITBOX_OFFSET_Y };
 
-    // Balloon mode boundary reflection
     if (m_balloonMode) {
-        const float TOP = 15.f, BOTTOM = 585.f, LEFT = 30.f, RIGHT = 770.f;
-        if (position.y < TOP)                       { position.y = TOP;                     velocity.y = -velocity.y; }
-        if (position.y + PLAYER_HEIGHT > BOTTOM)    { position.y = BOTTOM - PLAYER_HEIGHT;  velocity.y = -velocity.y; }
-        if (position.x < LEFT)                      { position.x = LEFT;                    velocity.x = -velocity.x; }
-        if (position.x + PLAYER_WIDTH > RIGHT)      { position.x = RIGHT - PLAYER_WIDTH;    velocity.x = -velocity.x; }
+        const float TOP_BOUNDARY    = 15.f;
+        const float BOTTOM_BOUNDARY = 585.f;
+        const float LEFT_BOUNDARY   = 30.f;
+        const float RIGHT_BOUNDARY  = 770.f;
+
+        if (position.y < TOP_BOUNDARY) {
+            position.y = TOP_BOUNDARY;
+            velocity.y = -velocity.y;
+        }
+        if (position.y + PLAYER_HEIGHT > BOTTOM_BOUNDARY) {
+            position.y = BOTTOM_BOUNDARY - PLAYER_HEIGHT;
+            velocity.y = -velocity.y;
+        }
+        if (position.x < LEFT_BOUNDARY) {
+            position.x = LEFT_BOUNDARY;
+            velocity.x = -velocity.x;
+        }
+        if (position.x + PLAYER_WIDTH > RIGHT_BOUNDARY) {
+            position.x = RIGHT_BOUNDARY - PLAYER_WIDTH;
+            velocity.x = -velocity.x;
+        }
+
         hitBox.position = { position.x + HITBOX_OFFSET_X, position.y + HITBOX_OFFSET_Y };
     }
 
-    updateAnimation(dt);
     applySpriteTransform();
 }
 
@@ -263,9 +337,9 @@ void Player::draw(sf::RenderWindow& window) {
 }
 
 void Player::setPosition(sf::Vector2f pos) {
-    position = pos;
+    position        = pos;
     hitBox.position = { pos.x + HITBOX_OFFSET_X, pos.y + HITBOX_OFFSET_Y };
-    m_sprite.setPosition({ pos.x + PLAYER_WIDTH / 2.f, pos.y });
+    applySpriteTransform();
 }
 
 void Player::loseLife() {
@@ -273,13 +347,15 @@ void Player::loseLife() {
     if (m_lives <= 0) return;
     --m_lives;
     m_invincibleTimer = 3.0f;
-    m_blinkVisible = true;
+    m_blinkVisible    = true;
 }
 
 void Player::respawn(sf::Vector2f spawnPos) {
     setPosition(spawnPos);
-    velocity = { 0.f, 0.f };
-    onGround = false;
-    m_facingRight = true;
-    m_isThrowing = false;
+    velocity       = { 0.f, 0.f };
+    onGround       = false;
+    m_facingRight  = true;
+    m_currentAnim  = AnimState::Idle;
+    m_currentFrame = 0;
+    m_animTimer    = 0.f;
 }

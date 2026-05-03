@@ -2,7 +2,7 @@
 #include "Entity.hpp"
 
 /**
- * @brief Abstract base for all projectiles (spec §11.1 requires this).
+ * @brief Abstract base for all projectiles (spec Â§11.1 requires this).
  *
  * A Projectile is an Entity that:
  *   - Moves in a straight-ish line under its own velocity
@@ -12,7 +12,7 @@
  *
  * Concrete subclasses: Snowball, (future) Knife, ArtilleryBlast.
  *
- * INHERITANCE HIERARCHY (spec §11.1 depth requirement):
+ * INHERITANCE HIERARCHY (spec Â§11.1 depth requirement):
  *   Entity -> Projectile -> Snowball
  */
 class Projectile : public Entity {
@@ -29,5 +29,5 @@ public:
     // All projectiles still need update/draw; subclasses implement them.
     // Projectile does NOT implement Template Method here because Snowball
     // wraps around screens (odd motion) while a Knife flies in a straight
-    // line — too divergent to share a skeleton at this layer.
+    // line â€” too divergent to share a skeleton at this layer.
 };

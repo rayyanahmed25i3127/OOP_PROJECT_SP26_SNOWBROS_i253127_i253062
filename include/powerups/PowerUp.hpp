@@ -4,30 +4,30 @@
 #include <string>
 
 /**
- * @brief Pickup item dropped by chain-killed enemies (spec §8).
+ * @brief Pickup item dropped by chain-killed enemies (spec Â§8).
  *
  * Lifecycle:
  *   - Spawned by PlayState at a chain-kill position with a randomly
  *     chosen Type.
  *   - Falls under gravity, lands on platforms (routed through
- *     CollisionDetector — same code path as Player/Enemy).
+ *     CollisionDetector â€” same code path as Player/Enemy).
  *   - Despawns on player-hitbox overlap (PlayState applies the effect).
  *   - Auto-despawns after PICKUP_TIMEOUT seconds (so old drops don't
  *     clutter the level forever).
  *
- * INHERITANCE (spec §11.1 — abstract bases for Enemy / PowerUp / Projectile):
- *   Entity → PowerUp.
+ * INHERITANCE (spec Â§11.1 â€” abstract bases for Enemy / PowerUp / Projectile):
+ *   Entity â†’ PowerUp.
  *
- * Note: spec §8.2 lists 4 Level-1 power-ups (Speed Boost, Snowball Power,
- * Distance Increase, Balloon Mode). Extra Life is shop-only per §8.4.
+ * Note: spec Â§8.2 lists 4 Level-1 power-ups (Speed Boost, Snowball Power,
+ * Distance Increase, Balloon Mode). Extra Life is shop-only per Â§8.4.
  */
 class PowerUp : public Entity {
 public:
     enum class Type {
-        SpeedBoost,        // 15s — +50% movement speed
-        SnowballPower,     // until level end — 1-hit encase
-        DistanceIncrease,  // until level end — snowball travels full screen
-        BalloonMode,       // 10s — float upward, ground enemies can't harm
+        SpeedBoost,        // 15s â€” +50% movement speed
+        SnowballPower,     // until level end â€” 1-hit encase
+        DistanceIncrease,  // until level end â€” snowball travels full screen
+        BalloonMode,       // 10s â€” float upward, ground enemies can't harm
         Count_             // sentinel for random pick
     };
 

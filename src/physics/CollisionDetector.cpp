@@ -157,19 +157,19 @@ bool CollisionDetector::checkEnemyContact(const Entity& player,
     for (int i = 0; i < enemyCount; ++i) {
         if (!enemies[i]) continue;
 
-        // Lethality rules (spec §7.1):
-        //   Alive       — lethal (standard walker)
-        //   ShakingFree — lethal (enemy is waking back up, warning to player)
-        //   Snowballed  — NOT lethal (frozen, kickable)
-        //   Rolling     — NOT lethal to player (Phase 3 will add kick-through)
-        //   Dead        — not drawn, not lethal
-        // Lethality (spec §7.1):
-        //   Alive + Escaping75/50/25 — lethal (walking OR waking up)
-        //   Snowballed                — NOT lethal (frozen, kickable)
-        //   Rolling                   — NOT lethal to player (Phase 3 reserved)
-        //   Dead                      — not drawn, not lethal
+        // Lethality rules (spec Â§7.1):
+        //   Alive       â€” lethal (standard walker)
+        //   ShakingFree â€” lethal (enemy is waking back up, warning to player)
+        //   Snowballed  â€” NOT lethal (frozen, kickable)
+        //   Rolling     â€” NOT lethal to player (Phase 3 will add kick-through)
+        //   Dead        â€” not drawn, not lethal
+        // Lethality (spec Â§7.1):
+        //   Alive + Escaping75/50/25 â€” lethal (walking OR waking up)
+        //   Snowballed                â€” NOT lethal (frozen, kickable)
+        //   Rolling                   â€” NOT lethal to player (Phase 3 reserved)
+        //   Dead                      â€” not drawn, not lethal
         // Lethality rules (Phase 3 locked):
-        //   Alive only — every other state has snow on the enemy = safe.
+        //   Alive only â€” every other state has snow on the enemy = safe.
         //   Rolling enemies don't hurt the player (pass-through).
         if (enemies[i]->getState() != Enemy::State::Alive) continue;
 

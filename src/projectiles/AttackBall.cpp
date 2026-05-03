@@ -3,8 +3,8 @@
 #include <iostream>
 
 namespace {
-    // Attack ball design parameters (spec §7.1 — "travels 2-2.5 inches").
-    // At typical 96 DPI, 2 inches ≈ 192 pixels. Use 200 as round number.
+    // Attack ball design parameters (spec Â§7.1 â€” "travels 2-2.5 inches").
+    // At typical 96 DPI, 2 inches â‰ˆ 192 pixels. Use 200 as round number.
     const float ATTACKBALL_SPEED    = 700.f;   // snappier arcade feel
     const float ATTACKBALL_MAX_DIST = 220.f;
     const float SCREEN_WIDTH        = 800.f;   // for Distance Increase power-up
@@ -46,7 +46,7 @@ AttackBall::AttackBall(sf::Vector2f pos, bool facingRight,
         }
     } else {
         std::cerr << "[AttackBall] missing " << texturePath
-                  << " — falling back to circle\n";
+                  << " â€” falling back to circle\n";
     }
 
     // Configure fallback circle (used only if sprite didn't load)

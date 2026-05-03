@@ -9,12 +9,12 @@
  * @brief Resolves physics collisions between any Entity and the world,
  *        and detects player-enemy overlaps.
  *
- * Spec section 7.2: "All collisions go through CollisionDetector —
+ * Spec section 7.2: "All collisions go through CollisionDetector â€”
  * no ad-hoc overlap checks."
  *
  * Design: stateless utility class. Polymorphic over Entity (option b from
  * the design discussion): Player and Enemy both resolve through the same
- * code path — we never reach into subclass-specific members.
+ * code path â€” we never reach into subclass-specific members.
  *
  * Collision strategy for resolve():
  *   1. Screen-border wall clamp (left/right)
@@ -43,10 +43,10 @@ public:
     /**
      * @brief Checks whether the player's hit-box overlaps any living enemy.
      *
-     * Per spec §7.2, this centralizes player-enemy overlap detection so
+     * Per spec Â§7.2, this centralizes player-enemy overlap detection so
      * PlayState doesn't do ad-hoc AABB checks. Returns true on the first
      * overlap found. Ignores enemies in non-Alive state (snowballed
-     * enemies can be pushed, not instantly lethal — matters when snowball
+     * enemies can be pushed, not instantly lethal â€” matters when snowball
      * mechanic lands).
      *
      * @param player        The player to test.

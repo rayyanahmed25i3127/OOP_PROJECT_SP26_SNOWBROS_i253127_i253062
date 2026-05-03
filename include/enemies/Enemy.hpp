@@ -54,7 +54,7 @@ protected:
     sf::Sprite m_overlaySprite;
     bool       m_overlayVisible;
 
-    // ----- Animation textures (persistent — outlive the sprite) -----
+    // ----- Animation textures (persistent â€” outlive the sprite) -----
     sf::Texture m_walkTextures[3];   // 3 walk frames
     sf::Texture m_jumpTexture;       // 1 jump frame (going up)
     sf::Texture m_fallTexture;       // 1 fall frame (coming down)
