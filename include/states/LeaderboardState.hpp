@@ -7,15 +7,14 @@
 class LeaderboardState : public GameState {
 private:
     sf::Texture bgTexture;
-    sf::Sprite* bgSprite  = nullptr;   // raw pointer â€” no optional
-    sf::Text*   backText  = nullptr;   // raw pointer â€” no optional
+    sf::Sprite* bgSprite  = nullptr;   
+    sf::Text*   backText  = nullptr;   
 
     sf::Font       font;
     Leaderboard    leaderboard;
     bool           isBackHovered = false;
 
-    // Draws a smooth capsule as a single TriangleFan â€” no vector, no seam.
-    // outlineColor / outlineThickness are optional params â€” default = no outline.
+    // capsule texture buttons rendering 
     void drawCapsule(sf::RenderWindow& window,
                      float x, float y,
                      float width, float height,

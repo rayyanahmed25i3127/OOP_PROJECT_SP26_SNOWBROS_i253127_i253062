@@ -28,7 +28,7 @@ private:
     std::string  m_playerName;
     int          m_characterIndex;
 
-    // ── Multiplayer ────────────────────────────────────────────────────
+//multiplayer
     bool         m_multiplayer;
     int          m_characterIndex2;
     Player*      m_player2;
@@ -49,7 +49,7 @@ private:
     void updatePowerUpTimersP2(float dt);
     void drawPowerUpHUDP2(sf::RenderWindow& window);
     void playerLoseLife(Player* p, sf::Vector2f spawn, bool isP2);
-    // ───────────────────────────────────────────────────────────────────
+    
 
     sf::Texture  m_backgroundTexture;
     sf::Sprite   m_backgroundSprite;
@@ -131,7 +131,7 @@ private:
     bool         m_showLevelCompleteText;
     bool         m_bonusDiamondsSpawned;
 
-    // ── Boss: Mogera (Level 5) ─────────────────────────────────────────
+//Boss1,  Mogera (Level 5)
     class Mogera*      m_mogera;
     class MogeraChild* m_mogeraChildren[MAX_MOGERA_CHILDREN];
     int                m_mogeraChildCount;
@@ -142,12 +142,12 @@ private:
     void updateMogera(float dt);
     void drawBossHealthBar(sf::RenderWindow& window);
 
-    // ── Boss: Gamakichi (Level 10) ─────────────────────────────────────
+    //      Bos2.. Gamakichi (Level 10)
     class Gamakichi*   m_gamakichi;
     void updateGamakichi(float dt);
     void drawGamaHealthBar(sf::RenderWindow& window);
 
-    // ── Level helpers ──────────────────────────────────────────────────
+    //helpers
     void buildLevel();
     void spawnEnemies();
     void nextLevel();

@@ -23,7 +23,7 @@ public:
     };
 
 protected:
-    // ----- BODY textures (multi-pose) -----
+    // body poses k textures
     sf::Texture m_idleTexture;
     sf::Texture m_trappedTexture;
     sf::Texture m_unleash1Texture;   
@@ -38,7 +38,7 @@ protected:
 
     sf::Sprite m_bodySprite;
 
-    // ----- SNOW overlay textures -----
+    // hitting effect / snow encasement wagera
     sf::Texture m_snowEncase50Texture;
     sf::Texture m_snowEncase100Texture;
     sf::Texture m_snowEscape75Texture;
@@ -54,20 +54,20 @@ protected:
     sf::Sprite m_overlaySprite;
     bool       m_overlayVisible;
 
-    // ----- Animation textures (persistent â€” outlive the sprite) -----
+    // animations, walk jump etc
     sf::Texture m_walkTextures[3];   // 3 walk frames
-    sf::Texture m_jumpTexture;       // 1 jump frame (going up)
-    sf::Texture m_fallTexture;       // 1 fall frame (coming down)
+    sf::Texture m_jumpTexture;       // 1 jump frame 
+    sf::Texture m_fallTexture;       // 1 fall frame 
 
     bool m_walkLoaded;
     bool m_jumpLoaded;
     bool m_fallLoaded;
 
-    // Walk animation timer
-    int   m_walkFrame;               // 0-2
+    // walk anim timer
+    int   m_walkFrame;               
     float m_walkTimer;
 
-    // ----- Layout / physics -----
+    // physics / appearance 
     float m_spriteWidth;
     float m_spriteHeight;
     float m_overlayWidth;
@@ -81,13 +81,13 @@ protected:
     bool  m_facingRight;
     bool  m_onGround;
 
-    // ----- State machine -----
+    // cheks state
     State m_state;
     int   m_hitsToEncase;
     int   m_hitsTaken;
     float m_stateTimer;              
 
-    // ----- Rolling-state bookkeeping -----
+    // rolling state
     float m_rollOriginX;
     bool  m_rollDirectionRight;      
     float m_rollDistanceTravelled;   
@@ -97,7 +97,7 @@ protected:
 
     bool m_oneHitEncase;
 
-    // ----- Helpers -----
+    //helpers
     void applyGravity(float dt);
     void syncHitBox();
     void syncSpritePositions();

@@ -3,9 +3,7 @@
 #include <SFML/Graphics.hpp>
 #include <string>
 
-// Simple name-entry screen shown before a multiplayer game starts.
-// Player 1 name = logged-in username (read-only).
-// Player 2 name = typed by the user here.
+// name entry for player 2, player 1 wahi hai jiska account hai 
 class MultiplayerNameState : public GameState {
 private:
     sf::Font   m_font;

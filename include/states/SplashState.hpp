@@ -2,6 +2,7 @@
 #include "states/GameState.hpp"
 #include <SFML/Graphics.hpp>
 
+ 
 class SplashState : public GameState {
 private:
     sf::Texture m_bgTexture;

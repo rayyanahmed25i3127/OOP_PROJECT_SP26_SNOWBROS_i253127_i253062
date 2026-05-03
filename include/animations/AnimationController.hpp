@@ -3,22 +3,12 @@
 #include <SFML/Graphics.hpp>
 #include <string>
 
-/**
- * @brief Manages multiple named animations for a single entity.
- *
- * Allows switching between animations (idle, walk, jump, etc.) and
- * automatically applies the current frame to a sprite.
- *
- * Usage:
- *   AnimationController controller;
- *   controller.addAnimation("idle", idleAnim);
- *   controller.addAnimation("walk", walkAnim);
- *   controller.setAnimation("idle");
- *   
- *   // In update loop:
- *   controller.update(dt);
- *   controller.applyToSprite(mySprite);
- */
+//Yeh ek **Animation Controller** hai jo ek entity (jaise ke game character) 
+//ki mukhtalif animations ko handle karta hai. Iska kaam animations ke darmiyan 
+//switch karna hai, jaise ke "idle" se "walk" ya "jump" par jana. Update loop ke 
+//doran, yeh automatic taur par sahi frame sprite par apply kar deta hai taake 
+//character move hota hua dikhayi de.
+
 class AnimationController {
 private:
     static const int MAX_ANIMATIONS = 16;
@@ -33,50 +23,30 @@ private:
     
     AnimationEntry m_animations[MAX_ANIMATIONS];
     int m_animationCount;
-    int m_currentIndex;  // Index of currently playing animation (-1 if none)
+    int m_currentIndex;  // abhi wale frame ka index
 
 public:
     AnimationController();
 
-    /**
-     * @brief Add a named animation to the controller.
-     * @param name Animation name (e.g., "idle", "walk", "jump")
-     * @param anim The animation object
-     */
+    // animation with name like walk1.png jump.png etc
     void addAnimation(const std::string& name, const Animation& anim);
 
-    /**
-     * @brief Switch to a different animation by name.
-     * @param name Animation name to switch to
-     * @param restart If true, restarts animation even if already playing
-     * @return True if animation was found and switched
-     */
+    
+     //Switch to a different animation by name    
     bool setAnimation(const std::string& name, bool restart = false);
-
-    /**
-     * @brief Update the current animation.
-     * @param dt Delta time in seconds
-     */
+                                        //^^ animation name to switch to
+   // update current animation
     void update(float dt);
 
-    /**
-     * @brief Apply current animation frame to a sprite.
-     * @param sprite The sprite to update
-     */
+    // apply curent animation to sprite
     void applyToSprite(sf::Sprite& sprite);
 
-    /**
-     * @brief Get name of currently playing animation.
-     */
+    // get name of currently playing animation
     std::string getCurrentAnimationName() const;
 
-    /**
-     * @brief Check if current animation has finished (for non-looping anims).
-     */
+    //check if current animation has finished
     bool hasCurrentAnimationFinished() const;
 
-    /**
-     * @brief Get pointer to animation by name (for advanced control).
-     */
+    // get pointer to animation by name.
     Animation* getAnimation(const std::string& name);
 };

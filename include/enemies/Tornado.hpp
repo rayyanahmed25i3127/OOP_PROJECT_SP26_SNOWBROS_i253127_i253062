@@ -1,17 +1,10 @@
 #pragma once
 #include "enemies/FlyngFoogaFoog.hpp"
 
-/**
- * Tornado — inherits FlyngFoogaFoog, adds:
- *   - Randomized fly speed (slow ↔ fast)
- *   - Knife throwing toward player at intervals
- *   - 3 hits to encase (tornado_encased25/50 → snowball)
- *   - Own walk/fly/throw/turn/jump animations
- *
- * PlayState polls getAndClearKnifeSpawn() each frame to spawn Knife projectiles.
- *
- * Inheritance: Entity → Enemy → FlyngFoogaFoog → Tornado  (depth 4)
- */
+//Yeh bhai apni urrne ki speed ko kabhi kam aur kabhi zyada karta rehta hai aur thori thori 
+//der baad player ki taraf knives phenkta hai... Isse snowball encase karne ke 
+//liye 3 snowball hits ki zaroorat hoti hai aur iski apni mukhtalif animations (walk, fly, throw wagera)
+//hain. Game ki PlayState har frame check karti hai ke kab naya knife spawn karna hai taake enemy ka attack continuous rahe.
 class Tornado : public FlyngFoogaFoog {
 public:
     struct KnifeRequest {
@@ -25,35 +18,35 @@ private:
     sf::Texture m_walkTextures[3]; bool m_walkTexLoaded;
     int   m_walkTexFrame; float m_walkTexTimer;
 
-    // Fly frames (tornado_frame1/2)
+   //flight frames
     sf::Texture m_flyFrames[2]; bool m_flyFramesLoaded;
     int m_flyFrame; float m_flyFrameTimer;
 
-    // Directional / jump
+    // directional flips and jump frames
     sf::Texture m_leftTex;  bool m_leftLoaded;
     sf::Texture m_rightTex; bool m_rightLoaded;
     sf::Texture m_jumpTex2; bool m_jumpLoaded2;
 
-    // Turn animation (4 frames)
+    //turnanim
     sf::Texture m_turnFrames[4]; bool m_turnLoaded;
     bool  m_isTurning; int m_turnFrame; float m_turnTimer;
     bool  m_prevFacingRight;
 
-    // Throw animation (2 frames)
+    //throw knife anim
     sf::Texture m_throwFrames[2]; bool m_throwLoaded;
     bool  m_isThrowing; int m_throwFrame; float m_throwTimer;
     bool  m_knifeSpawnedThisCycle;
 
-    // Encasement textures (3-hit)
+    //encapsulation textures
     sf::Texture m_enc25Tex; bool m_enc25Loaded;
     sf::Texture m_enc50Tex; bool m_enc50Loaded;
 
-    // Knife
+    //knife, its secondary attack
     float        m_knifeTimer;
     float        m_knifeCooldown;
     KnifeRequest m_knifeRequest;
 
-    // Randomized fly speed (overrides fooga's 100 px/s)
+    //flying speed is random bcuz it teleports 
     float m_flySpeed;
 
     static constexpr float FLY_FRAME_TIME   = 0.15f;

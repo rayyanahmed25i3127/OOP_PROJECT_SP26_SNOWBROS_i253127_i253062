@@ -1,8 +1,7 @@
 #pragma once
 #include "enemies/Enemy.hpp"
 
-// Identical behaviour to BotomBlue — 3 hits to encase, 125% speed.
-// Only difference: all asset filenames use "orange" instead of "blue".
+// sab same as blue botom, bas speed or thori tez and color change and hp or zada thori
 class BotomOrange : public Enemy {
 private:
     sf::Texture m_encased25Texture;

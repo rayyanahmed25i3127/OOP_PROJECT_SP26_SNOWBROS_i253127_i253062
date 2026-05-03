@@ -11,7 +11,7 @@ private:
     sf::Vector2f  m_size;
 
     sf::FloatRect m_localBounds[MAX_HITBOXES];
-    bool          m_solid[MAX_HITBOXES];   // NEW: true = blocks from all sides
+    bool          m_solid[MAX_HITBOXES];   //when true then blocks from all sides
     int           m_hitboxCount;
 
 public:
@@ -19,12 +19,12 @@ public:
 
     Platform(const sf::Texture& texture, sf::Vector2f size, sf::Vector2f position,
              const sf::FloatRect* localHitboxes, int count,
-             const bool* solidFlags = nullptr);   // NEW optional param
+             const bool* solidFlags = nullptr);   // optional parameters
 
     void draw(sf::RenderWindow& window);
 
     sf::FloatRect getBounds(int i = 0) const;
-    bool          isSolid(int i = 0) const;       // NEW
+    bool          isSolid(int i = 0) const;       
     int           getHitboxCount() const { return m_hitboxCount; }
 
     sf::Vector2f getPosition() const { return m_position; }

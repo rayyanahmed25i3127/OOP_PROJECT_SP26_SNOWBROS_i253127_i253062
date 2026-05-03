@@ -1,11 +1,7 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 
-/**
- * GamaBomb — projectile fired by Gamakichi toward a danger-zone target.
- * Falls under gravity, explodes on hitting target Y or player proximity.
- * Explosion lingers for EXPLODE_DURATION showing hit_effect sprite.
- */
+// dropped by gamakichi, from its artilleries, it blasts where ever it hits, also plays a fire hit effect too
 class GamaBomb {
 public:
     enum class Phase { Flying, Exploding, Dead };

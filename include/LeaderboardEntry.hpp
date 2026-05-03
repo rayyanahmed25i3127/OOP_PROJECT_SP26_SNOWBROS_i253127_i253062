@@ -4,6 +4,6 @@
 struct LeaderboardEntry {
     std::string playerName;
     long long score;
-    int levelReached;  // Make sure this field exists
+    int levelReached;  
     std::string date;
 };
