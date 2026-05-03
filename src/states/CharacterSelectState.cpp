@@ -1,5 +1,6 @@
 #include "states/CharacterSelectState.hpp"
 #include "states/StateManager.hpp"
+#include "audio/AudioManager.hpp"
 #include "states/PlayState.hpp"
 #include <iostream>
 
@@ -48,6 +49,7 @@ CharacterSelectState::~CharacterSelectState() {
 
 // ── onEnter ─────────────────────────────────────────────────────────────────
 void CharacterSelectState::onEnter() {
+    AudioManager::get().playMenuMusic();
     std::cout << "[CharSelect] Entering character selection\n";
 
     // Background

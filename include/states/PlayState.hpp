@@ -28,6 +28,29 @@ private:
     std::string  m_playerName;
     int          m_characterIndex;
 
+    // ── Multiplayer ────────────────────────────────────────────────────
+    bool         m_multiplayer;
+    int          m_characterIndex2;
+    Player*      m_player2;
+    sf::Vector2f m_player2Spawn;
+    int          m_score2;
+    int          m_gems2;
+    bool         m_player2Dead;
+    AttackBall*  m_projectiles2[MAX_PROJECTILES];
+    int          m_projectileCount2;
+    float        m_player2PrevX;
+    float        m_player2PrevY;
+    bool         m_speedActive2; float m_speedTimer2;
+    bool         m_balloonActive2; float m_balloonTimer2;
+    bool         m_snowballPowerActive2;
+    bool         m_distanceActive2;
+    PowerUp::Type m_displayedType2; bool m_hasDisplayed2;
+    void activatePowerUpP2(PowerUp::Type type);
+    void updatePowerUpTimersP2(float dt);
+    void drawPowerUpHUDP2(sf::RenderWindow& window);
+    void playerLoseLife(Player* p, sf::Vector2f spawn, bool isP2);
+    // ───────────────────────────────────────────────────────────────────
+
     sf::Texture  m_backgroundTexture;
     sf::Sprite   m_backgroundSprite;
     bool         m_backgroundLoaded;
@@ -132,6 +155,7 @@ private:
 
 public:
     explicit PlayState(int characterIndex = 0);
+    PlayState(int charIdx1, int charIdx2);
     ~PlayState();
 
     PlayState(const PlayState&)            = delete;

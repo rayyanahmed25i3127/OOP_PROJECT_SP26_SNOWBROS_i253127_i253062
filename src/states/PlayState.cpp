@@ -52,10 +52,23 @@ namespace {
     int g_globalDoubleKillEvents = 0;
 }
 
-// Constructor
+// Single-player constructor
 PlayState::PlayState(int characterIndex)
     : m_playerName("")
     , m_characterIndex(characterIndex)
+    , m_multiplayer(false)
+    , m_characterIndex2(0)
+    , m_player2(nullptr)
+    , m_player2Spawn(700.f, 450.f)
+    , m_score2(0)
+    , m_gems2(0)
+    , m_player2Dead(false)
+    , m_projectileCount2(0)
+    , m_player2PrevX(0.f), m_player2PrevY(0.f)
+    , m_speedActive2(false), m_speedTimer2(0.f)
+    , m_balloonActive2(false), m_balloonTimer2(0.f)
+    , m_snowballPowerActive2(false), m_distanceActive2(false)
+    , m_displayedType2(PowerUp::Type::SpeedBoost), m_hasDisplayed2(false)
     , m_backgroundTexture()
     , m_backgroundSprite(m_backgroundTexture)
     , m_backgroundLoaded(false)
@@ -120,10 +133,21 @@ PlayState::PlayState(int characterIndex)
         m_mogeraChildPrevX[i] = 0.f;
         m_mogeraChildPrevY[i] = 0.f;
     }
+    for (int i = 0; i < MAX_PROJECTILES; ++i) m_projectiles2[i] = nullptr;
+}
+
+// Two-player constructor
+PlayState::PlayState(int charIdx1, int charIdx2)
+    : PlayState(charIdx1)
+{
+    m_multiplayer = true;
+    m_characterIndex2 = charIdx2;
 }
 
 PlayState::~PlayState() {
     delete m_player; m_player = nullptr;
+    delete m_player2; m_player2 = nullptr;
+    for (int i=0;i<m_projectileCount2;++i){delete m_projectiles2[i];m_projectiles2[i]=nullptr;}
     for (int i = 0; i < m_platformCount; ++i)  { delete m_platforms[i];   m_platforms[i]   = nullptr; }
     for (int i = 0; i < m_enemyCount; ++i)      { delete m_enemies[i];     m_enemies[i]     = nullptr; }
     for (int i = 0; i < m_projectileCount; ++i) { delete m_projectiles[i]; m_projectiles[i] = nullptr; }
@@ -134,6 +158,7 @@ PlayState::~PlayState() {
     delete m_mogera; m_mogera = nullptr;
     for (int i = 0; i < m_mogeraChildCount; ++i) { delete m_mogeraChildren[i]; m_mogeraChildren[i] = nullptr; }
     delete m_gamakichi; m_gamakichi = nullptr;
+    for (int i=0;i<m_projectileCount2;++i){delete m_projectiles2[i];m_projectiles2[i]=nullptr;} m_projectileCount2=0;
 }
 
 void PlayState::onEnter() {
@@ -178,22 +203,52 @@ void PlayState::onEnter() {
         }
     }
 
-    m_player  = new Player(m_playerSpawn, m_characterIndex);
+    m_player  = new Player(m_playerSpawn, m_characterIndex, PlayerControls::player1());
     g_player  = m_player;
+
+    if (m_multiplayer) {
+        m_player2 = new Player(m_player2Spawn, m_characterIndex2, PlayerControls::player2());
+        m_player2Dead = false;
+        m_score2 = 0;
+        m_gems2 = 0;
+        // Multiplayer: 2 lives each, no continue
+        m_player->loseLife(); // starts with 2, remove extra so getLives()==1 (actually starts at 2)
+        // Actually Player starts with m_lives=2 which means 2 lives. That's correct.
+        std::cout << "[PlayState] Multiplayer: P2 spawned (char=" << m_characterIndex2 << ")\n";
+    }
 
     // Apply pending shop purchases
     {
         PlayerProgress& prog = m_manager->getProgress();
-        m_gems = prog.gems;
-        if (prog.pendingSpeed)    { activatePowerUp(PowerUp::Type::SpeedBoost);      }
-        if (prog.pendingSnowball) { activatePowerUp(PowerUp::Type::SnowballPower);   }
-        if (prog.pendingDistance) { activatePowerUp(PowerUp::Type::DistanceIncrease);}
-        if (prog.pendingBalloon)  { activatePowerUp(PowerUp::Type::BalloonMode);     }
-        if (prog.pendingExtraLifeCount > 0 && m_player) {
-            for (int li = 0; li < prog.pendingExtraLifeCount; ++li)
-                m_player->addLife();
-            std::cout << "[PlayState] Applied " << prog.pendingExtraLifeCount
-                      << " Extra Life(s) from shop\n";
+        if (m_multiplayer) {
+            m_gems  = prog.gemsP1;
+            m_gems2 = prog.gemsP2;
+            // P1 powerups
+            if (prog.pendingSpeed)    { activatePowerUp(PowerUp::Type::SpeedBoost);       }
+            if (prog.pendingSnowball) { activatePowerUp(PowerUp::Type::SnowballPower);    }
+            if (prog.pendingDistance) { activatePowerUp(PowerUp::Type::DistanceIncrease); }
+            if (prog.pendingBalloon)  { activatePowerUp(PowerUp::Type::BalloonMode);      }
+            if (prog.pendingExtraLifeCount > 0 && m_player)
+                for (int li = 0; li < prog.pendingExtraLifeCount; ++li) m_player->addLife();
+            // P2 powerups
+            if (prog.pendingSpeedP2)    { activatePowerUpP2(PowerUp::Type::SpeedBoost);       }
+            if (prog.pendingSnowballP2) { activatePowerUpP2(PowerUp::Type::SnowballPower);    }
+            if (prog.pendingDistanceP2) { activatePowerUpP2(PowerUp::Type::DistanceIncrease); }
+            if (prog.pendingBalloonP2)  { activatePowerUpP2(PowerUp::Type::BalloonMode);      }
+            if (prog.pendingExtraLifeCountP2 > 0 && m_player2)
+                for (int li = 0; li < prog.pendingExtraLifeCountP2; ++li) m_player2->addLife();
+        } else {
+            m_gems = prog.gems;
+            if (prog.pendingSpeed)    { activatePowerUp(PowerUp::Type::SpeedBoost);      }
+            if (prog.pendingSnowball) { activatePowerUp(PowerUp::Type::SnowballPower);   }
+            if (prog.pendingDistance) { activatePowerUp(PowerUp::Type::DistanceIncrease);}
+            if (prog.pendingBalloon)  { activatePowerUp(PowerUp::Type::BalloonMode);     }
+            if (prog.pendingExtraLifeCount > 0 && m_player) {
+                for (int li = 0; li < prog.pendingExtraLifeCount; ++li)
+                    m_player->addLife();
+                std::cout << "[PlayState] Applied " << prog.pendingExtraLifeCount
+                          << " Extra Life(s) from shop\n";
+            }
         }
         prog.clearPending();
     }
@@ -207,11 +262,16 @@ void PlayState::onEnter() {
     g_platforms     = m_platforms;
     g_platformCount = m_platformCount;
     spawnEnemies();
-    AudioManager::get().playGameMusic();
+
+    // Choose music track based on level
+    bool isBossLevel = (m_currentLevel == 5 || m_currentLevel == 10);
+    if (isBossLevel) AudioManager::get().playBossLevelMusic();
+    else             AudioManager::get().playNormalLevelMusic();
 }
 
 void PlayState::onExit() {
     std::cout << "[PlayState] Exiting gameplay\n";
+    AudioManager::get().setAttackPlaying(false);  // stop looping attack sfx
     AudioManager::get().playMenuMusic();
 
     PlayerProgress& prog = m_manager->getProgress();
@@ -516,7 +576,13 @@ void PlayState::updateMogera(float dt) {
             std::cout << "[PlayState] Player hit by Mogera! Lives: " << m_player->getLives() << "\n";
             if (m_player->getLives() <= 0) {
                 m_gameOver = true;
-                saveScore(m_manager->getCurrentUserName(), m_score, m_currentLevel);
+                {
+                    std::string _p1n = m_manager->getCurrentUserName();
+                    std::string _p2n = m_manager->getProgress().player2Name;
+                    if (_p2n.empty()) _p2n = "Player2";
+                    saveScore(_p1n, m_score, m_currentLevel);
+                    if (m_multiplayer) saveScore(_p2n, m_score2, m_currentLevel);
+                }
                 m_manager->pushState(new GameOverState());
             } else {
                 m_player->respawn(m_playerSpawn);
@@ -538,7 +604,13 @@ void PlayState::updateMogera(float dt) {
                 std::cout << "[PlayState] Player hit by MogeraChild! Lives: " << m_player->getLives() << "\n";
                 if (m_player->getLives() <= 0) {
                     m_gameOver = true;
-                    saveScore(m_manager->getCurrentUserName(), m_score, m_currentLevel);
+                    {
+                        std::string _p1n = m_manager->getCurrentUserName();
+                        std::string _p2n = m_manager->getProgress().player2Name;
+                        if (_p2n.empty()) _p2n = "Player2";
+                        saveScore(_p1n, m_score, m_currentLevel);
+                        if (m_multiplayer) saveScore(_p2n, m_score2, m_currentLevel);
+                    }
                     m_manager->pushState(new GameOverState());
                 } else {
                     m_player->respawn(m_playerSpawn);
@@ -586,16 +658,30 @@ void PlayState::update(float dt) {
     // Apply pending shop powerups
     {
         PlayerProgress& prog = m_manager->getProgress();
+        // P1
         if (prog.pendingSpeed)    { activatePowerUp(PowerUp::Type::SpeedBoost);       prog.pendingSpeed    = false; }
         if (prog.pendingSnowball) { activatePowerUp(PowerUp::Type::SnowballPower);    prog.pendingSnowball = false; }
         if (prog.pendingDistance) { activatePowerUp(PowerUp::Type::DistanceIncrease); prog.pendingDistance = false; }
         if (prog.pendingBalloon)  { activatePowerUp(PowerUp::Type::BalloonMode);      prog.pendingBalloon  = false; }
         if (prog.pendingExtraLifeCount > 0 && m_player) {
-            for (int li = 0; li < prog.pendingExtraLifeCount; ++li)
-                m_player->addLife();
+            for (int li = 0; li < prog.pendingExtraLifeCount; ++li) m_player->addLife();
             prog.pendingExtraLifeCount = 0;
         }
-        m_gems = prog.gems;
+        // P2 (multiplayer only)
+        if (m_multiplayer) {
+            if (prog.pendingSpeedP2)    { activatePowerUpP2(PowerUp::Type::SpeedBoost);       prog.pendingSpeedP2    = false; }
+            if (prog.pendingSnowballP2) { activatePowerUpP2(PowerUp::Type::SnowballPower);    prog.pendingSnowballP2 = false; }
+            if (prog.pendingDistanceP2) { activatePowerUpP2(PowerUp::Type::DistanceIncrease); prog.pendingDistanceP2 = false; }
+            if (prog.pendingBalloonP2)  { activatePowerUpP2(PowerUp::Type::BalloonMode);      prog.pendingBalloonP2  = false; }
+            if (prog.pendingExtraLifeCountP2 > 0 && m_player2) {
+                for (int li = 0; li < prog.pendingExtraLifeCountP2; ++li) m_player2->addLife();
+                prog.pendingExtraLifeCountP2 = 0;
+            }
+            m_gems  = prog.gemsP1;
+            m_gems2 = prog.gemsP2;
+        } else {
+            m_gems = prog.gems;
+        }
     }
 
     if (m_player) {
@@ -603,6 +689,12 @@ void PlayState::update(float dt) {
         m_playerPrevY = m_player->getPosition().y;
         m_player->update(dt);
         m_collider.resolve(*m_player, m_platforms, m_platformCount, m_playerPrevX, m_playerPrevY);
+    }
+    if (m_multiplayer && m_player2 && !m_player2Dead) {
+        m_player2PrevX = m_player2->getPosition().x;
+        m_player2PrevY = m_player2->getPosition().y;
+        m_player2->update(dt);
+        m_collider.resolve(*m_player2, m_platforms, m_platformCount, m_player2PrevX, m_player2PrevY);
     }
 
     for (int i = 0; i < m_enemyCount; ++i) {
@@ -660,7 +752,13 @@ void PlayState::update(float dt) {
                 std::cout << "[PlayState] Player hit by knife! Lives: " << m_player->getLives() << "\n";
                 if (m_player->getLives() <= 0) {
                     m_gameOver = true;
-                    saveScore(m_manager->getCurrentUserName(), m_score, m_currentLevel);
+                    {
+                        std::string _p1n = m_manager->getCurrentUserName();
+                        std::string _p2n = m_manager->getProgress().player2Name;
+                        if (_p2n.empty()) _p2n = "Player2";
+                        saveScore(_p1n, m_score, m_currentLevel);
+                        if (m_multiplayer) saveScore(_p2n, m_score2, m_currentLevel);
+                    }
                     m_manager->pushState(new GameOverState());
                 } else {
                     m_player->respawn(m_playerSpawn);
@@ -675,14 +773,28 @@ void PlayState::update(float dt) {
         if (m_knives[r]&&m_knives[r]->isAlive()) m_knives[w++]=m_knives[r];
         else { delete m_knives[r]; m_knives[r]=nullptr; } } m_knifeCount=w; }
 
-    // Spawn attack ball
+    // ── Attack sound: loop while any fire key is held ─────────────────
+    {
+        bool p1Firing = m_player && (
+            sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space) ||
+            sf::Keyboard::isKeyPressed(sf::Keyboard::Key::J) ||
+            (m_player->isAutoAttack()));
+        bool p2Firing = m_multiplayer && m_player2 && !m_player2Dead && (
+            sf::Keyboard::isKeyPressed(sf::Keyboard::Key::L) ||
+            sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Numpad0) ||
+            (m_player2->isAutoAttack()));
+        AudioManager::get().setAttackPlaying(p1Firing || p2Firing);
+    }
+
+    // Spawn attack ball (P1)
     if (m_player && m_player->wantsToThrow() && m_projectileCount < MAX_PROJECTILES) {
         sf::FloatRect pHit = m_player->getHitBox();
         float spawnY = pHit.position.y + pHit.size.y * 0.3f;
         float spawnX = m_player->isFacingRight()
             ? pHit.position.x + pHit.size.x + 2.f
             : pHit.position.x - 16.f - 2.f;
-        AttackBall* newBall = new AttackBall({spawnX, spawnY}, m_player->isFacingRight());
+        const std::string ballTex = (m_characterIndex==1) ? "assets/sprites/attackball_orange.png" : "assets/sprites/attackball_blue.png";
+        AttackBall* newBall = new AttackBall({spawnX, spawnY}, m_player->isFacingRight(), ballTex);
         if (m_distanceActive) newBall->setMaxRangeMode(true);
         m_projectiles[m_projectileCount++] = newBall;
         m_player->consumeThrowRequest();
@@ -690,6 +802,19 @@ void PlayState::update(float dt) {
 
     for (int i = 0; i < m_projectileCount; ++i)
         if (m_projectiles[i]) m_projectiles[i]->update(dt);
+
+    // Spawn + update P2 projectiles
+    if (m_multiplayer && m_player2 && !m_player2Dead && m_player2->wantsToThrow() && m_projectileCount2 < MAX_PROJECTILES) {
+        sf::FloatRect pHit = m_player2->getHitBox();
+        float spawnY = pHit.position.y + pHit.size.y * 0.3f;
+        float spawnX = m_player2->isFacingRight() ? pHit.position.x+pHit.size.x+2.f : pHit.position.x-16.f-2.f;
+        const std::string bTex = (m_characterIndex2==1) ? "assets/sprites/attackball_orange.png" : "assets/sprites/attackball_blue.png";
+        AttackBall* nb = new AttackBall({spawnX,spawnY}, m_player2->isFacingRight(), bTex);
+        if (m_distanceActive2) nb->setMaxRangeMode(true);
+        m_projectiles2[m_projectileCount2++] = nb;
+        m_player2->consumeThrowRequest();
+    }
+    for (int i=0;i<m_projectileCount2;++i) if (m_projectiles2[i]) m_projectiles2[i]->update(dt);
 
     // Attack ball vs regular enemy
     for (int i = 0; i < m_projectileCount; ++i) {
@@ -714,10 +839,53 @@ void PlayState::update(float dt) {
         }
     }
 
-    // GC dead projectiles
+    // GC dead projectiles (P1)
     { int w=0; for (int r=0;r<m_projectileCount;++r) {
         if (m_projectiles[r]&&m_projectiles[r]->isAlive()) m_projectiles[w++]=m_projectiles[r];
         else { delete m_projectiles[r]; m_projectiles[r]=nullptr; } } m_projectileCount=w; }
+
+    // P2 ball vs enemy + boss + GC
+    if (m_multiplayer) {
+        for (int i=0;i<m_projectileCount2;++i) {
+            if (!m_projectiles2[i]||!m_projectiles2[i]->isAlive()) continue;
+            sf::FloatRect pH2=m_projectiles2[i]->getHitBox();
+            float pL=pH2.position.x,pR=pL+pH2.size.x,pT=pH2.position.y,pB=pT+pH2.size.y;
+            for (int e=0;e<m_enemyCount;++e) {
+                if (!m_enemies[e]) continue;
+                Enemy::State s=m_enemies[e]->getState();
+                if (s!=Enemy::State::Alive&&s!=Enemy::State::PartialEncase&&
+                    s!=Enemy::State::Escaping75&&s!=Enemy::State::Escaping50&&
+                    s!=Enemy::State::Escaping25) continue;
+                sf::FloatRect eH=m_enemies[e]->getHitBox();
+                if (pR>eH.position.x&&pL<eH.position.x+eH.size.x&&pB>eH.position.y&&pT<eH.position.y+eH.size.y) {
+                    m_enemies[e]->takeAttackHit(); m_projectiles2[i]->setAlive(false);
+                    if (m_hitFlashCount<MAX_HIT_FLASHES) m_hitFlashes[m_hitFlashCount++]=new HitFlash({(pL+pR)*0.5f-6.f,(pT+pB)*0.5f-8.f});
+                    break;
+                }
+            }
+        }
+        if (m_mogera&&!m_mogera->isDead()&&!m_mogera->isDying()) {
+            for (int i=0;i<m_projectileCount2;++i) {
+                if (!m_projectiles2[i]||!m_projectiles2[i]->isAlive()) continue;
+                sf::FloatRect pH2=m_projectiles2[i]->getHitBox(); sf::FloatRect mH=m_mogera->getHitBox();
+                if (pH2.position.x+pH2.size.x>mH.position.x&&pH2.position.x<mH.position.x+mH.size.x&&
+                    pH2.position.y+pH2.size.y>mH.position.y&&pH2.position.y<mH.position.y+mH.size.y) {
+                    m_mogera->takeSnowballHit(); m_projectiles2[i]->setAlive(false); }
+            }
+        }
+        if (m_gamakichi&&!m_gamakichi->isDead()&&!m_gamakichi->isDying()) {
+            for (int i=0;i<m_projectileCount2;++i) {
+                if (!m_projectiles2[i]||!m_projectiles2[i]->isAlive()) continue;
+                sf::FloatRect pH2=m_projectiles2[i]->getHitBox(); sf::FloatRect gH=m_gamakichi->getHitBox();
+                if (pH2.position.x+pH2.size.x>gH.position.x&&pH2.position.x<gH.position.x+gH.size.x&&
+                    pH2.position.y+pH2.size.y>gH.position.y&&pH2.position.y<gH.position.y+gH.size.y) {
+                    m_gamakichi->takeSnowballHit(); m_projectiles2[i]->setAlive(false); }
+            }
+        }
+        {int w=0;for(int r=0;r<m_projectileCount2;++r){
+            if(m_projectiles2[r]&&m_projectiles2[r]->isAlive())m_projectiles2[w++]=m_projectiles2[r];
+            else{delete m_projectiles2[r];m_projectiles2[r]=nullptr;}}m_projectileCount2=w;}
+    }
 
     // Update & GC hit flashes
     for (int i=0;i<m_hitFlashCount;++i) if (m_hitFlashes[i]) m_hitFlashes[i]->update(dt);
@@ -738,6 +906,20 @@ void PlayState::update(float dt) {
                 int ks = randomScore(100,500); m_score+=ks; m_chainCount[e]=1;
                 std::cout << "[PlayState] Kicked into roll. +" << ks << " score\n";
                 break;
+            }
+        }
+    }
+
+    // P2 kicks snowballed enemy
+    if (m_multiplayer && m_player2 && !m_player2Dead) {
+        sf::FloatRect pHit=m_player2->getHitBox();
+        float pL=pHit.position.x,pR=pL+pHit.size.x,pT=pHit.position.y,pB=pT+pHit.size.y;
+        for (int e=0;e<m_enemyCount;++e) {
+            if (!m_enemies[e]||m_enemies[e]->getState()!=Enemy::State::Snowballed) continue;
+            sf::FloatRect eHit=m_enemies[e]->getHitBox();
+            if (pR>eHit.position.x&&pL<eHit.position.x+eHit.size.x&&pB>eHit.position.y&&pT<eHit.position.y+eHit.size.y) {
+                m_enemies[e]->kickIntoRoll(m_player2->isFacingRight());
+                int ks=randomScore(100,500); m_score2+=ks; m_chainCount[e]=1; break;
             }
         }
     }
@@ -780,7 +962,15 @@ void PlayState::update(float dt) {
         for (int i=0;i<m_powerUpCount;++i) { if (!m_powerUps[i]||!m_powerUps[i]->isAlive()) continue;
             sf::FloatRect h=m_powerUps[i]->getHitBox();
             if (pR>h.position.x&&pL<h.position.x+h.size.x&&pB>h.position.y&&pT<h.position.y+h.size.y)
-                { activatePowerUp(m_powerUps[i]->getType()); m_powerUps[i]->setAlive(false); } } }
+                { activatePowerUp(m_powerUps[i]->getType()); m_powerUps[i]->setAlive(false); m_score+=50; } } }
+    // P2 powerup pickup
+    if (m_multiplayer && m_player2 && !m_player2Dead) {
+        sf::FloatRect pH=m_player2->getHitBox();
+        float pL=pH.position.x,pR=pL+pH.size.x,pT=pH.position.y,pB=pT+pH.size.y;
+        for (int i=0;i<m_powerUpCount;++i) { if (!m_powerUps[i]||!m_powerUps[i]->isAlive()) continue;
+            sf::FloatRect h=m_powerUps[i]->getHitBox();
+            if (pR>h.position.x&&pL<h.position.x+h.size.x&&pB>h.position.y&&pT<h.position.y+h.size.y)
+                { activatePowerUpP2(m_powerUps[i]->getType()); m_powerUps[i]->setAlive(false); m_score2+=50; } } }
     { int w=0; for (int r=0;r<m_powerUpCount;++r) {
         if (m_powerUps[r]&&m_powerUps[r]->isAlive()) m_powerUps[w++]=m_powerUps[r];
         else { delete m_powerUps[r]; m_powerUps[r]=nullptr; } } m_powerUpCount=w; }
@@ -797,16 +987,29 @@ void PlayState::update(float dt) {
             sf::FloatRect h=m_diamonds[i]->getHitBox();
             if (pR>h.position.x&&pL<h.position.x+h.size.x&&pB>h.position.y&&pT<h.position.y+h.size.y) {
                 m_gems+=Diamond::GEM_VALUE;
+                m_score+=50;
                 m_manager->getProgress().gems = m_gems;
+                if (m_multiplayer) m_manager->getProgress().gemsP1 = m_gems;
                 m_diamonds[i]->setAlive(false);
-                std::cout << "[PlayState] Diamond! +" << Diamond::GEM_VALUE
-                          << " gems. Total: " << m_gems << "\n";
+            } } }
+    // P2 diamond pickup (individual gems)
+    if (m_multiplayer && m_player2 && !m_player2Dead) {
+        sf::FloatRect pH=m_player2->getHitBox();
+        float pL=pH.position.x,pR=pL+pH.size.x,pT=pH.position.y,pB=pT+pH.size.y;
+        for (int i=0;i<m_diamondCount;++i) { if (!m_diamonds[i]||!m_diamonds[i]->isAlive()) continue;
+            sf::FloatRect h=m_diamonds[i]->getHitBox();
+            if (pR>h.position.x&&pL<h.position.x+h.size.x&&pB>h.position.y&&pT<h.position.y+h.size.y) {
+                m_gems2+=Diamond::GEM_VALUE;
+                m_score2+=50;
+                m_manager->getProgress().gemsP2 = m_gems2;
+                m_diamonds[i]->setAlive(false);
             } } }
     { int w=0; for (int r=0;r<m_diamondCount;++r) {
         if (m_diamonds[r]&&m_diamonds[r]->isAlive()) m_diamonds[w++]=m_diamonds[r];
         else { delete m_diamonds[r]; m_diamonds[r]=nullptr; } } m_diamondCount=w; }
 
     updatePowerUpTimers(dt);
+    if (m_multiplayer) updatePowerUpTimersP2(dt);
 
     // GC dead regular enemies
     { int w=0;
@@ -844,14 +1047,11 @@ void PlayState::update(float dt) {
 
     if (!m_gameOver && m_player && !m_player->isInvincible()
         && m_collider.checkEnemyContact(*m_player,m_enemies,m_enemyCount)) {
-        m_player->loseLife();
-        std::cout << "[PlayState] Player lost a life. Lives left: " << m_player->getLives() << "\n";
-        if (m_player->getLives()<=0) {
-            m_gameOver=true;
-            saveScore(m_manager->getCurrentUserName(), m_score, m_currentLevel);
-            m_manager->pushState(new GameOverState());
-        }
-        else m_player->respawn(m_playerSpawn);
+        playerLoseLife(m_player, m_playerSpawn, false);
+    }
+    if (m_multiplayer && !m_gameOver && m_player2 && !m_player2Dead && !m_player2->isInvincible()
+        && m_collider.checkEnemyContact(*m_player2,m_enemies,m_enemyCount)) {
+        playerLoseLife(m_player2, m_player2Spawn, true);
     }
 }
 
@@ -865,10 +1065,12 @@ void PlayState::draw(sf::RenderWindow& window) {
     if (m_gamakichi) m_gamakichi->draw(window);
     for (int i=0;i<m_mogeraChildCount;++i) if (m_mogeraChildren[i]) m_mogeraChildren[i]->draw(window);
     for (int i=0;i<m_projectileCount;++i) if (m_projectiles[i]) m_projectiles[i]->draw(window);
+    for (int i=0;i<m_projectileCount2;++i) if (m_projectiles2[i]) m_projectiles2[i]->draw(window);
     for (int i=0;i<m_knifeCount;++i)     if (m_knives[i])      m_knives[i]->draw(window);
     for (int i=0;i<m_powerUpCount;++i) if (m_powerUps[i]) m_powerUps[i]->draw(window);
     for (int i=0;i<m_diamondCount;++i) if (m_diamonds[i]) m_diamonds[i]->draw(window);
     if (m_player) m_player->draw(window);
+    if (m_multiplayer && m_player2 && !m_player2Dead) m_player2->draw(window);
     for (int i=0;i<m_hitFlashCount;++i) if (m_hitFlashes[i]) m_hitFlashes[i]->draw(window);
 
     if (m_showHitboxes) {
@@ -893,8 +1095,8 @@ void PlayState::draw(sf::RenderWindow& window) {
     if (m_showLevelCompleteText && m_hudFontLoaded) {
         sf::Text t(m_hudFont);
         std::string msg = "Level " + std::to_string(m_currentLevel) + " Complete!";
-        if (m_currentLevel==4) msg += "\nGet ready to face the Boss Mogera!";
-        else if (m_currentLevel==9) msg += "\nGet ready to face the Final Boss Gamakichi!";
+        if (m_currentLevel==4) msg += "\nBoss Mogera!";
+        else if (m_currentLevel==9) msg += "\nBoss Gamakichi!";
         t.setString(msg); t.setCharacterSize(40);
         t.setFillColor(sf::Color::Yellow); t.setOutlineColor(sf::Color::Black); t.setOutlineThickness(2.f);
         sf::FloatRect b=t.getLocalBounds();
@@ -937,26 +1139,83 @@ void PlayState::drawHUD(sf::RenderWindow& window) {
     const float HUD_Y=14.f, LEFT_X=18.f, RIGHT_PAD=18.f, ICON_SIZE=16.f, GAP=6.f;
     const unsigned int TS=14;
 
-    { sf::Text t(m_hudFont,"SCORE "+std::to_string(m_score),TS);
-      t.setFillColor(sf::Color::White); t.setOutlineColor(sf::Color::Black); t.setOutlineThickness(2.f);
-      t.setPosition({LEFT_X,HUD_Y}); window.draw(t); }
+    if (!m_multiplayer) {
+        // ── Single-player HUD (unchanged) ──
+        { sf::Text t(m_hudFont,"SCORE "+std::to_string(m_score),TS);
+          t.setFillColor(sf::Color::White); t.setOutlineColor(sf::Color::Black); t.setOutlineThickness(2.f);
+          t.setPosition({LEFT_X,HUD_Y}); window.draw(t); }
+        { float ly=HUD_Y+22.f; int lives=m_player?m_player->getLives():0;
+          if (m_heartLoaded) { sf::Sprite h(m_heartTexture); auto ts=m_heartTexture.getSize();
+            if (ts.x>0&&ts.y>0) h.setScale({ICON_SIZE/(float)ts.x,ICON_SIZE/(float)ts.y});
+            h.setPosition({LEFT_X,ly}); window.draw(h); }
+          sf::Text t(m_hudFont,std::to_string(lives),TS);
+          t.setFillColor(sf::Color::White); t.setOutlineColor(sf::Color::Black); t.setOutlineThickness(2.f);
+          t.setPosition({LEFT_X+ICON_SIZE+GAP,ly}); window.draw(t); }
+        { sf::Text t(m_hudFont,std::to_string(m_gems),TS);
+          t.setFillColor(sf::Color::White); t.setOutlineColor(sf::Color::Black); t.setOutlineThickness(2.f);
+          auto tb=t.getLocalBounds(); float tx=800.f-RIGHT_PAD-tb.size.x-tb.position.x;
+          t.setPosition({tx,HUD_Y}); window.draw(t);
+          if (m_diamondLoaded) { sf::Sprite d(m_diamondTexture); auto ts=m_diamondTexture.getSize();
+            if (ts.x>0&&ts.y>0) d.setScale({ICON_SIZE/(float)ts.x,ICON_SIZE/(float)ts.y});
+            d.setPosition({tx-ICON_SIZE-GAP,HUD_Y}); window.draw(d); } }
+    } else {
+        // ── Multiplayer HUD — P1 left, P2 right ──
+        const unsigned int S=10;
+        // P1 label
+        { sf::Text t(m_hudFont,"P1",S); t.setFillColor(sf::Color(100,200,255));
+          t.setOutlineColor(sf::Color::Black); t.setOutlineThickness(1.5f);
+          t.setPosition({LEFT_X,HUD_Y}); window.draw(t); }
+        // P1 score
+        { sf::Text t(m_hudFont,std::to_string(m_score),S);
+          t.setFillColor(sf::Color::White); t.setOutlineColor(sf::Color::Black); t.setOutlineThickness(1.5f);
+          t.setPosition({LEFT_X,HUD_Y+16.f}); window.draw(t); }
+        // P1 lives
+        { float ly=HUD_Y+32.f; int lives=m_player?m_player->getLives():0;
+          if (m_heartLoaded) { sf::Sprite h(m_heartTexture); auto ts=m_heartTexture.getSize();
+            if (ts.x>0&&ts.y>0) h.setScale({12.f/(float)ts.x,12.f/(float)ts.y});
+            h.setPosition({LEFT_X,ly}); window.draw(h); }
+          sf::Text t(m_hudFont,std::to_string(lives),S);
+          t.setFillColor(sf::Color::White); t.setOutlineColor(sf::Color::Black); t.setOutlineThickness(1.5f);
+          t.setPosition({LEFT_X+14.f+GAP,ly}); window.draw(t); }
+        // P1 gems
+        { float ly=HUD_Y+48.f;
+          if (m_diamondLoaded) { sf::Sprite d(m_diamondTexture); auto ts=m_diamondTexture.getSize();
+            if (ts.x>0&&ts.y>0) d.setScale({12.f/(float)ts.x,12.f/(float)ts.y});
+            d.setPosition({LEFT_X,ly}); window.draw(d); }
+          sf::Text t(m_hudFont,std::to_string(m_gems),S);
+          t.setFillColor(sf::Color::Cyan); t.setOutlineColor(sf::Color::Black); t.setOutlineThickness(1.5f);
+          t.setPosition({LEFT_X+14.f+GAP,ly}); window.draw(t); }
 
-    { float ly=HUD_Y+22.f; int lives=m_player?m_player->getLives():0;
-      if (m_heartLoaded) { sf::Sprite h(m_heartTexture); auto ts=m_heartTexture.getSize();
-        if (ts.x>0&&ts.y>0) h.setScale({ICON_SIZE/(float)ts.x,ICON_SIZE/(float)ts.y});
-        h.setPosition({LEFT_X,ly}); window.draw(h); }
-      sf::Text t(m_hudFont,std::to_string(lives),TS);
-      t.setFillColor(sf::Color::White); t.setOutlineColor(sf::Color::Black); t.setOutlineThickness(2.f);
-      t.setPosition({LEFT_X+ICON_SIZE+GAP,ly}); window.draw(t); }
+        // P2 label
+        float RX=800.f-RIGHT_PAD;
+        { sf::Text t(m_hudFont,"P2",S); t.setFillColor(sf::Color(255,160,80));
+          t.setOutlineColor(sf::Color::Black); t.setOutlineThickness(1.5f);
+          auto tb=t.getLocalBounds(); t.setPosition({RX-tb.size.x-tb.position.x,HUD_Y}); window.draw(t); }
+        // P2 score
+        { sf::Text t(m_hudFont,std::to_string(m_score2),S);
+          t.setFillColor(sf::Color::White); t.setOutlineColor(sf::Color::Black); t.setOutlineThickness(1.5f);
+          auto tb=t.getLocalBounds(); t.setPosition({RX-tb.size.x-tb.position.x,HUD_Y+16.f}); window.draw(t); }
+        // P2 lives
+        { float ly=HUD_Y+32.f; int lives2=m_player2?m_player2->getLives():0;
+          std::string ls = m_player2Dead ? "DEAD" : std::to_string(lives2);
+          sf::Text t(m_hudFont,ls,S);
+          t.setFillColor(m_player2Dead?sf::Color(255,80,80):sf::Color::White);
+          t.setOutlineColor(sf::Color::Black); t.setOutlineThickness(1.5f);
+          auto tb=t.getLocalBounds(); t.setPosition({RX-tb.size.x-tb.position.x,ly}); window.draw(t);
+          if (m_heartLoaded) { sf::Sprite h(m_heartTexture); auto ts=m_heartTexture.getSize();
+            if (ts.x>0&&ts.y>0) h.setScale({12.f/(float)ts.x,12.f/(float)ts.y});
+            h.setPosition({RX-tb.size.x-tb.position.x-14.f-GAP,ly}); window.draw(h); } }
+        // P2 gems
+        { float ly=HUD_Y+48.f;
+          sf::Text t(m_hudFont,std::to_string(m_gems2),S);
+          t.setFillColor(sf::Color::Cyan); t.setOutlineColor(sf::Color::Black); t.setOutlineThickness(1.5f);
+          auto tb=t.getLocalBounds(); t.setPosition({RX-tb.size.x-tb.position.x,ly}); window.draw(t);
+          if (m_diamondLoaded) { sf::Sprite d(m_diamondTexture); auto ts=m_diamondTexture.getSize();
+            if (ts.x>0&&ts.y>0) d.setScale({12.f/(float)ts.x,12.f/(float)ts.y});
+            d.setPosition({RX-tb.size.x-tb.position.x-14.f-GAP,ly}); window.draw(d); } }
+    }
 
-    { sf::Text t(m_hudFont,std::to_string(m_gems),TS);
-      t.setFillColor(sf::Color::White); t.setOutlineColor(sf::Color::Black); t.setOutlineThickness(2.f);
-      auto tb=t.getLocalBounds(); float tx=800.f-RIGHT_PAD-tb.size.x-tb.position.x;
-      t.setPosition({tx,HUD_Y}); window.draw(t);
-      if (m_diamondLoaded) { sf::Sprite d(m_diamondTexture); auto ts=m_diamondTexture.getSize();
-        if (ts.x>0&&ts.y>0) d.setScale({ICON_SIZE/(float)ts.x,ICON_SIZE/(float)ts.y});
-        d.setPosition({tx-ICON_SIZE-GAP,HUD_Y}); window.draw(d); } }
-
+    // Level label centred
     { std::string ls="LEVEL "+std::to_string(m_currentLevel)+"/"+std::to_string(m_totalLevels);
       sf::Text t(m_hudFont,ls,TS); t.setFillColor(sf::Color::White);
       t.setOutlineColor(sf::Color::Black); t.setOutlineThickness(2.f);
@@ -971,11 +1230,12 @@ void PlayState::drawHUD(sf::RenderWindow& window) {
         t.setFillColor(sf::Color(80, 255, 80));
         t.setOutlineColor(sf::Color::Black);
         t.setOutlineThickness(1.5f);
-        t.setPosition({LEFT_X, HUD_Y + 44.f});
+        t.setPosition({LEFT_X, HUD_Y + 64.f});
         window.draw(t);
     }
 
     drawPowerUpHUD(window);
+    if (m_multiplayer) drawPowerUpHUDP2(window);
 }
 
 int PlayState::randomScore(int lo, int hi) const {
@@ -1117,7 +1377,15 @@ void PlayState::nextLevel() {
     g_platformCount = m_platformCount;
     spawnEnemies();
     if (m_player) m_player->respawn(m_playerSpawn);
+    if (m_multiplayer && m_player2) m_player2->respawn(m_player2Spawn);
     std::cout << "[PlayState] Started Level " << m_currentLevel << "\n";
+
+    // Switch music track for new level
+    {
+        bool isBoss = (m_currentLevel == 5 || m_currentLevel == 10);
+        if (isBoss) AudioManager::get().playBossLevelMusic();
+        else        AudioManager::get().playNormalLevelMusic();
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -1274,4 +1542,92 @@ void PlayState::cleanupLevel() {
     for (int i = 0; i < m_mogeraChildCount; ++i) { delete m_mogeraChildren[i]; m_mogeraChildren[i] = nullptr; } m_mogeraChildCount = 0;
 
     delete m_gamakichi; m_gamakichi = nullptr;
+    for (int i=0;i<m_projectileCount2;++i){delete m_projectiles2[i];m_projectiles2[i]=nullptr;} m_projectileCount2=0;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Multiplayer helper: player loses a life with MP-aware game over
+// ═══════════════════════════════════════════════════════════════════════════
+void PlayState::playerLoseLife(Player* p, sf::Vector2f spawn, bool isP2) {
+    p->loseLife();
+    std::cout << "[PlayState] " << (isP2?"P2":"P1") << " lost a life. Lives: " << p->getLives() << "\n";
+    if (p->getLives() <= 0) {
+        AudioManager::get().playDeathSound();
+        if (!m_multiplayer) {
+            m_gameOver = true;
+            {
+                std::string _p1n = m_manager->getCurrentUserName();
+                std::string _p2n = m_manager->getProgress().player2Name;
+                if (_p2n.empty()) _p2n = "Player2";
+                saveScore(_p1n, m_score, m_currentLevel);
+                if (m_multiplayer) saveScore(_p2n, m_score2, m_currentLevel);
+            }
+            m_manager->pushState(new GameOverState());
+        } else {
+            if (isP2) m_player2Dead = true;
+            bool p1Dead = m_player && m_player->getLives() <= 0;
+            bool p2Dead = !m_player2 || m_player2Dead;
+            if (p1Dead && p2Dead) {
+                m_gameOver = true;
+                // Save both players' scores under their own names
+                std::string p1name = m_manager->getCurrentUserName();
+                std::string p2name = m_manager->getProgress().player2Name;
+                if (p2name.empty()) p2name = "Player2";
+                saveScore(p1name, m_score,  m_currentLevel);
+                saveScore(p2name, m_score2, m_currentLevel);
+                m_manager->pushState(new GameOverState());
+            }
+        }
+    } else {
+        p->respawn(spawn);
+    }
+}
+
+void PlayState::activatePowerUpP2(PowerUp::Type type) {
+    switch (type) {
+        case PowerUp::Type::SpeedBoost:
+            m_speedActive2=true; m_speedTimer2=15.f;
+            if (m_player2) m_player2->setSpeedMultiplier(1.5f); break;
+        case PowerUp::Type::SnowballPower:
+            m_snowballPowerActive2=true;
+            for (int i=0;i<m_enemyCount;++i) if (m_enemies[i]) m_enemies[i]->setOneHitEncase(true); break;
+        case PowerUp::Type::DistanceIncrease:
+            m_distanceActive2=true; break;
+        case PowerUp::Type::BalloonMode:
+            m_balloonActive2=true; m_balloonTimer2=10.f;
+            if (m_player2) m_player2->setBalloonMode(true); break;
+        default: break;
+    }
+    m_displayedType2=type; m_hasDisplayed2=true;
+}
+
+void PlayState::updatePowerUpTimersP2(float dt) {
+    if (m_speedActive2) { m_speedTimer2-=dt;
+        if (m_speedTimer2<=0.f) { m_speedActive2=false; if (m_player2) m_player2->setSpeedMultiplier(1.f); } }
+    if (m_balloonActive2) { m_balloonTimer2-=dt;
+        if (m_balloonTimer2<=0.f) { m_balloonActive2=false; if (m_player2) m_player2->setBalloonMode(false); } }
+}
+
+void PlayState::drawPowerUpHUDP2(sf::RenderWindow& window) {
+    if (!m_hasDisplayed2 || !m_hudFontLoaded) return;
+    const float BY=568.f, IS=22.f, BW=120.f, BH=10.f, GAP=8.f;
+    float startX=800.f-IS-BW-GAP-18.f;
+    float barX=startX, barY=BY+(IS-BH)/2.f;
+
+    sf::Texture* tex=nullptr; bool loaded=false; float fillRatio=1.f; sf::Color barColor=sf::Color::White;
+    switch (m_displayedType2) {
+        case PowerUp::Type::SpeedBoost:     tex=&m_puIconSpeed;    loaded=m_puIconSpeedLoaded;    fillRatio=m_speedTimer2<=0?0:m_speedTimer2/15.f; barColor={120,200,255}; break;
+        case PowerUp::Type::SnowballPower:  tex=&m_puIconSnowball; loaded=m_puIconSnowballLoaded; fillRatio=1.f; barColor={255,120,200}; break;
+        case PowerUp::Type::DistanceIncrease:tex=&m_puIconDistance;loaded=m_puIconDistanceLoaded; fillRatio=1.f; barColor={80,140,255}; break;
+        case PowerUp::Type::BalloonMode:    tex=&m_puIconBalloon;  loaded=m_puIconBalloonLoaded;  fillRatio=m_balloonTimer2<=0?0:m_balloonTimer2/10.f; barColor={180,220,255}; break;
+        default: return;
+    }
+    if (loaded&&tex) { sf::Sprite icon(*tex); auto ts=tex->getSize();
+        if (ts.x>0&&ts.y>0) icon.setScale({IS/(float)ts.x,IS/(float)ts.y});
+        icon.setPosition({startX+BW+GAP,BY}); window.draw(icon); }
+    sf::RectangleShape bg({BW,BH}); bg.setPosition({barX,barY});
+    bg.setFillColor(sf::Color(20,20,30,200)); bg.setOutlineColor(sf::Color::Black); bg.setOutlineThickness(1.f);
+    window.draw(bg);
+    if (fillRatio>0.f) { sf::RectangleShape fill({BW*fillRatio,BH}); fill.setPosition({barX,barY});
+        fill.setFillColor(barColor); window.draw(fill); }
 }
