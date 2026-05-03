@@ -1,6 +1,11 @@
 #pragma once
+#include <string>
 
 struct PlayerProgress {
+    // -- Multiplayer mode flag --
+    bool        isMultiplayer  = false;
+    std::string player2Name;          // entered by user before MP game starts
+
     int gems  = 0;
     int score = 0;
 
@@ -11,20 +16,32 @@ struct PlayerProgress {
     bool pendingBalloon        = false;
     int  pendingExtraLifeCount = 0;
 
+    // -- Per-player shop purchases (multiplayer) --
+    bool pendingSpeedP2          = false;
+    bool pendingSnowballP2       = false;
+    bool pendingDistanceP2       = false;
+    bool pendingBalloonP2        = false;
+    int  pendingExtraLifeCountP2 = 0;
+    int  gemsP1 = 0;   // per-player diamond tracking in multiplayer
+    int  gemsP2 = 0;
+
     // -- GameOver Continue button (GameOver screen) ---------------------------
-    // cost = 5 + continueCount * 10  =>  5, 15, 25 ...
     int  continueCount = 0;
     bool pendingRevive = false;
 
     // -- Main Menu Continue button --------------------------------------------
-    // Set by PlayState::onExit() when the player voluntarily quits mid-game.
-    // Cleared when the continued game starts (PlayState::onEnter reads these).
-    // savedLevel == 0  =>  no active save / nothing to continue.
-    // gameOverOccurred =>  game ended naturally; Continue must show error.
     int  savedLevel          = 0;
     int  savedGems           = 0;
     int  savedCharacterIndex = 0;
     bool gameOverOccurred    = false;
+
+    void clearPendingP2() {
+        pendingSpeedP2          = false;
+        pendingSnowballP2       = false;
+        pendingDistanceP2       = false;
+        pendingBalloonP2        = false;
+        pendingExtraLifeCountP2 = 0;
+    }
 
     void clearPending() {
         pendingSpeed          = false;
@@ -32,7 +49,7 @@ struct PlayerProgress {
         pendingDistance       = false;
         pendingBalloon        = false;
         pendingExtraLifeCount = 0;
-        // pendingRevive cleared by PlayState::update, not here.
+        clearPendingP2();
     }
 
     void clearSave() {

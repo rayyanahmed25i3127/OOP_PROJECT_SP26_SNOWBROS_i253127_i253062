@@ -50,25 +50,19 @@ namespace {
                { "assets/sprites/player_red_throw_frame2.png",  1, 0.15f },
                { nullptr, 0, 0.f }} },
         },
-        // ---- Modi player (character 2) ----
+        // ---- Modi player (character 2) — idle only, others fall back ----
         {
             { {{ "assets/sprites/player_modi_idle.png",          1, 0.18f },
                { nullptr, 0, 0.f }} },
-            { {{ "assets/sprites/player_modi_walk_frame1.png",   1, 0.33f },
-               { "assets/sprites/player_modi_walk_frame2.png",   1, 0.33f },
-               { "assets/sprites/player_modi_walk_frame3.png",   1, 0.33f },
-               { nullptr, 0, 0.f }} },
-            { {{ "assets/sprites/player_modi_jump.png",          1, 0.15f },
-               { nullptr, 0, 0.f }} },
-            { {{ "assets/sprites/player_modi_throw_frame1.png",  1, 0.15f },
-               { "assets/sprites/player_modi_throw_frame2.png",  1, 0.15f },
-               { nullptr, 0, 0.f }} },
+            { {{ nullptr, 0, 0.f }} },
+            { {{ nullptr, 0, 0.f }} },
+            { {{ nullptr, 0, 0.f }} },
         },
     };
 
 }
 
-Player::Player(sf::Vector2f pos, int characterIndex)
+Player::Player(sf::Vector2f pos, int characterIndex, PlayerControls controls)
     : Entity(pos)
     , m_currentAnim(AnimState::Idle)
     , m_currentFrame(0)
@@ -89,6 +83,7 @@ Player::Player(sf::Vector2f pos, int characterIndex)
     , m_facingRight(true)
     , m_balloonMode(false)
     , m_balloonGravity(-50.f)
+    , m_controls(controls)
 {
     loadAnimations(characterIndex);
     hitBox.size     = { HITBOX_WIDTH,  HITBOX_HEIGHT };
@@ -210,13 +205,14 @@ void Player::updateAnimation(float dt) {
 }
 
 void Player::applySpriteTransform() {
-    Animation& anim = m_animations[static_cast<int>(m_currentAnim)];
-    if (!anim.loaded || anim.frameW <= 0 || anim.frameH <= 0) return;
-
-    float scaleX = PLAYER_WIDTH  / static_cast<float>(anim.frameW);
-    float scaleY = PLAYER_HEIGHT / static_cast<float>(anim.frameH);
-
-    m_sprite.setOrigin({ static_cast<float>(anim.frameW) / 2.f, 0.f });
+    const sf::Texture& tex = m_sprite.getTexture();
+    sf::Vector2u sz = tex.getSize();
+    if (sz.x == 0 || sz.y == 0) return;
+    float fw = static_cast<float>(sz.x);
+    float fh = static_cast<float>(sz.y);
+    float scaleX = PLAYER_WIDTH  / fw;
+    float scaleY = PLAYER_HEIGHT / fh;
+    m_sprite.setOrigin({ fw / 2.f, 0.f });
 
     // Sprites face LEFT by default → negative scaleX flips to face right
     if (m_facingRight)
@@ -229,45 +225,25 @@ void Player::applySpriteTransform() {
 
 void Player::handleInput() {
     velocity.x = 0.f;
-
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A)) {
-        velocity.x = -speed;
-        m_facingRight = false;
-    }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D)) {
-        velocity.x = speed;
-        m_facingRight = true;
-    }
-
-    if ((sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W)
-       || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
-        && onGround) {
-        velocity.y = jumpForce;
-        onGround = false;
-    }
-
-    if ((sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space)
-       || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::J))
-        && m_throwCooldown <= 0.f) {
-        m_wantsToThrow = true;
-    }
-
-    // K key toggles auto-attack
+    if (sf::Keyboard::isKeyPressed(m_controls.left)) { velocity.x = -speed; m_facingRight = false; }
+    if (sf::Keyboard::isKeyPressed(m_controls.right)) { velocity.x = speed; m_facingRight = true; }
+    bool jumpKey = sf::Keyboard::isKeyPressed(m_controls.jump);
+    if (m_controls.jump2 != sf::Keyboard::Key::Unknown)
+        jumpKey = jumpKey || sf::Keyboard::isKeyPressed(m_controls.jump2);
+    if (jumpKey && onGround) { velocity.y = jumpForce; onGround = false; }
+    bool fireKey = sf::Keyboard::isKeyPressed(m_controls.fire);
+    if (m_controls.fire2 != sf::Keyboard::Key::Unknown)
+        fireKey = fireKey || sf::Keyboard::isKeyPressed(m_controls.fire2);
+    if (fireKey && m_throwCooldown <= 0.f) { m_wantsToThrow = true; }
     {
         static bool s_kWasPressed = false;
-        bool kNow = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::K);
+        bool kNow = sf::Keyboard::isKeyPressed(m_controls.autoToggle);
         if (kNow && !s_kWasPressed) {
-            m_autoAttack = !m_autoAttack;
-            m_autoAttackTimer = 0.f;
-            std::cout << "[Player] Auto-attack " << (m_autoAttack ? "ON" : "OFF") << "\n";
+            m_autoAttack = !m_autoAttack; m_autoAttackTimer = 0.f;
         }
         s_kWasPressed = kNow;
     }
-
-    // Auto-attack fires at the same interval as manual throw
-    if (m_autoAttack && m_throwCooldown <= 0.f) {
-        m_wantsToThrow = true;
-    }
+    if (m_autoAttack && m_throwCooldown <= 0.f) { m_wantsToThrow = true; }
 }
 
 void Player::applyGravity(float dt) {

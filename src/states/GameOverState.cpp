@@ -1,5 +1,6 @@
 #include "states/GameOverState.hpp"
 #include "states/StateManager.hpp"
+#include "audio/AudioManager.hpp"
 #include <iostream>
 #include <cmath>
 #include <string>
@@ -150,6 +151,7 @@ void GameOverState::refreshCostLabel() {
 }
 
 void GameOverState::onEnter() {
+    AudioManager::get().playMenuMusic();
     if (!m_font.openFromFile("assets/fonts/BubbleBobble-rg3rx.ttf")) {
         std::cerr << "[GameOverState] Failed to load font\n";
     }

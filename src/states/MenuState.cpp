@@ -3,6 +3,8 @@
 #include "audio/AudioManager.hpp"
 #include "states/CharacterSelectState.hpp"
 #include "states/PlayState.hpp"
+#include "states/MultiplayerNameState.hpp"
+#include "states/PlayState.hpp"
 #include "states/LeaderboardState.hpp"
 #include "states/LoginState.hpp"
 #include <iostream>
@@ -26,6 +28,7 @@ namespace {
     const sf::Color COLOR_GREY    = sf::Color( 60,  60,  70);
     const sf::Color COLOR_RED     = sf::Color(170,  30,  40);
     const sf::Color COLOR_OUTLINE = sf::Color( 10,  10,  15, 220);
+    const sf::Color COLOR_YELLOW  = sf::Color(220, 190,  30);
 }
 
 // ============================================================================
@@ -75,8 +78,10 @@ void MenuState::Button::configure(sf::Vector2f centerPos,
     shineCenter.setFillColor(shineColor);
 
     text.setString(label);
-    text.setFillColor(sf::Color::White);
-    text.setOutlineColor(sf::Color(0, 0, 0, 180));
+    // Yellow buttons get black text with white outline, others get white text with dark outline
+    bool isYellow = (baseFill.r > 200 && baseFill.g > 150 && baseFill.b < 100);
+    text.setFillColor(isYellow ? sf::Color::Black : sf::Color::White);
+    text.setOutlineColor(isYellow ? sf::Color::White : sf::Color(0, 0, 0, 180));
     text.setOutlineThickness(2.f);
 
     update(0.f);
@@ -189,16 +194,17 @@ void MenuState::onEnter() {
         m_clickSoundLoaded = true;
     }
 
-    float startY  = 380.f;
-    float spacing = 40.f;
+    float startY  = 340.f;
+    float spacing = 36.f;
     float centerX = WINDOW_WIDTH / 2.f;
-    float exitY   = 540.f;
 
-    addButton("New Game",    {centerX, startY + 0 * spacing}, COLOR_NAVY,    ButtonAction::NewGame);
-    addButton("Continue",    {centerX, startY + 1 * spacing}, COLOR_SKYBLUE, ButtonAction::Continue);
-    addButton("Leaderboard", {centerX, startY + 2 * spacing}, COLOR_GREEN,   ButtonAction::Leaderboard);
-    addButton("Logout",      {centerX, startY + 3 * spacing}, COLOR_GREY,    ButtonAction::Logout);
-    addButton("Exit",        {centerX, exitY},                COLOR_RED,     ButtonAction::Exit);
+    // Multiplayer is the first/top button, then all original buttons follow
+    addButton("Multiplayer", {centerX, startY + 0 * spacing}, COLOR_YELLOW,  ButtonAction::Multiplayer);
+    addButton("New Game",    {centerX, startY + 1 * spacing}, COLOR_NAVY,    ButtonAction::NewGame);
+    addButton("Continue",    {centerX, startY + 2 * spacing}, COLOR_SKYBLUE, ButtonAction::Continue);
+    addButton("Leaderboard", {centerX, startY + 3 * spacing}, COLOR_GREEN,   ButtonAction::Leaderboard);
+    addButton("Logout",      {centerX, startY + 4 * spacing}, COLOR_GREY,    ButtonAction::Logout);
+    addButton("Exit",        {centerX, startY + 5 * spacing}, COLOR_RED,     ButtonAction::Exit);
 
     m_selectedIndex = 0;
     setHovered(0);
@@ -244,10 +250,21 @@ void MenuState::activateButton(int index) {
 
     switch (m_buttons[index]->action) {
 
-        case ButtonAction::NewGame:
-            std::cout << "[MenuState] New Game → CharacterSelectState\n";
-            // Clear any previous save so Continue points to the new run
+        case ButtonAction::Multiplayer:
+            std::cout << "[MenuState] Multiplayer -> MultiplayerNameState\n";
             m_manager->getProgress().clearSave();
+            m_manager->getProgress().isMultiplayer = true;
+            m_manager->getProgress().gemsP1 = 0;
+            m_manager->getProgress().gemsP2 = 0;
+            m_manager->getProgress().player2Name.clear();
+            if (m_clickSoundLoaded) sf::sleep(sf::milliseconds(100));
+            m_manager->pushState(new MultiplayerNameState());
+            break;
+
+        case ButtonAction::NewGame:
+            std::cout << "[MenuState] New Game\n";
+            m_manager->getProgress().clearSave();
+            m_manager->getProgress().isMultiplayer = false;
             if (m_clickSoundLoaded) sf::sleep(sf::milliseconds(100));
             m_manager->pushState(new CharacterSelectState());
             break;
